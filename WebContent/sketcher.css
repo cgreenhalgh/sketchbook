@@ -1,0 +1,10 @@
+/* sketcher.css */
+canvas.maincanvas {
+	border:1px solid grey;
+	width: 300px;
+	height: 300px;
+}
+h1 {
+	font-family: sans-serif;
+	font-size: medium;
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Load the Paper.js library -->
+<script type="text/javascript" src="paper-0.2.2.js"></script>
+<!-- Define inlined PaperScript associate it with myCanvas -->
+<script type="text/paperscript" canvas="myCanvas">
+	// for some reason, setting the size via CSS on the Canvas doesn't seem to work.
+	// the view stays 300x150
+//	view.size = view.viewSize = new Size(300,300);
+
+    // Create a Paper.js Path to draw a line into it:
+    var path = new Path();
+    // Give the stroke a color
+    path.strokeColor = 'black';
+    var start = new Point(100, 100);
+    // Move to start and draw a line from there
+    path.moveTo(start);
+    // Note the plus operator on Point objects.
+    // PaperScript does that for us, and much more!
+    path.lineTo(start + [ 100, -50 ]);
+
+  	var myCircle = new Path.Circle(new Point(150,150), 30);
+   	myCircle.fillColor = 'black';
+
+/*        var drawTool = new Tool();
+var myPath;
+        drawTool.onMouseDown = function(event) {
+    myPath = new Path();
+    myPath.strokeColor = 'black';
+        	console.log('onMouseDown('+event.point+')');
+        	
+        	var myCircle = new Path.Circle(event.point, 3);
+        	myCircle.fillColor = 'black';
+        	
+	        //path = new Path();
+	        //path.strokeColour = 'black';
+	        path.add(event.point);
+       }
+        drawTool.onMouseDrag = function(event) {
+     myPath.add(event.point);
+       	path.add(event.point);
+        	console.log('onMouseDrag('+event.point+')');
+        }
+        drawTool.activate();
+*/
+var myPath;
+
+function onMouseDown(event) {
+    myPath = new Path();
+    myPath.strokeColor = 'black';
+}
+
+function onMouseDrag(event) {
+    myPath.add(event.point);
+}
+
+function onMouseUp(event) {
+    var myCircle = new Path.Circle(new Point(event.point.x+10,event.point.y), 10);
+    myCircle.strokeColor = 'black';
+    myCircle.fillColor = 'white';
+    
+    myPath.simplify();
+}
+ 
+       // Draw the view now:
+        //paper.view.draw();
+</script>
+</head>
+<body>
+    <canvas id="myCanvas" ></canvas>
+</body>
+</html>
