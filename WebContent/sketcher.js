@@ -7,9 +7,10 @@
 
 // redraw all views 
 function redraw(ps) {
-	for (var vi in ps.views) {
-		var v = ps.views[vi];
-		v.draw();
+	for (var vi in ps.View._views) {
+		var v = ps.View._views[vi];
+		if (ps===v._scope)
+			v.draw();
 	}
 }
 
@@ -86,12 +87,16 @@ function setupOverviewAndDetail(overviewId, detailId) {
     paperScopes.push(ps);
     
     var overviewCanvas = document.getElementById(overviewId);
-    //ps.setup(overviewCanvas);
+    ps.setup(overviewCanvas);
     
-    var p = new paper.Project();
-    p.activate();
+    //var p = new paper.Project();
+    //p.activate();
 
-    new paper.View(overviewCanvas);
+    // release 0.2.2
+    //new paper.View(overviewCanvas);
+    // later versions
+    //paper.View.create(overviewCanvas);
+    
     // for some reason, setting the size via CSS on the Canvas doesn't seem to work.
 	// the view stays 300x150
 	//ps.view.viewSize = new ps.Size(300,300);
@@ -105,8 +110,10 @@ function setupOverviewAndDetail(overviewId, detailId) {
 	
     var detailCanvas = document.getElementById(detailId);
     console.log('detailCanvas '+detailId+' = '+detailCanvas);
-    new ps.View(detailCanvas);
-   
+    // release 0.2.2
+    //new ps.View(detailCanvas);
+    //paper.View.create(detailCanvas);
+    
     // mouse/key tool
     /*
     var drawTool = new ps.Tool();
@@ -202,18 +209,22 @@ var keyDown = undefined;
  * @return View if found, else null
  */ 
 function getView(target) {
-	for (var psi in paperScopes) {
-		var ps = paperScopes[psi];
+//	for (var psi in paperScopes) {
+//		var ps = paperScopes[psi];
     	//console.log('paperscope with '+ps.views);
-		for (var vi in ps.views) {
-			var v = ps.views[vi];
-			if (v.canvas===mouseTarget) {
+		// post paperjs 0.2.2. views -> _views?
+	for (var vi in paper.View._views) {
+		var v = paper.View._views[vi];
+//		for (var vi in ps._views) {
+//			var v = ps._views[vi];
+//			if (v.canvas===mouseTarget) {
+		if (v._element===mouseTarget) {
 				//console.log('- - in view2 '+v);
-				paper = ps;
-				v.activate();
+				paper = v._scope;//ps;
+				//v.activate();
 				//ps.projects[0].activate();
 				return v;
-			}
+//			}
 		}
 	}
 	return null;
@@ -302,7 +313,7 @@ textTool.end = function(point) {
 var zoomInTool = new Object();
 var zoomOutTool = new Object();
 var ZOOM_INTERVAL = 20;
-var ZOOM_RATIO = 0.02;
+var ZOOM_RATIO = 0.05;
 var zoomInterval = undefined;
 var zoomPoint = undefined;
 var zoomView = undefined;
@@ -312,31 +323,33 @@ function zoomIn() {
 		return;
 	// zoom towards zoomPoint in project space
 	var zoom = zoomView.zoom;
-	console.log('zoomIn point='+zoomPoint+' zoom='+zoomView.zoom+' center='+zoomView.center);
+	// had problems with main version - see top of file
+	//console.log('zoomIn point='+zoomPoint+' zoom='+zoomView.zoom+' center='+zoomView.center);
 	zoomView.zoom = zoomView.zoom*(1+ZOOM_RATIO);
 	var dx = zoomPoint.x-zoomView.center.x;
 	var dy = zoomPoint.y-zoomView.center.y;
 	var sdx = (ZOOM_RATIO*dx*zoom)/zoomView.zoom;
 	var sdy = (ZOOM_RATIO*dy*zoom)/zoomView.zoom;
-	console.log('- d='+dx+','+dy+' zoom\'='+zoomView.zoom+' sd='+sdx+','+sdy);
+	//console.log('- d='+dx+','+dy+' zoom\'='+zoomView.zoom+' sd='+sdx+','+sdy);
 	zoomView.center = new paper.Point(zoomView.center.x+sdx, zoomView.center.y+sdy);
-	console.log('- center\'='+zoomView.center);
+	//console.log('- center\'='+zoomView.center);
 }
 
 function zoomOut() {
 	if (!zoomView || !zoomPoint)
 		return;
 	// zoom away from zoomPoint in project space
-	console.log('zoomOut point='+zoomPoint+' zoom='+zoomView.zoom+' center='+zoomView.center);
+	// had problems with main version - see top of file
+	//console.log('zoomOut point='+zoomPoint+' zoom='+zoomView.zoom+' center='+zoomView.center);
 	var zoom = zoomView.zoom;
 	zoomView.zoom = zoomView.zoom*(1-ZOOM_RATIO);
 	var dx = zoomPoint.x-zoomView.center.x;
 	var dy = zoomPoint.y-zoomView.center.y;
 	var sdx = (ZOOM_RATIO*dx*zoom)/zoomView.zoom;
 	var sdy = (ZOOM_RATIO*dy*zoom)/zoomView.zoom;
-	console.log('- d='+dx+','+dy+' zoom\'='+zoomView.zoom+' sd='+sdx+','+sdy);
+	//console.log('- d='+dx+','+dy+' zoom\'='+zoomView.zoom+' sd='+sdx+','+sdy);
 	zoomView.center = new paper.Point(zoomView.center.x-sdx, zoomView.center.y-sdy);
-	console.log('- center\'='+zoomView.center);
+	//console.log('- center\'='+zoomView.center);
 }
 
 zoomInTool.begin = function(point, view) {
@@ -382,9 +395,10 @@ var toolView = undefined;
 /** function to map view pixel position to project coordinates.
  * @return Point */
 function view2project(view, vx, vy) {
-	var px = (vx-view.canvas.width/2)/view.zoom+view.center.x;
-	var py = (vy-view.canvas.height/2)/view.zoom+view.center.y;
-	return new paper.Point(px, py);
+	return view.viewToProject(new paper.Point(vx, vy));
+//	var px = (vx-view.canvas.width/2)/view.zoom+view.center.x;
+//	var py = (vy-view.canvas.height/2)/view.zoom+view.center.y;
+//	return new paper.Point(px, py);
 }
 
 // Only executed our code once the DOM is ready.
@@ -493,17 +507,17 @@ $(document).ready(function() {
 	// work-around for canvas sizing problem
     function handleResize() {
     	console.log('handle resize');
-    	for (var psi in paperScopes) {
-    		var ps = paperScopes[psi];
-        	console.log('paperscope with '+ps.views);
-    		for (var vi in ps.views) {
-    			var v = ps.views[vi];
-           		console.log('canvas:resize to '+$(v.canvas).width()+","+$(v.canvas).height());
+//    	for (var psi in paperScopes) {
+//    		var ps = paperScopes[psi];
+//        	console.log('paperscope with '+ps._views);
+    		for (var vi in paper.View._views) {
+    			var v = paper.View._views[vi];
+           		console.log('canvas:resize to '+$(v._element).width()+","+$(v._element).height());
            		// need to force a change or it does some weird partial rescaling
-           		v.viewSize = new ps.Size(1,1);
-           		v.viewSize = new ps.Size($(v.canvas).width(),$(v.canvas).height());
+           		v.viewSize = new paper.Size(1,1);
+           		v.viewSize = new paper.Size($(v._element).width(),$(v._element).height());
     		}
-    	}
+//    	}
     }
     $(window).resize(handleResize);
     handleResize();
