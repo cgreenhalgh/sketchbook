@@ -5,112 +5,26 @@
 <title>Sketcher</title>
 <link rel="StyleSheet" href="sketcher.css" type="text/css"> <!-- media=screen,print, -->
 <script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
-<script type="text/javascript" src="paper-20120704.js"></script>
-<script type="text/javascript" canvas="mymaincanvas">
-	//paper.install(window);
-    // Only executed our code once the DOM is ready.
-//	window.onload = function() {
-    $(document).ready(function() {
-        var ps = new paper.PaperScope();
-        
-        // Create an empty project and a view for the canvas:
-        var canvas = document.getElementById('objectOverviewCanvas');
-        ps.setup(canvas);
-    //    var v = new ps.View(canvas);
-    //    var p = new ps.Project();
-    //    p.activate();
-		// for some reason, setting the size via CSS on the Canvas doesn't seem to work.
-		// the view stays 300x150
-		//ps.view.viewSize = new ps.Size(300,300);
-    var v = ps.view;    
-		    // Create a Paper.js Path to draw a line into it:
-    var path = new ps.Path();
-    // Give the stroke a color
-    path.strokeColor = 'black';
-    var start = new ps.Point(100, 100);
-    // Move to start and draw a line from there
-    path.moveTo(start);
-    // Note the plus operator on Point objects.
-    // PaperScript does that for us, and much more!
-    path.lineTo(new ps.Point( 200, 50 ));
-
-    	var myPath;    
-    	myPath = new ps.Path();
-    	myPath.strokeColor = 'black';
-    	myPath.strokeWidth = 3;
-    	myPath.add(new ps.Point(100,100));
-    	myPath.add(new ps.Point(200,200));
-    	
-    	myPath = new ps.Path.Line(new ps.Point(200,100), new ps.Point(100,200));
-    	myPath.strokeColor = 'black';
-    	myPath.strokeWidth = 3;
-
-    	var myCircle = new ps.Path.Circle(new paper.Point(150,150), 30);
-    	myCircle.fillColor = 'black';
-    	
-        var drawTool = new ps.Tool();
-        drawTool.onMouseDown = function(event) {
-        	ps.install(this);
-
-        	console.log('onMouseDown('+event.point+')');
-        	
-        	var myCircle = new ps.Path.Circle(event.point, 3);
-        	myCircle.fillColor = 'black';
-        	
-        	myPath = new ps.Path();
-        	myPath.strokeColor = 'black';
-        	myPath.add(event.point);
-        	console.log('myPath='+myPath);
-        }
-        drawTool.onMouseDrag = function(event) {
-        	ps.install(this);
-
-        	console.log('myPath='+myPath);
-        	myPath.add(event.point);
-        	console.log('onMouseDrag');
-        }
-        drawTool.onMouseUp = function(event) { 
-        	ps.install(this);
-
-        	myPath.simplify();
-        }
-        drawTool.activate();
-        // Draw the view now:
-        ps.view.draw();
-        
-        function handleResize() {
-        	//ps.install(this);
-       		console.log('div:resize to '+$('#objectOverviewDiv').width()+","+$('#objectOverviewDiv').height());
-//       		v.viewSize = new ps.Size($('#objectOverviewDiv').width(),$('#objectOverviewDiv').height());
-       		console.log('canvas:resize to '+$('#objectOverviewCanvas').width()+","+$('#objectOverviewCanvas').height());
-	   		v.viewSize = new ps.Size($('#objectOverviewCanvas').width(),$('#objectOverviewCanvas').height());
-        }
-        $(window).resize(handleResize);
-        handleResize();
-    });
-</script>
+<script type="text/javascript" src="paper-0.2.2.js"></script>
+<script type="text/javascript" src="sketcher.js"></script>
 </head>
 <body>
-<div class="page">
+<div id="page" class="page">
 <h1>Paperjs test(s) for sketching interface 3</h1>
 	<!-- object editor -->
 	<div class="editor">
 		<!-- left column -->
 		<div class="editorLeft">
 			<!-- overview -->
-			<p>Overview</p>
-			<div id="objectOverviewDiv" class="editorOverview">
-		    	<canvas id="objectOverviewCanvas" class="overviewCanvas" ></canvas>				
-			</div>
+			<p class="label">Overview</p>
+		   	<canvas id="objectOverviewCanvas" class="overviewCanvas" ></canvas>				
 			<!-- hidden text -->
-			<div class="editorText">
-				<p>Hidden text</p>
-		    	<canvas id="objectTextCanvas" class="textCanvas" ></canvas>								
-			</div>
+			<p class="label">Hidden text</p>
+	    	<canvas id="objectTextCanvas" class="textCanvas" ></canvas>								
 		</div>
 		<!-- right / zoomable view -->
 		<div class="editorDetail">
-			<p>Detail (zoomable)</p>
+			<p class="label">Detail (zoomable)</p>
 	    	<canvas id="objectDetailCanvas" class="detailCanvas" ></canvas>					
 		</div>
 		<div class="footer"></div>
@@ -119,12 +33,12 @@
 	<div class="commonFacilities">
 		<!-- orphan text -->
 		<div class="orphanText">
-			<p>Orphan text</p>
+			<p class="label">Orphan text</p>
 			<canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas>								
 		</div>
 		<div class="selectionHistory">
 			<!-- selection history -->
-			<p>Selection history</p>
+			<p class="label">Selection history</p>
 			<canvas id="selectionCanvas" class="selectionCanvas" ></canvas>								
 		</div>
 		<div class="footer"></div>
