@@ -100,6 +100,7 @@ function setupOverviewAndDetail(overviewId, detailId) {
     new ps.View(detailCanvas);
    
     // mouse/key tool
+    /*
     var drawTool = new ps.Tool();
     drawTool.onMouseDown = function(event) {
     	paper = ps;
@@ -128,7 +129,7 @@ function setupOverviewAndDetail(overviewId, detailId) {
     //	console.log('onKeyUp('+event.key+')');
     //};
     drawTool.activate();
-	
+	*/
 }
 
 // some special key codes - from http://www.quirksmode.org/js/keys.html#t00
@@ -180,14 +181,90 @@ function isSpecialKey(which) {
 	}
 }
 
+var mouseTarget = undefined;
+var mousePageX = undefined;
+var mousePageY = undefined;
+var keyTarget = undefined;
+var keyDown = undefined;
+
+function getView(target) {
+	for (var psi in paperScopes) {
+		var ps = paperScopes[psi];
+    	//console.log('paperscope with '+ps.views);
+		for (var vi in ps.views) {
+			var v = ps.views[vi];
+			if (v.canvas===mouseTarget) {
+				//console.log('- - in view2 '+v);
+				paper = ps;
+				v.activate();
+				//ps.projects[0].activate();
+				return v;
+			}
+		}
+	}
+	return null;
+}
+
+var aTool = new Object();
+var aToolPath = undefined;
+
+aTool.begin = function(point) {
+	console.log('aTool.begin '+point);
+	
+	aToolPath = new paper.Path();
+	aToolPath.strokeColor = 'black';
+	aToolPath.add(point);	
+};
+aTool.move = function(point) {
+	//console.log('aTool.move '+point);
+
+	aToolPath.add(point);
+};
+aTool.end = function(point) {
+	console.log('aTool.end'+point);
+
+	aToolPath.simplify();
+	aToolPath = undefined;
+};
+
+var tools = new Object();
+tools['code'+('A'.charCodeAt(0))] = aTool;
+
+var tool = undefined;
+
 // Only executed our code once the DOM is ready.
 $(document).ready(function() {
 	
 	// capture document-wide key presses, including special keys
 	$(document).keydown(function(ev) {
+		if (ev.which==keyDown) {
+			//console.log('ignore duplicate keydown for '+ev.which);
+			ev.stopPropagation();
+			return false;
+		}
+		keyDown = ev.which;
 		// Note: this is not meant to be called multiple times when key is held down, but on Chrome
 		// it is being, so that will need some filtering
 		console.log('keydown: '+ev.which+' ctrlKey='+ev.ctrlKey+' special='+isSpecialKey(ev.which));
+
+		if (tool) {
+			// switch tool
+			tool.end(new paper.Point(mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+			tool = undefined;
+			redraw(paper);
+		}
+		keyTarget = mouseTarget;
+		var v = getView(keyTarget);
+		if (v) {
+			var t = tools['code'+ev.which];
+			if (t) {
+				console.log('begin tool '+t);
+				tool = t;
+				tool.begin(new paper.Point(mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+				redraw(paper);
+			}
+		}
+		
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
 			ev.stopPropagation();
@@ -195,6 +272,13 @@ $(document).ready(function() {
 		}
 	});
 	$(document).keyup(function(ev) {
+		keyDown = undefined;
+		if (tool) {
+			// switch tool
+			tool.end(new paper.Point(mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+			redraw(paper);
+			tool = undefined;
+		}
 		console.log('keyup: '+ev.which);
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
@@ -203,11 +287,54 @@ $(document).ready(function() {
 		}
 	});
 	$(document).keypress(function(ev) {
-		console.log('keypress: '+ev.which+' ctrlKey='+ev.ctrlKey);
+		console.log('keypress: '+ev.which+' at '+mousePageX+','+mousePageY+' on '+mouseTarget+' = '+(mousePageX-mouseTarget.offsetLeft)+','+(mousePageY-mouseTarget.offsetTop));
+//		var v = getView(mouseTarget);
+//		if (v) {
+//			// test content
+//	    	var myText = new paper.PointText(new paper.Point(mousePageX-mouseTarget.offsetLeft, mousePageY-mouseTarget.offsetTop));
+//	    	myText.content = String.fromCharCode(ev.which);
+//	    	myText.strokeColor = 'black';
+//	    	redraw(paper);
+//		}
 	});
+	$(document).mousemove(function(ev) {
+		//console.log('mousemove: '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-ev.target.offsetLeft)+','+(ev.pageY-ev.target.offsetTop));
+		mouseTarget = ev.target;
+		mousePageX = ev.pageX;
+		mousePageY = ev.pageY;
+		if (tool) {
+			tool.move(new paper.Point(mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+			redraw(paper);
+		}
+	});
+	$(document).mousedown(function(ev) {
+		// which: 1=left, 2=middle, 3=right
+		console.log('mousedown: '+ev.which+' at '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-ev.target.offsetLeft)+','+(ev.pageY-ev.target.offsetTop));
+		if (tool) {
+			// switch tool
+			tool.end(new paper.Point(mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+			redraw(paper);
+			tool = undefined;
+		}
+		keyTarget = ev.target;
+		var v = getView(ev.target);
+		if (v) {
+			// test content
+	    	var myCircle = new paper.Path.Circle(new paper.Point(ev.pageX-ev.target.offsetLeft, ev.pageY-ev.target.offsetTop), 3);
+	    	myCircle.fillColor = 'black';
+	    	redraw(paper);
+		}
+	});
+	$(document).mouseup(function(ev) {
+		console.log('mouseup: '+ev.which+' on '+ev.target);
+	});
+	// mousedown, mouseup, mouseenter, mouseleave
 	
+	
+	// create object editor paperjs scope/project/views
 	setupOverviewAndDetail('objectOverviewCanvas', 'objectDetailCanvas');
-        
+
+	// work-around for canvas sizing problem
     function handleResize() {
     	console.log('handle resize');
     	for (var psi in paperScopes) {
