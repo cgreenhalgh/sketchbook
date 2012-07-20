@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Sketcher</title>
-<!-- <link rel="StyleSheet" href="sketcher.css" type="text/css"> --><!-- media=screen,print, -->
+<link rel="StyleSheet" href="sketcher.css" type="text/css"> <!-- media=screen,print, -->
 <script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
 <script type="text/javascript" src="paper-20120704.js"></script>
 <script type="text/javascript" canvas="mymaincanvas">
@@ -14,15 +14,15 @@
         var ps = new paper.PaperScope();
         
         // Create an empty project and a view for the canvas:
-        var canvas = document.getElementById('mymaincanvas');
+        var canvas = document.getElementById('objectOverviewCanvas');
         ps.setup(canvas);
     //    var v = new ps.View(canvas);
     //    var p = new ps.Project();
     //    p.activate();
 		// for some reason, setting the size via CSS on the Canvas doesn't seem to work.
 		// the view stays 300x150
-	//	v.viewSize = new ps.Size(300,300);
-        
+		//ps.view.viewSize = new ps.Size(300,300);
+    var v = ps.view;    
 		    // Create a Paper.js Path to draw a line into it:
     var path = new ps.Path();
     // Give the stroke a color
@@ -77,11 +77,58 @@
         drawTool.activate();
         // Draw the view now:
         ps.view.draw();
+        
+        function handleResize() {
+        	//ps.install(this);
+       		console.log('div:resize to '+$('#objectOverviewDiv').width()+","+$('#objectOverviewDiv').height());
+//       		v.viewSize = new ps.Size($('#objectOverviewDiv').width(),$('#objectOverviewDiv').height());
+       		console.log('canvas:resize to '+$('#objectOverviewCanvas').width()+","+$('#objectOverviewCanvas').height());
+	   		v.viewSize = new ps.Size($('#objectOverviewCanvas').width(),$('#objectOverviewCanvas').height());
+        }
+        $(window).resize(handleResize);
+        handleResize();
     });
 </script>
 </head>
 <body>
+<div class="page">
 <h1>Paperjs test(s) for sketching interface 3</h1>
-    <canvas id="mymaincanvas" class="maincanvas" ></canvas>
+	<!-- object editor -->
+	<div class="editor">
+		<!-- left column -->
+		<div class="editorLeft">
+			<!-- overview -->
+			<p>Overview</p>
+			<div id="objectOverviewDiv" class="editorOverview">
+		    	<canvas id="objectOverviewCanvas" class="overviewCanvas" ></canvas>				
+			</div>
+			<!-- hidden text -->
+			<div class="editorText">
+				<p>Hidden text</p>
+		    	<canvas id="objectTextCanvas" class="textCanvas" ></canvas>								
+			</div>
+		</div>
+		<!-- right / zoomable view -->
+		<div class="editorDetail">
+			<p>Detail (zoomable)</p>
+	    	<canvas id="objectDetailCanvas" class="detailCanvas" ></canvas>					
+		</div>
+		<div class="footer"></div>
+	</div>
+	<!-- common facilities -->
+	<div class="commonFacilities">
+		<!-- orphan text -->
+		<div class="orphanText">
+			<p>Orphan text</p>
+			<canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas>								
+		</div>
+		<div class="selectionHistory">
+			<!-- selection history -->
+			<p>Selection history</p>
+			<canvas id="selectionCanvas" class="selectionCanvas" ></canvas>								
+		</div>
+		<div class="footer"></div>
+	</div>
+</div>
 </body>
 </html>

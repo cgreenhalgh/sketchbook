@@ -1,10 +1,80 @@
 /* sketcher.css */
 canvas.maincanvas {
 	border:1px solid grey;
-	width: 300px;
-	height: 300px;
+/*	width: 300px; */
+/*	height: 300px; */
 }
 h1 {
 	font-family: sans-serif;
 	font-size: medium;
+}
+canvas {
+	border:1px solid grey;
+}
+div { 
+	border:1px solid black;
+}
+div.page {
+	width:100%;
+/*	position: relative;
+	height:100%; */
+}
+div.editor {
+	width:100%;
+/*	clear:both; */
+/*	position: relative; */
+}
+div.editorLeft {
+	width:25%;
+	float: left;
+	/*position:absolute;
+	left:0%;
+	top:0%;*/
+	background-color:#f0f;
+}
+div.editorOverview {
+	background-color:#00f;
+}
+canvas.overviewCanvas {
+ /* sizing doesn't work with paper js here :-( A hack to use resize callback set paperjs size on resize */
+ /*	width: inherit; */
+	height: 300px;  
+	width: 100%;
+}
+div.editorText {
+	background-color:#0ff;
+}
+div.editorDetail {
+	float: left;
+	/*position:absolute;
+	left:25%;
+	top:0%;*/
+	background-color:#0f0;
+	width:74%; /* could be 75% if no border */
+	height:600px;
+}
+div.commonFacilities {
+	clear:both;
+	position:relative;
+	/*height: 20%;*/
+}
+div.orphanText {
+	background-color:#f00;
+	width:49%;
+	float:left;
+	/*height: 10%;*/
+	/*position:absolute;
+	left:0%;
+	top:0%;*/
+}
+div.selectionHistory {
+	background-color:#ff0;
+	width:49%; /* could be 50% if no border */
+	/*position:absolute;
+	left:50%;
+	top:0%;*/
+	float:left;
+}
+div.footer {
+	clear:both;
 }
