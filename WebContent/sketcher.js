@@ -79,15 +79,19 @@ function createTestContent(ps) {
 
 var paperScopes = new Array();
 
+// with new version may only need one scope
+paperScopes.push(paper);
+
 // set up a PaperScope with overview and detail canvases
 function setupOverviewAndDetail(overviewId, detailId) {
 
-	var ps = new paper.PaperScope();
-	paper = ps;
-    paperScopes.push(ps);
+	// with new version may only need one scope
+	//var ps = new paper.PaperScope();
+	//paper = ps;
+    //paperScopes.push(ps);
     
     var overviewCanvas = document.getElementById(overviewId);
-    ps.setup(overviewCanvas);
+    papers.setup(overviewCanvas);
     
     //var p = new paper.Project();
     //p.activate();
@@ -401,9 +405,27 @@ function view2project(view, vx, vy) {
 //	return new paper.Point(px, py);
 }
 
+
+/** HTML actions */
+function onShowObjects() {
+	$('.tab').removeClass('tabselected');
+	$('#tabObjects').addClass('tabselected');
+	$('.tabview').hide();
+	$('#objects').show();
+}	
+
+function onNewObject() {
+	$('.tabview').hide();
+	$('#editor').show();
+	// TODO 
+	$('#tabs .footer').before('<div class="tab" id="tabNewObject">New Object</div>');
+}
+
 // Only executed our code once the DOM is ready.
 $(document).ready(function() {
-	
+
+	onShowObjects();
+
 	// capture document-wide key presses, including special keys
 	$(document).keydown(function(ev) {
 		if (ev.which==keyDown) {
@@ -522,3 +544,4 @@ $(document).ready(function() {
     $(window).resize(handleResize);
     handleResize();
 });
+

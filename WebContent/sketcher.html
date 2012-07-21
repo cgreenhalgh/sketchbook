@@ -11,8 +11,36 @@
 <body>
 <div id="page" class="page">
 <h1>Paperjs test(s) for sketching interface 3</h1>
+	<!-- objects list -->
+	<div id="tabs" class="tabs">
+		<div class="tab tabselected" id="tabObjects" 
+			onmouseover="javascript:$(this).addClass('tabhighlight');" 
+			onmouseout="javascript:$(this).removeClass('tabhighlight');"
+			onclick="javascript:onShowObjects();"
+			>Objects</div>
+
+		<div class="tab" id="tabPages">Pages</div>
+		<div class="footer"></div>
+	</div>
+	<div id="objects" class="objects tabview" style="display:none">
+		<div class="objectsHeader">
+			<div class="headerItem">
+				<form>
+					<input type="button" value="New Object" class="button" onclick="javascript:onNewObject();"/>
+				</form>
+			</div>
+			<div class="headerItem">
+				<form>
+					<span class="label">Filter:</span><input type="text" id="objectFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+				</form>
+			</div>
+			
+			<div class="footer"></div>
+		</div>
+		<canvas id="objectsCanvas" class="objectsCanvas" ></canvas>								
+	</div>
 	<!-- object editor -->
-	<div class="editor">
+	<div class="editor tabview" id="editor">
 		<!-- left column -->
 		<div class="editorLeft">
 			<!-- overview -->
