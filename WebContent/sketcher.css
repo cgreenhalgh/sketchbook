@@ -62,7 +62,7 @@ input.button {
 input.filterText {
 }
 canvas.indexCanvas {
-	height: 500px;
+	height: 400px;
 	width: 100%;
 }
 /* EDITOR */
@@ -106,7 +106,7 @@ div.editorDetail {
 	/*height:600px;*/
 }
 canvas.detailCanvas {
-	height:500px;
+	height:400px;
 	width: 99%;
 }
 div.commonFacilities {
