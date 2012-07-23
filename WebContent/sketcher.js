@@ -30,7 +30,15 @@ var tool = undefined;
 var toolView = undefined;
 var toolProject = undefined;
 
+var highlightItem = undefined;
+var highlightProject = undefined;
+
 var MAX_ZOOM = 2;
+
+var INDEX_CELL_SIZE = 100;
+var INDEX_CELL_MARGIN = 10;
+var INDEX_LABEL_HEIGHT = 20;
+var LABEL_FONT_SIZE = 12;
 
 
 // redraw all views 
@@ -272,10 +280,10 @@ function getProject(target) {
 	for (var pi in paper.projects) {
 		var p = paper.projects[pi];
 		if (p.view && p.view._element===mouseTarget) {
-			console.log('in project '+p);
+			//console.log('in project '+p);
 			return p;
 		}
-		console.log('- not in project '+p);
+		//console.log('- not in project '+p);
 	}
 	return null;
 }
@@ -438,20 +446,38 @@ var showAllTool = new Object();
 
 var MIN_SIZE = 10;
 
-showAllTool.begin = function() {
-	var bounds = toolProject.activeLayer.bounds;
+/** scale view to show all of project */
+function showAll(project) {
+	// this doesn't seem to work at the moment with my indexProject
+	//var bounds = project.activeLayer.bounds;
+	var bounds = null;
+	for (var ci in project.activeLayer.children) {
+		var c = project.activeLayer.children[ci];
+		var b = c.bounds;
+		if (b) {
+			if (bounds==null)
+				bounds = b;
+			else
+				bounds = bounds.unite(b);
+		}
+	}
 	if (bounds==null) {
-		toolView.zoom = 1;
-		toolView.center = new paper.Point(0,0);
+		project.view.zoom = 1;
+		project.view.center = new paper.Point(0,0);
 	} else {
 		var bw = bounds.width+MIN_SIZE;
 		var bh = bounds.height+MIN_SIZE;
-		var w = $(toolView._element).width();
-		var h = $(toolView._element).height();
+		var w = $(project.view._element).width();
+		var h = $(project.view._element).height();
 		var zoom = Math.min(MAX_ZOOM, w/bw, h/bh);
-		toolView.zoom = zoom;
-		toolView.center = bounds.center;
+		console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
+		project.view.zoom = zoom;
+		project.view.center = bounds.center;
 	}
+}
+
+showAllTool.begin = function() {
+	showAll(toolProject);
 };
 showAllTool.move = function() {};
 showAllTool.end = function() {};
@@ -464,6 +490,118 @@ function getToolKeyWhich(which) {
 function getToolKeyChar(c) {
 	return 'code'+c.charCodeAt(0);
 }
+
+var selectTool = new Object();
+var selectToolPath = undefined;
+selectTool.edits = true;
+var selectToolItems = undefined;
+
+selectTool.begin = function(point) {
+	console.log('selectTool.begin '+point);
+	
+	selectToolPath = new paper.Path();
+	selectToolPath.strokeColor = 'red';
+	selectToolPath.strokeWidth = 1/toolView.zoom;
+	selectToolPath.add(point);	
+	selectToolItems = new Array();
+	if (highlightItem)
+		selectToolItems.push(highlightItem);
+};
+selectTool.move = function(point) {
+	if (selectToolPath) {
+		//console.log('lineTool.move '+point);
+
+		selectToolPath.add(point);
+		if (highlightItem && selectToolItems.indexOf(highlightItem)<0)
+			selectToolItems.push(highlightItem);
+	}
+};
+
+
+/** make an index icon in current project for a symbol. 
+ * @return Item (Group) representing object in index/selection
+ */
+function createIndexItem(objid, indexProject) {
+	// make a visual icon for the object comprising a group with box, scaled view and text label
+	// (currently id)
+	var symbol = objectSymbols[objid];
+	var symbolDef = symbol.definition.copyTo(indexProject);
+	var indexSymbol = new paper.Symbol(symbolDef);
+	var symbolBounds = indexSymbol.definition.bounds;
+	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
+			(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
+	var placed = indexSymbol.place();
+	placed.scale(scale);
+	placed.name = objid;
+	placed.translate(new paper.Point(INDEX_CELL_SIZE/2, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2));
+	var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
+	label.content = objid;
+	label.paragraphStyle.justification = 'center';
+	label.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
+	
+	var box = new paper.Path.Rectangle(new paper.Point(INDEX_CELL_MARGIN/2, INDEX_CELL_MARGIN/2),
+			new paper.Point(INDEX_CELL_SIZE-INDEX_CELL_MARGIN/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN/2));
+	box.strokeColor = 'grey';		
+	var group = new paper.Group([placed, box, label]);
+	// name is object id
+	group.name = objid;
+
+	return group;
+}
+
+function selectItem(item) {
+	selectionProject.activate();
+	// move history along
+	for (var ci in selectionProject.activeLayer.children) {
+		var c = selectionProject.activeLayer.children[ci];
+		c.translate(new paper.Point(INDEX_CELL_SIZE,0));
+	}
+	var objid = item.name;
+	if (!(objid)) {
+		// Symbol name?!
+		for (var ci in item.children) {
+			var c = item.children[ci]; 
+			if (c instanceof paper.PlacedSymbol && c.name) {
+				objid = c.name;
+				console.log('Found objid on child Symbol: '+objid);
+			}
+		}
+	}
+	// add new item
+	if (objid && objectSymbols[objid]) {
+		selectionProject.activate();
+		var group = createIndexItem(objid, selectionProject);
+		// initial position should be ok
+		selectionProject.view.zoom = 1;
+		selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
+		//redraw(paper);
+	}
+	else {
+		console.log('dont know how to add/select '+item+' (name='+item.name+', objid='+objid+')');
+	}
+}
+selectTool.end = function(point) {
+	if (selectToolPath) {
+		console.log('selectToolPath.end'+point);
+
+		selectToolPath.remove();
+		selectToolPath = undefined;
+
+		if (highlightItem && selectToolItems.indexOf(highlightItem)<0)
+			selectToolItems.push(highlightItem);
+		
+		// do something with selection...
+		console.log('Selected '+selectToolItems.length+' items');
+		
+		for (var si in selectToolItems) {
+			var s = selectToolItems[si];
+			selectItem(s);
+		}
+		
+		selectToolItems = undefined;
+	}
+};
+
 
 /** global - all tools keys by key */
 var tools = new Object();
@@ -501,6 +639,7 @@ function handleResize() {
 }
 
 
+
 /** HTML actions */
 function onShowIndex() {
 	$('.tab').removeClass('tabselected');
@@ -508,8 +647,43 @@ function onShowIndex() {
 	$('.tabview').hide();
 	$('#index').show();
 	currentObjectId = undefined;
+	
+	indexProject.activate();
+	indexProject.layers[0].activate();
+	indexProject.activeLayer.removeChildren();
+	indexProject.symbols = [];
+	
+	var max = 0;
+	var x = 0;
+	var y = 0;
+	
+	for (var objid in objectSymbols) {
+		var group = createIndexItem(objid, indexProject);
+		group.translate(new paper.Point(x*INDEX_CELL_SIZE, y*INDEX_CELL_SIZE));
+
+		// lay out in an outwards 'square spiral'
+		if (x>(-max) && x<max && y==(-max))
+			x++;
+		else if (x==max && y<max)
+			y++;
+		else if (y==max && x>(-max))
+			x--;
+		else if (x==(-max) && y>(-max))
+			y--;
+		else {
+			y--;
+			max++;
+		}
+		indexProject.activeLayer.addChild(group);
+		
+		//console.log("added "+objid+" to index, group bounds="+group.bounds+', symbol bounds='+indexSymbol.bounds+', placed bounds='+placed.bounds);
+		//console.log('project bounds='+indexProject.activeLayer.bounds);
+	}
+		
 	// scaling problem workaround
 	handleResize();
+	
+	showAll(indexProject);
 }	
 
 function onNewObject() {
@@ -605,8 +779,13 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 	var objectSymbol = objectSymbols[currentObjectId];
 	// group assumed first item in changedProject
 	var changedGroup = changedProject.activeLayer.firstChild;
-	while (changedProject.activeLayer.children.length>1) {
-		var newItem = changedProject.activeLayer.children[1];
+	var skip = 1;
+	while (changedProject.activeLayer.children.length>skip) {
+		var newItem = changedProject.activeLayer.children[skip];
+		if (newItem===highlightVisibleItem || newItem===selectToolPath) {
+			skip++;
+			continue;
+		}
 		changedGroup.addChild(newItem);
 		console.log('added new item to group');
 	}
@@ -646,15 +825,130 @@ function handleEdit(tool, toolView) {
 	}
 }
 
+// temporary hack to show red box at bounds as highlight
+var highlightVisibleItem = undefined;
+
+/** clear any highlight */
+function clearHighlight() {
+	if (highlightItem) {
+		//highlightItem.strokeColor = 'black';
+		highlightItem = undefined;
+		if (highlightVisibleItem)
+			// temporary hack to show red box at bounds as highlight
+			highlightVisibleItem.remove();
+		redraw(paper);
+	}
+}
+function highlight(project, item) {
+	//item.strokeColor = 'red';
+	if (item) {
+		// temporary hack to show red box at bounds as highlight
+		highlightProject = project;
+		highlightItem = item;
+		var bounds = highlightItem.bounds;
+		highlightVisibleItem = new paper.Path.Rectangle(bounds);
+		highlightVisibleItem.strokeColor = 'red';
+		highlightProject.activeLayer.addChild(highlightVisibleItem);
+	}
+}
+
+/** check/set highlight from mouse move */
+function checkHighlight() {
+	if (mouseTarget) {
+		var project = getProject(mouseTarget);
+		if (project) {
+			var point = view2project(project.view, 
+					mousePageX-mouseTarget.offsetLeft,
+					mousePageY-mouseTarget.offsetTop);
+			/* Hit test doesn't seem to work by default on Text, or on groups
+			var options = { tolerance:2, fill:true, stroke:true, segments: true };
+			var res = project.hitTest(point, options);
+			console.log('highlight test at '+point+' -> '+res);
+			var item = (res) ? res.item : null;
+			*/
+			var tolerance = 2/project.view.zoom;
+			var items = new Array();
+			for (var ci in project.activeLayer.children) {
+				var c = project.activeLayer.children[ci];
+				if (c!==highlightVisibleItem && c!==selectToolPath) {
+					var bounds = c.bounds;
+					if (point.x>=bounds.left-tolerance &&
+							point.x<=bounds.right+tolerance &&
+							point.y>=bounds.top-tolerance &&
+							point.y<=bounds.bottom+tolerance)
+						items.push(c);
+					else {
+						console.log('missed '+point+' vs '+bounds+'+/-'+tolerance);
+					}
+				}
+			}
+			var item = (items.length>0) ? items[0] : null;
+			if (item) {
+				if (item===highlightItem && project===highlightProject) 
+					; // no-op
+				else {
+					clearHighlight();
+					highlight(project, item);
+					redraw(paper);
+				}
+			}
+			else
+				clearHighlight();
+		}
+		else
+			clearHighlight();
+	}
+	else
+		clearHighlight();
+}
+
 // Only executed our code once the DOM is ready.
 $(document).ready(function() {
 
+	// create object editor paperjs scope/project/views
+	//setupOverviewAndDetail('objectOverviewCanvas', 'objectDetailCanvas');
+	// set up canvases
+	paper.setup();
+	objectsProject = paper.project;
+	
+	var indexCanvas = document.getElementById('indexCanvas');
+	paper.setup(indexCanvas);
+	indexProject = paper.project;
+	var test;
+	test = new paper.PointText(new paper.Point(10,20));
+	test.content = 'Index';
+	
+	var objectOverviewCanvas = document.getElementById('objectOverviewCanvas');
+	paper.setup(objectOverviewCanvas);
+	objectOverviewProject = paper.project;
+	var test;
+	test = new paper.PointText(new paper.Point(10,20));
+	test.content = 'ObjectOverview';
+	
+	var objectDetailCanvas = document.getElementById('objectDetailCanvas');
+	paper.setup(objectDetailCanvas);
+	objectDetailProject = paper.project;
+	var test;
+	test = new paper.PointText(new paper.Point(10,20));
+	test.content = 'ObjectDetail';
+	
+	var selectionCanvas = document.getElementById('selectionCanvas');
+	paper.setup(selectionCanvas);
+	selectionProject = paper.project;
+	var test;
+	test = new paper.PointText(new paper.Point(10,20));
+	test.content = 'Selection';
+	
+	
+
+	
 	$(document).on('mouseover', 'div .tab', function() {
 		$(this).addClass('tabhighlight');
 	});
 	$(document).on('mouseout', 'div .tab', function() {
 		$(this).removeClass('tabhighlight');
 	});
+	
 	onShowIndex();
 
 	// capture document-wide key presses, including special keys
@@ -690,6 +984,9 @@ $(document).ready(function() {
 					editable = true;
 				}
 				if (!t.edits || editable) {
+
+					clearHighlight();
+
 					p.activate();
 					console.log('begin tool '+t);
 					tool = t;
@@ -697,7 +994,7 @@ $(document).ready(function() {
 					toolProject = p;
 					tool.begin(view2project(toolView, mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop), v);
 					redraw(paper);
-				}
+				}				
 			}
 		}
 		
@@ -741,7 +1038,12 @@ $(document).ready(function() {
 		mousePageY = ev.pageY;
 		if (tool) {
 			tool.move(view2project(toolView, mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+			if (tool===selectTool)
+				checkHighlight();
 			redraw(paper);
+		}
+		else {
+			checkHighlight();
 		}
 	});
 	$(document).mousedown(function(ev) {
@@ -755,6 +1057,20 @@ $(document).ready(function() {
 			tool = undefined;
 		}
 		keyTarget = ev.target;
+		var p = getProject(keyTarget);
+		//var v = getView(keyTarget);
+		if (p && p.view) {
+			var v = p.view;			
+			p.activate();
+			console.log('begin select tool');
+			tool = selectTool;
+			toolView = v;
+			toolProject = p;
+			tool.begin(view2project(toolView, mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop), v);
+			checkHighlight();
+			redraw(paper);
+		}
+
 		/* TEST		 
 		var v = getView(ev.target);
 		if (v) {
@@ -767,43 +1083,14 @@ $(document).ready(function() {
 	});
 	$(document).mouseup(function(ev) {
 		console.log('mouseup: '+ev.which+' on '+ev.target);
+		if (tool===selectTool) {
+			tool.end(view2project(toolView, mousePageX-keyTarget.offsetLeft, mousePageY-keyTarget.offsetTop));
+			handleEdit(tool, toolView);
+			redraw(paper);
+			tool = undefined;
+		}
 	});
 	// mousedown, mouseup, mouseenter, mouseleave
-	
-	
-	// create object editor paperjs scope/project/views
-	//setupOverviewAndDetail('objectOverviewCanvas', 'objectDetailCanvas');
-	// set up canvases
-	paper.setup();
-	objectsProject = paper.project;
-	
-	var indexCanvas = document.getElementById('indexCanvas');
-	paper.setup(indexCanvas);
-	indexProject = paper.project;
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'Index';
-	
-	var objectOverviewCanvas = document.getElementById('objectOverviewCanvas');
-	paper.setup(objectOverviewCanvas);
-	objectOverviewProject = paper.project;
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'ObjectOverview';
-	
-	var objectDetailCanvas = document.getElementById('objectDetailCanvas');
-	paper.setup(objectDetailCanvas);
-	objectDetailProject = paper.project;
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'ObjectDetail';
-	
-	var selectionCanvas = document.getElementById('selectionCanvas');
-	paper.setup(selectionCanvas);
-	selectionProject = paper.project;
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'Selection';
 	
 	
     $(window).resize(handleResize);

@@ -62,7 +62,7 @@ input.button {
 input.filterText {
 }
 canvas.indexCanvas {
-	height: 600px;
+	height: 500px;
 	width: 100%;
 }
 /* EDITOR */
@@ -116,7 +116,7 @@ div.commonFacilities {
 }
 div.orphanText {
 	/*background-color:#f00;*/
-	width:50%;
+	width:20%;
 	float:left;
 	/*height: 10%;*/
 	/*position:absolute;
@@ -125,11 +125,15 @@ div.orphanText {
 }
 div.selectionHistory {
 	/*background-color:#ff0;*/
-	width:49%; /* could be 50% if no border */
+	width:80%; /* could be 50% if no border */
 	/*position:absolute;
 	left:50%;
 	top:0%;*/
 	float:left;
+}
+canvas.selectionCanvas {
+	height: 100px;
+	width: 100%;
 }
 div.footer {
 	clear:both;
