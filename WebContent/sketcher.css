@@ -51,7 +51,7 @@ div.tabselected {
 div.objects {
 	width:100%;
 }
-div.objectsHeader {
+div.indexHeader {
 	width:100%;
 }
 div.headerItem {
@@ -61,7 +61,7 @@ input.button {
 }
 input.filterText {
 }
-canvas.objectsCanvas {
+canvas.indexCanvas {
 	height: 600px;
 	width: 100%;
 }
