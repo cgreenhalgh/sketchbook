@@ -150,7 +150,7 @@ function updateSymbolCaches(objid) {
 				// is edited, is the detail/overview the other object appears shifted, but in the index view it 
 				// is not shifted but the bounds are not correct.
 				
-				var scale = Math.max(bounds1.width, bounds1.height)/Math.max(bounds2.width, bounds2.height);
+				var scale = Math.max(bounds1.width, bounds1.height)/Math.max(bounds2.width, bcxzounds2.height);
 				var delta = new paper.Point(bounds1.center.x-bounds2.center.x, bounds1.center.y-bounds2.center.y);
 				if (delta.x!=0 || delta.y!=0 || scale!=1) {
 					for (var ii in symbol._instances) {
@@ -433,7 +433,7 @@ function copyDefinition(objectSymbol, toProject) {
 	toProject.activate();
 	var fix = new paper.Group();
 	var toGroup = new paper.Group([fix]);//[]?
-	for (var ci in objectSymbol.definition.children) {
+	for (var ci=0; ci<objectSymbol.definition.children.length; ci++) {
 		var c = objectSymbol.definition.children[ci];
 		if (c instanceof paper.PlacedSymbol) {
 			console.log('- copy symbol');
@@ -972,6 +972,74 @@ placeTool.end = function(point) {
 	placeToolBegin = undefined;
 };
 
+var deleteTool = new Object();
+deleteTool.edits = true;
+deleteTool.highlights = true;
+
+function checkDelete() {
+	if (highlightItem) {
+		var deleteItem = highlightItem;
+		clearHighlight();
+		// fix only child?
+		if (toolProject.activeLayer.firstChild.children.length==1) {
+			console.log('added fix object before delete');
+			toolProject.activeLayer.firstChild.addChild(new paper.Group());
+		}
+		console.log('delete '+deleteItem);
+		deleteItem.remove();
+	}
+}
+
+deleteTool.begin = function(point) {
+	checkDelete();
+	
+	toolProject.layers[1].activate();
+	selectToolPath = new paper.Path();
+	toolProject.layers[0].activate();	
+	selectToolPath.strokeColor = 'red';
+	selectToolPath.strokeWidth = 1/toolView.zoom;
+	selectToolPath.add(point);	
+
+};
+deleteTool.move = function(point) {
+	checkDelete();
+
+	if (selectToolPath) {
+		//console.log('lineTool.move '+point);
+
+		selectToolPath.add(point);
+		if (highlightItem && selectToolItems.indexOf(highlightItem)<0)
+			selectToolItems.push(highlightItem);
+	}
+};
+deleteTool.end = function(point) {
+	if (selectToolPath) {
+		selectToolPath.remove();
+		selectToolPath = undefined;
+	}
+};
+
+/** space tool, i.e. move to end of children */
+var spaceTool = new Object();
+spaceTool.edits = true;
+spaceTool.highlights = true;
+
+function moveHighlight() {
+	if (highlightItem && highlightItem.parent && highlightItem.parent instanceof paper.Group && highlightItem.parent.children.length>1 && highlightItem.parent.lastChild!==highlightItem) {
+		console.log('move highlight item to end of parent children');
+		highlightItem.moveBelow(highlightItem.parent.lastChild);
+	}
+}
+spaceTool.begin = function(point) {
+	moveHighlight();
+};
+spaceTool.move = function(point) {
+	moveHighlight();
+};
+spaceTool.end = function(point) {
+	moveHighlight();	
+};
+
 /** global - all tools keys by key */
 var tools = new Object();
 tools[getToolKeyChar('A')] = lineTool;
@@ -981,8 +1049,8 @@ tools[getToolKeyChar('X')] = zoomOutTool;
 tools[getToolKeyChar('C')] = showAllTool;
 tools[getToolKeyChar('E')] = editTool;
 tools[getToolKeyChar('D')] = placeTool;
-// TODO Delete
-// TODO cycle highlight (space?)
+tools[getToolKeyWhich(KEY_DELETE)] = deleteTool;
+tools[getToolKeyChar(' ')] = spaceTool;
 
 
 function pageOffsetTop(target) {
@@ -1149,9 +1217,9 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 	objectsProject.activate();
 	
 	// fix: remove old children afterwards!
-	var oldChildren = objectSymbol.definition.length;
+	var oldChildren = objectSymbol.definition.children.length;
 	//objectSymbol.definition.removeChildren();
-	for (var ci in changedGroup.children) {
+	for (var ci=0; ci<changedGroup.children.length; ci++) {
 		var c = changedGroup.children[ci];
 		// A Symbol needs to be translated to the symbol there
 		if (c instanceof paper.PlacedSymbol) {
