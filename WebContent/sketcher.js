@@ -125,6 +125,8 @@ function updateSymbolCaches(objid) {
 		if (symbol) {
 			if (refSymbol) {
 				
+				var bounds1 = symbol.definition.bounds;//.clone();
+				
 				symbol.definition.removeChildren();
 				for (var ci in refSymbol.definition.children) {
 					var c = refSymbol.definition.children[ci];
@@ -132,6 +134,40 @@ function updateSymbolCaches(objid) {
 				}
 				console.log('- update definition for '+$(cache.project.view._element).attr('id'));
 
+				var bounds2 = symbol.definition.bounds;
+				console.log('- bounds '+bounds1+' now '+symbol.definition.bounds);
+				
+				// in index & selection the symbol should still fit in the bounding box.
+				// in definition and detail/overview the placed symbol needs to be offset to compensate for change in 
+				// center of symbol.
+				// TODO this isn't working at the moment!!
+				// 
+				var scale = Math.max(bounds1.width, bounds1.height)/Math.max(bounds2.width, bounds2.height);
+				var delta = new paper.Point(bounds1.center.x-bounds2.center.x, bounds1.center.y-bounds2.center.y);
+				if (delta.x!=0 || delta.y!=0 || scale!=1) {
+					for (var ii in symbol._instances) {
+						var placed = symbol._instances[ii];
+						if (!(placed.project)) {
+							// hmm. old PlacedSymbols still seem to show up as being in their project, i.e. this 
+							// doesn't discriminate them
+							console.log('note: placed not in project: '+placed);
+							// TODO GC? clear definition?!
+							continue;
+						}
+						if (cache.project===indexProject || cache.project===selectionProject) {
+							// need to adjust delta by scale?!
+							// TODO this still isn't right
+							var matrix = placed.matrix;
+							console.log('- - matrix sx '+matrix.scaleX+', sy='+matrix.scaleY);
+							var d2 = new paper.Point(delta.x*matrix.scaleX, delta.y*matrix.scaleY);
+							placed.translate(d2);
+							console.log('- - offset by '+d2+' in '+$(cache.project.view._element).attr('id'));
+							placed.scale(scale);
+							console.log('- - scaled by '+scale+' in '+$(cache.project.view._element).attr('id'));
+						}
+					}
+				}
+				
 			} else {
 				// remove
 				symbol.remove();
@@ -426,7 +462,7 @@ function copyDefinition(objectSymbol, toProject) {
 /** show editor for object ID */
 function showEditor(objid) {
 	$('.tab').removeClass('tabselected');
-	$(this).addClass('tabselected');
+	$('#tab_'+objid).addClass('tabselected');
 	$('.tabview').hide();
 	// update editor state!
 	// find object Symbol
@@ -438,7 +474,8 @@ function showEditor(objid) {
 	objectDetailProject.activeLayer.removeChildren();
 	clearSymbolCache(objectDetailProject);
 	
-	var objectDetailGroup = copyDefinition(objectSymbol, objectDetailProject);
+	//var objectDetailGroup = 
+	copyDefinition(objectSymbol, objectDetailProject);
 	//objectDetailGroup.translate(new paper.Point(50,25));
 	//objectDetailSymbol.place();
 	
@@ -447,7 +484,8 @@ function showEditor(objid) {
 	objectOverviewProject.activeLayer.removeChildren();
 	clearSymbolCache(objectOverviewProject);
 	
-	var objectOverviewGroup = copyDefinition(objectSymbol, objectOverviewProject);
+	//var objectOverviewGroup = 
+	copyDefinition(objectSymbol, objectOverviewProject);
 	//objectOverviewGroup.translate(new paper.Point(50,25));
 	//objectOverviewSymbol.place();
 
@@ -481,6 +519,7 @@ function showEditor(objid) {
 /** line tool */
 var lineTool = new Object();
 var lineToolPath = undefined;
+var DOT_SIZE = 2;
 
 lineTool.edits = true;
 lineTool.begin = function(point) {
@@ -502,7 +541,14 @@ lineTool.end = function(point) {
 	if (lineToolPath) {
 		console.log('lineTool.end'+point);
 
-		lineToolPath.simplify();
+		if (lineToolPath.length==0) {
+			// replace with dot
+			lineToolPath.remove();
+			lineToolPath = new paper.Path.Circle(point, DOT_SIZE/toolView.zoom);
+			lineToolPath.fillColor = 'black';
+		} else {
+			lineToolPath.simplify();
+		}
 		lineToolPath = undefined;
 	}
 };
@@ -731,9 +777,10 @@ function createIndexItem(objid, indexProject) {
 	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
 			(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
 	var placed = symbol.place();
+	console.log('symbolbounds='+symbolBounds+', placed bounds='+placed.bounds);
 	placed.scale(scale);
 	placed.name = objid;
-	placed.translate(new paper.Point(INDEX_CELL_SIZE/2, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2));
+	placed.translate(new paper.Point(INDEX_CELL_SIZE/2-placed.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-placed.bounds.center.y));
 	var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
 	label.content = objid;
 	label.paragraphStyle.justification = 'center';
@@ -982,7 +1029,7 @@ function onShowIndex() {
 	indexProject.activate();
 	indexProject.layers[0].activate();
 	indexProject.activeLayer.removeChildren();
-	indexProject.symbols = [];
+	//cache?! indexProject.symbols = [];
 	
 	var max = 0;
 	var x = 0;
@@ -1245,9 +1292,9 @@ $(document).ready(function() {
 	indexProject = paper.project;
 	// extra layer for highlights
 	new paper.Layer();
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'Index';
+	//var test;
+	//test = new paper.PointText(new paper.Point(10,20));
+	//test.content = 'Index';
 	indexProject.layers[0].activate();
 	
 	var objectOverviewCanvas = document.getElementById('objectOverviewCanvas');
@@ -1255,9 +1302,9 @@ $(document).ready(function() {
 	objectOverviewProject = paper.project;
 	// extra layer for highlights
 	new paper.Layer();
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'ObjectOverview';
+	//var test;
+	//test = new paper.PointText(new paper.Point(10,20));
+	//test.content = 'ObjectOverview';
 	objectOverviewProject.layers[0].activate();
 	
 	var objectDetailCanvas = document.getElementById('objectDetailCanvas');
@@ -1265,9 +1312,9 @@ $(document).ready(function() {
 	objectDetailProject = paper.project;
 	// extra layer for highlights
 	new paper.Layer();
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'ObjectDetail';
+	//var test;
+	//test = new paper.PointText(new paper.Point(10,20));
+	//test.content = 'ObjectDetail';
 	objectDetailProject.layers[0].activate();
 	
 	var selectionCanvas = document.getElementById('selectionCanvas');
@@ -1275,9 +1322,9 @@ $(document).ready(function() {
 	selectionProject = paper.project;
 	// extra layer for highlights
 	new paper.Layer();
-	var test;
-	test = new paper.PointText(new paper.Point(10,20));
-	test.content = 'Selection';
+	//var test;
+	//test = new paper.PointText(new paper.Point(10,20));
+	//test.content = 'Selection';
 	selectionProject.layers[0].activate();
 	
 	
