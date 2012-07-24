@@ -150,7 +150,7 @@ function updateSymbolCaches(objid) {
 				// is edited, is the detail/overview the other object appears shifted, but in the index view it 
 				// is not shifted but the bounds are not correct.
 				
-				var scale = Math.max(bounds1.width, bounds1.height)/Math.max(bounds2.width, bcxzounds2.height);
+				var scale = Math.max(bounds1.width, bounds1.height)/Math.max(bounds2.width, bounds2.height);
 				var delta = new paper.Point(bounds1.center.x-bounds2.center.x, bounds1.center.y-bounds2.center.y);
 				if (delta.x!=0 || delta.y!=0 || scale!=1) {
 					for (var ii in symbol._instances) {
