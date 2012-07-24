@@ -127,13 +127,18 @@ function updateSymbolCaches(objid) {
 				
 				var bounds1 = symbol.definition.bounds;//.clone();
 				
-				symbol.definition.removeChildren();
+				// fix: remove old children afterwards
+				var oldChildren = symbol.definition.children.length;
+				//symbol.definition.removeChildren();
 				for (var ci in refSymbol.definition.children) {
 					var c = refSymbol.definition.children[ci];
 					c.copyTo(symbol.definition);
 				}
 				console.log('- update definition for '+$(cache.project.view._element).attr('id'));
 
+				for (var i=0; i<oldChildren; i++)
+					symbol.definition.firstChild.remove();
+				
 				var bounds2 = symbol.definition.bounds;
 				console.log('- bounds '+bounds1+' now '+symbol.definition.bounds);
 				
@@ -141,7 +146,10 @@ function updateSymbolCaches(objid) {
 				// in definition and detail/overview the placed symbol needs to be offset to compensate for change in 
 				// center of symbol.
 				// TODO this isn't working at the moment!!
-				// 
+				// The current weirdness is that an object which has another placed object in it, when the other object 
+				// is edited, is the detail/overview the other object appears shifted, but in the index view it 
+				// is not shifted but the bounds are not correct.
+				
 				var scale = Math.max(bounds1.width, bounds1.height)/Math.max(bounds2.width, bounds2.height);
 				var delta = new paper.Point(bounds1.center.x-bounds2.center.x, bounds1.center.y-bounds2.center.y);
 				if (delta.x!=0 || delta.y!=0 || scale!=1) {
@@ -423,7 +431,8 @@ function copyDefinition(objectSymbol, toProject) {
 	console.log('copy definition to '+toProject);
 	// definition should be a group
 	toProject.activate();
-	var toGroup = new paper.Group();//[]?
+	var fix = new paper.Group();
+	var toGroup = new paper.Group([fix]);//[]?
 	for (var ci in objectSymbol.definition.children) {
 		var c = objectSymbol.definition.children[ci];
 		if (c instanceof paper.PlacedSymbol) {
@@ -456,6 +465,8 @@ function copyDefinition(objectSymbol, toProject) {
 			c.copyTo(toGroup);
 		}
 	}
+	if (toGroup.children.length>1)
+		fix.remove();
 	return toGroup;
 }
 
@@ -565,16 +576,18 @@ function createTextBlock(point, lines, justification) {
 		justification = 'center';
 	var characterStyle = { fillColor: 'black', fontSize: 12/toolView.zoom };
 	var lineSpacing = pt2px(characterStyle.fontSize)*1.15;
-	var block = new paper.Group();//[]?
+	var texts = new Array();
 	for (var li in lines) {
 		var line = lines[li];
 		var text = new paper.PointText(new paper.Point(point.x, point.y));
 		text.content = line;
 		text.paragraphStyle.justification = justification;
 		text.characterStyle = characterStyle;
-		block.addChild(text);
+		texts.push(text);//block.addChild(text);
 		point.y = point.y + lineSpacing;
 	}
+	var block = new paper.Group(texts);//[]?
+
 }
 
 /** text tool */
@@ -774,7 +787,7 @@ function createIndexItem(objid, indexProject) {
 	var symbol = getCachedSymbol(indexProject, objid);
 	//}
 	var symbolBounds = symbol.definition.bounds;
-	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
+	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
 			(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
 	var placed = symbol.place();
 	console.log('symbolbounds='+symbolBounds+', placed bounds='+placed.bounds);
@@ -1073,7 +1086,8 @@ function onNewObject() {
 	
 	// new object Symbol
 	objectsProject.activate();
-	var objectGroup = new paper.Group();//[]?
+	var fix = new paper.Group();
+	var objectGroup = new paper.Group([fix]);//[]?
 	// note: by default, position is considered to be the centre of the item's bounds!
 	// group is re-positioned at 0,0
 	var objectSymbol = new paper.Symbol(objectGroup);
@@ -1109,15 +1123,6 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 	var changedGroup = changedProject.activeLayer.firstChild;
 	console.log('from changed with '+changedProject.activeLayer.children.length+' items, first '+changedGroup);
 	// if the group is empty the bounds don't seem to update properly
-	if (changedGroup.children.length==0 && changedProject.activeLayer.children.length>1) {
-		// create a new group instead
-		changedGroup.remove();
-		console.log('converting '+changedProject.activeLayer.children.length+' items to new group');
-		changedGroup = new paper.Group([changedProject.activeLayer.firstChild]);
-		if (changedProject.activeLayer.children.length>1)
-			changedGroup.moveAbove(changedProject.activeLayer.firstChild);
-		console.log('- layer now has '+changedProject.activeLayer.children.length);
-	} 
 	while (changedProject.activeLayer.children.length>1) {
 		var newItem = changedProject.activeLayer.children[1];
 		// just doing addChild isn't updating the bounds
@@ -1127,6 +1132,12 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 		console.log('added new item to group');
 	}
 	console.log('- group bounds now '+changedGroup.bounds);
+	// discard empty group fix??
+	if (changedGroup.children.length>1 && changedGroup.firstChild instanceof paper.Group && changedGroup.firstChild.children.length==0) {
+		console.log('remove first child fix');
+		changedGroup.firstChild.remove();
+	}
+	
 	// force group bounds update?!
 	//changedProject.activeLayer.addChild(changedGroup);
 	//changedProject.activeLayer._clearBoundsCache();
@@ -1136,7 +1147,10 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 	changedGroup.copyTo(copyProject);
 	// copy to symbol 
 	objectsProject.activate();
-	objectSymbol.definition.removeChildren();
+	
+	// fix: remove old children afterwards!
+	var oldChildren = objectSymbol.definition.length;
+	//objectSymbol.definition.removeChildren();
 	for (var ci in changedGroup.children) {
 		var c = changedGroup.children[ci];
 		// A Symbol needs to be translated to the symbol there
@@ -1160,6 +1174,8 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 			c.copyTo(objectSymbol.definition);
 		}
 	}
+	for (var i=0; i<oldChildren; i++) 
+		objectSymbol.definition.firstChild.remove();
 	// update caches...
 	updateSymbolCaches(currentObjectId);
 }
@@ -1243,8 +1259,12 @@ function checkHighlight() {
 			
 			var tolerance = 2/project.view.zoom;
 			var items = new Array();
-			for (var ci in project.layers[0].children) {
-				var c = project.layers[0].children[ci];
+			var children = project.layers[0].children;
+			if ((project===objectDetailProject || project===objectOverviewProject) && children.length>0)
+				// look inside top-level group in object editor
+				children = children[0].children;
+			for (var ci in children) {
+				var c = children[ci];
 				var bounds = c.bounds;
 				if (point.x>=bounds.left-tolerance &&
 						point.x<=bounds.right+tolerance &&

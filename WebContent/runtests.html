@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Run paperjs tests</title>
+<script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
+<script type="text/javascript" src="paper-weiser.js"></script>
+</head>
+<body>
+<h1>Some paperjs tests...</h1>
+<p>See javascript console...</p>
+<script type="text/javascript">
+paper.setup();
+console.log('Done setup');
+// make a group
+var group1 = new paper.Group();
+// Notes: Group initialiase if not array with at least one elements does addChildren with 'arguments'
+// which is the javascript list of provided arguments.
+// addChildren calls insertChild for each. Amongst other things this flags this._changed(Change.HIERARCHY);
+// Change.HIERARCHY does this._clearBoundsCache(); but does not itself propagate to parent.
+console.log('empty group1: '+group1.children.length+' children, bounds='+group1.bounds);
+// add something to it
+var box = new paper.Path.Rectangle(new paper.Point(10,10), new paper.Point(20,20));
+console.log('Add box '+box.bounds);
+group1.addChild(box);
+console.log('group1 now: '+group1.children.length+' children, bounds='+group1.bounds);
+if (group1.bounds.width==0 || group1.bounds.height==0)
+	console.log('ERROR: broken bounds');
+
+// make a group with a box
+box = new paper.Path.Rectangle(new paper.Point(10,10), new paper.Point(20,20));
+var group2 = new paper.Group([box]);
+console.log('New group2: '+group2.children.length+' children, bounds='+group2.bounds);
+
+// add another
+box = new paper.Path.Rectangle(new paper.Point(-10,-10), new paper.Point(-20,-20));
+console.log('Add box '+box.bounds);
+group1.addChild(box);
+console.log('group1 now: '+group1.children.length+' children, bounds='+group1.bounds);
+
+box = new paper.Path.Rectangle(new paper.Point(-10,-10), new paper.Point(-20,-20));
+group2.addChild(box);
+console.log('group2 now: '+group2.children.length+' children, bounds='+group2.bounds);
+
+var spare = new paper.Group();
+//var spare = new paper.Path.Line(new paper.Point(0,0), new paper.Point(10,10));
+var group3 = new paper.Group([spare]);
+console.log('group3 with "spare": '+group3.children.length+' children, bounds='+group3.bounds);
+spare.remove();
+console.log('group3 without "spare": '+group3.children.length+' children, bounds='+group3.bounds);
+box = new paper.Path.Rectangle(new paper.Point(-10,-10), new paper.Point(-20,-20));
+console.log('Add box '+box.bounds);
+group3.addChild(box);
+console.log('group3 now: '+group3.children.length+' children, bounds='+group3.bounds);
+
+//var spare = new paper.Path.Line(new paper.Point(0,0), new paper.Point(10,10));
+var spare = new paper.Group();
+var group4 = new paper.Group([spare]);
+console.log('group4 with "spare": '+group4.children.length+' children, bounds='+group4.bounds);
+box = new paper.Path.Rectangle(new paper.Point(-10,-10), new paper.Point(-20,-20));
+console.log('Add box '+box.bounds);
+group4.addChild(box);
+console.log('group4 now: '+group4.children.length+' children, bounds='+group4.bounds);
+spare.remove();
+console.log('group4 without "spare": '+group4.children.length+' children, bounds='+group4.bounds);
+
+
+// now a symbol?
+
+</script>
+</body>
+</html>
