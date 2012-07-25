@@ -5,6 +5,8 @@
 <title>Run paperjs tests</title>
 <script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
 <script type="text/javascript" src="paper-weiser.js"></script>
+<script type="text/javascript" src="BlobBuilder.js"></script>
+<script type="text/javascript" src="FileSaver.js"></script>
 </head>
 <body>
 <h1>Some paperjs tests...</h1>
@@ -66,7 +68,92 @@ console.log('group4 without "spare": '+group4.children.length+' children, bounds
 
 
 // now a symbol?
+		
+// from http://stackoverflow.com/questions/585234/how-to-read-and-write-into-file-using-javascript
+// This doesn't seem to do anything useful on Chrome 2012-07-025
+function save_content_to_file(content, filename)
+{
+	console.log('save to '+filename+':'+content);
+	//document.write("&#209");
+	var dlg = false;
+    with(document){
+     ir=createElement('iframe');
+     ir.id='ifr';
+     ir.location='about.blank';
+     ir.style.display='none';
+     body.appendChild(ir);
+      with(getElementById('ifr').contentWindow.document){
+           open("text/plain", "replace");
+           charset = "utf-8";
+           write(content);
+           close();
+           document.charset = "utf-8";
+           console.log('created output');
+           dlg = execCommand('SaveAs', false, filename+'.txt');
+           console.log('tried saveas: '+dlg);
+       }
+       //body.removeChild(ir);
+     }
+    return dlg;
+}
+save_content_to_file("Hello\nThere\n", "test");
 
+// http://www.w3.org/TR/file-writer-api/#the-filesaver-interface
+// Note: not supported in browsers as of 25/7/2012
+// trying http://eligrey.com/blog/post/saving-generated-files-on-the-client-side
+// - https://github.com/eligrey/FileSaver.js https://github.com/eligrey/BlobBuilder.js
+// That seems to work, at least on the current Chrome I am using
+console.log('try FileSaver');
+if (BlobBuilder && saveAs) {
+	var bb = new BlobBuilder();
+	bb.append("Lorem ipsum");
+	var fileSaver = saveAs(bb.getBlob(), "test_file.txt");
+	//fileSaver.onwriteend = myOnWriteEnd;
+}
+else
+	console.log('no go, BlobBuilder='+BlobBuilder+', saveAs='+saveAs);
+
+</script>
+
+<input type="file" id="files" name="files[]" multiple />
+<pre id="filecontent"></pre>
+
+<script type="text/javascript">
+
+// HTML5 load file... see http://www.html5rocks.com/en/tutorials/file/dndfiles/
+// Check for the various File API support.
+// Seems to work fine on Chrome :-)
+// This sample uses the file select input above to allow user to choose file, then loads it and shows in #filecontent
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+	// Great success! All the File APIs are supported.
+	function handleFileSelect(evt) {
+	    var files = evt.target.files; // FileList object
+	
+	    // files is a FileList of File objects. List some properties.
+	    var output = [];
+	    for (var i = 0, f; f = files[i]; i++) {
+	      console.log('file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
+	                  f.size+' bytes, last modified: '+
+	                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
+	      
+	      var reader = new FileReader();
+	      // Closure to capture the file information.
+	      reader.onload = function(evt) {
+	          // Render thumbnail.
+	          console.log('file read');
+	          $('#filecontent').append(evt.target.result);
+	      };
+
+	      // Read in the image file as a data URL.
+	      reader.readAsText(f);
+	    }
+	  }	
+	  document.getElementById('files').addEventListener('change', handleFileSelect, false);
+} else {
+  console.log('The File APIs are not fully supported in this browser.');
+}
+
+//console.log('try ')
 </script>
 </body>
 </html>

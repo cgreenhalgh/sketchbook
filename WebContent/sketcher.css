@@ -34,6 +34,7 @@ div.page {
 /* TABS */
 div.tabs {
 	width:100%;
+	border-bottom: 1px solid black;
 }
 div.tab {
 	border: 1px solid black;

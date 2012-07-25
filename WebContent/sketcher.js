@@ -10,15 +10,28 @@
 var nextObjectId = 1;
 
 var objectsProject = undefined;
-// each object is a Symbol on the objectsProject
-var objectSymbols = new Object();
-// per-object detail/ovewview/zoom/center 
-var objectEditorSettings = new Object();
+// an object, i.e. sketch, has properties:
+// - id
+// - description : text
+// - symbol : Symbol in objectsProject
+// - editorSettings : per-object detail/ovewview/zoom/center 
+// - editorRank (if exists): i.e. position of editor tab in list, if present
+// - [save] editorVisible : currently visible?
+var objects = new Object();
+// Old: each object is a Symbol on the objectsProject
+// var objectSymbols = new Object();
+// Old: per-object detail/ovewview/zoom/center 
+// var objectEditorSettings = new Object();
 // overview in the editor
 var objectOverviewProject = undefined;
 // detail view in the editor
 var objectDetailProject = undefined;
-// selection history
+// a selection
+// - objid : object id
+// - item : Item if partial selection within object
+// - current : is part of current selection
+var selectionHistory = new Array();
+// selection history project
 var selectionProject = undefined;
 // index project
 var indexProject = undefined;
@@ -88,7 +101,7 @@ function getCachedSymbol(project, objid) {
 	var symbol = cache.objects[objid];
 	if (symbol)
 		return symbol;
-	var refSymbol = objectSymbols[objid];
+	var refSymbol = objects[objid] ? objects[objid].symbol : null;
 	if (refSymbol) {
 		var def2 = refSymbol.definition.copyTo(cache.project);
 		cache.project.activate();
@@ -104,20 +117,32 @@ function getCachedSymbol(project, objid) {
 /** get object id for symbol */
 function getCachedSymbolId(project, placed) {
 	var symbol = placed.symbol;
-	var cache = getSymbolCache(project);
-	for (var oi in cache.objects) {
-		var s = cache.objects[oi];
-		if (symbol===s)
-			return oi;
+	if (project===objectsProject) {
+		for (var si in objects) {
+			var s = objects[si].symbol;
+			if (s===symbol) {
+				return si;
+			}
+		}
+		console.log('could not find definition objid for '+symbol);
+		return null;
 	}
-	console.log('could not find objid for '+symbol);
-	return null;
+	else {
+		var cache = getSymbolCache(project);
+		for (var oi in cache.objects) {
+			var s = cache.objects[oi];
+			if (symbol===s)
+				return oi;
+		}
+		console.log('could not find objid for '+symbol);
+		return null;
+	}
 }
 
 /** update symbol caches */
 function updateSymbolCaches(objid) {
 	console.log('update symbol caches for '+objid);
-	var refSymbol = objectSymbols[objid];
+	var refSymbol = objects[objid] ? objects[objid].symbol : null;
 	
 	for (var ci in symbolCaches) {
 		var cache = symbolCaches[ci];
@@ -426,6 +451,40 @@ function getProject(target) {
 	return null;
 }
 
+/** copy to Project handling PlacedSymbol */
+function copyItem(item, fromProject, toProject, toGroup) {
+	if (item instanceof paper.PlacedSymbol) {
+		console.log('- copy symbol');
+		var objid = getCachedSymbolId(fromProject, item);
+		if (objid) {
+			console.log('- instance symbol '+objid);
+			var symbol = getCachedSymbol(toProject, objid);
+			if (symbol) {
+				var placed = new paper.PlacedSymbol(symbol);
+				placed.matrix = item.matrix;
+				if (toGroup)
+					toGroup.addChild(placed);
+				else
+					toProject.activeLayer.addChild(placed);
+				return placed;
+			}
+			else {
+				console.log('- could not find '+objid+' in cache');
+				return null;
+			}
+		}
+		else {
+			console.log('- could not find ref symbol '+objid);
+			return null;
+		}
+	}
+	else {
+		console.log('- copy '+item);
+		// just copy
+		return item.copyTo(toGroup ? toGroup : toProject);
+	}	
+}
+
 /** copy from definition(s) to project */
 function copyDefinition(objectSymbol, toProject) {
 	console.log('copy definition to '+toProject);
@@ -435,49 +494,29 @@ function copyDefinition(objectSymbol, toProject) {
 	var toGroup = new paper.Group([fix]);//[]?
 	for (var ci=0; ci<objectSymbol.definition.children.length; ci++) {
 		var c = objectSymbol.definition.children[ci];
-		if (c instanceof paper.PlacedSymbol) {
-			console.log('- copy symbol');
-			var objid = null;
-			for (var si in objectSymbols) {
-				var s = objectSymbols[si];
-				if (c.symbol===s) {
-					objid = si;
-					break;
-				}
-			}
-			if (objid) {
-				console.log('- instance symbol '+objid);
-				var symbol = getCachedSymbol(toProject, objid);
-				if (symbol) {
-					var placed = new paper.PlacedSymbol(symbol);
-					placed.matrix = c.matrix;
-					toGroup.addChild(placed);
-				}
-				else 
-					console.log('- could not find '+objid+' in cache');
-			}
-			else 
-				console.log('- could not find ref symbol '+objid);
-		}
-		else {
-			console.log('- copy '+c);
-			// just copy
-			c.copyTo(toGroup);
-		}
+		copyItem(c, objectsProject, toProject, toGroup);
 	}
 	if (toGroup.children.length>1)
 		fix.remove();
 	return toGroup;
 }
 
+/** handle change of tab */
+function handleTabChange() {
+	// TODO tidy up selection history
+}
+
 /** show editor for object ID */
 function showEditor(objid) {
+	
+	handleTabChange();
+	
 	$('.tab').removeClass('tabselected');
 	$('#tab_'+objid).addClass('tabselected');
 	$('.tabview').hide();
 	// update editor state!
 	// find object Symbol
-	var objectSymbol = objectSymbols[objid];
+	var objectSymbol = objects[objid] ? objects[objid].symbol : null;
 	currentObjectId = objid;
 	
 	objectDetailProject.activate();
@@ -515,12 +554,14 @@ function showEditor(objid) {
 	objectGroup.addChild(rect);
 	*/
 	
+	$('#objectTextArea').val(objects[objid].description);
+	
 	$('#editor').show();		
 	// scaling problem workaround
 	handleResize();
 
 	// NB set zoom/center after resize workaround
-	var settings = objectEditorSettings[objid];
+	var settings = objects[objid].editorSettings;
 	objectDetailProject.view.zoom = settings.detailZoom;
 	objectDetailProject.view.center = settings.detailCenter;
 	objectOverviewProject.view.zoom = settings.overviewZoom;
@@ -782,7 +823,6 @@ function createIndexItem(objid, indexProject) {
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
 	indexProject.activate();
-	//var symbol = objectSymbols[objid];
 	//if (indexProject!==selectionProject) {
 	var symbol = getCachedSymbol(indexProject, objid);
 	//}
@@ -825,31 +865,60 @@ function getObjectId(item) {
 	return objid;
 }
 
-function selectItem(item) {
-	//selectionProject.activate();
+function moveHistory() {
 	// move history along
 	for (var ci in selectionProject.activeLayer.children) {
 		var c = selectionProject.activeLayer.children[ci];
 		c.translate(new paper.Point(INDEX_CELL_SIZE,0));
 		console.log('moved '+ci+' '+c+' to '+c.position);
 	}
-	var objid = getObjectId(item);
-	// add new item
-	if (objid && objectSymbols[objid]) {
-		//selectionProject.activate();
+}
+function selectItem(project, item) {
+	// a selection
+	// - objid : object id
+	// - item : Item if partial selection within object
+	// - current : is part of current selection
+	var selection = new Object();
+	if (project===objectDetailProject || project===objectOverviewProject) {
+		// within an object
+		selection.objid = currentObjectId;
+		selection.item = item;
+
+		moveHistory();
+		selectionProject.activate();
+		var copy = copyItem(item, toolProject, selectionProject);
+		var group = new paper.Group([copy]);
+		var bounds = group.bounds;
+		var scale = Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(bounds.width+INDEX_CELL_MARGIN),
+				(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(bounds.height+INDEX_CELL_MARGIN));
+		group.scale(scale);
+		group.translate(new paper.Point(INDEX_CELL_SIZE/2-group.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-group.bounds.center.y));
+		selection.historyItem = group;
+	} else {
+		// reference to an object, e.g. in index (or for now selection)?
+		var objid = getObjectId(item);
+		if (!objid || !objects[objid]) {
+			console.log('non-editor selection which is not object ref ignored');
+			return false;
+		}
+		selection.objid = objid;
+
+		moveHistory();
 		var group = createIndexItem(objid, selectionProject);
 		group.translate(new paper.Point());
 		console.log('added '+group+' at '+group.center);
-		// initial position should be ok
-		selectionProject.view.zoom = 1;
-		selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
-		//redraw(paper);
-		
-		console.log('selectionProject has '+selectionProject.layers[0].children.length+' children');
+		selection.historyItem = group;
 	}
-	else {
-		console.log('dont know how to add/select '+item+' (name='+item.name+', objid='+objid+')');
-	}
+	selection.current = true;
+	selectionHistory.splice(0,0,selection);
+	//selectionProject.activate();
+	//selectionProject.activate();
+	// initial position should be ok
+	selectionProject.view.zoom = 1;
+	selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
+	//redraw(paper);
+	
+	console.log('selection history has '+selectionHistorylength+' selections; project has '+selectionProject.layers[0].children.length+' children');
 }
 selectTool.end = function(point) {
 	if (selectToolPath) {
@@ -864,9 +933,14 @@ selectTool.end = function(point) {
 		// do something with selection...
 		console.log('Selected '+selectToolItems.length+' items');
 		
+		// clear old selection
+		for (var i=0; i<selectionHistory.length; i++)
+			selectionHistory[i].current = false;
+		
 		for (var si in selectToolItems) {
 			var s = selectToolItems[si];
-			selectItem(s);
+			// TODO if this is the selectionHistory then just re-order and/or make current
+			selectItem(toolProject, s);
 		}
 		
 		selectToolItems = undefined;
@@ -913,36 +987,35 @@ placeTool.edits = true;
 placeTool.begin = function(point) {
 	placeToolBegin = point;
 	// try the last item in the selectionProject...
-	var item = selectionProject.layers[0].lastChild;
-	if (item) {
-		// is it an object?
-		var objid = getObjectId(item);
-		if (objid) {
-			if (currentObjectId===objid) {
-				console.log('cannot place object in self '+objid);				
-			} else {
-				console.log('place '+objid);
-				// make sure it is a symbol in this project
-				var symbol = getCachedSymbol(toolProject, objid);
-				if (symbol) {
-					// place the symbol, centred at point with default scale
-					placeToolItem = new paper.PlacedSymbol(symbol);
-					placeToolItem.translate(point);
-					placeToolItem.scale(1/toolView.zoom);
-					placeToolBeginWidth = placeToolItem.bounds.width;
-					placeToolBeginHeight = placeToolItem.bounds.height;
-				}
-				else {
-					console.log('Could not get symbol for '+objid);
-				}
+	if (selectionHistory.length==0) {
+		console.log('no selections');
+		return;
+	}
+	var selection = selectionHistory[0];
+	if (!selection.item) {
+		// an object
+		if (currentObjectId===selection.objid) {
+			console.log('cannot place object in self '+selection.objid);				
+		} else {
+			console.log('place '+selection.objid);
+			// make sure it is a symbol in this project
+			var symbol = getCachedSymbol(toolProject, selection.objid);
+			if (symbol) {
+				// place the symbol, centred at point with default scale
+				placeToolItem = new paper.PlacedSymbol(symbol);
+				placeToolItem.translate(point);
+				placeToolItem.scale(1/toolView.zoom);
+				placeToolBeginWidth = placeToolItem.bounds.width;
+				placeToolBeginHeight = placeToolItem.bounds.height;
+			}
+			else {
+				console.log('Could not get symbol for '+selection.objid);
 			}
 		}
-		else {
-			console.log('Selected item does not seem to be an object');
-		}
 	}
-	else {
-		console.log('Could not get a last selected item');
+	else {		
+		// TODO handle partial selection
+		console.log('Todo: paste item '+selection.item);
 	}
 };
 placeTool.move = function(point) {
@@ -1101,6 +1174,9 @@ function handleResize() {
 
 /** HTML actions */
 function onShowIndex() {
+	
+	handleTabChange();
+	
 	$('.tab').removeClass('tabselected');
 	$('#tabIndex').addClass('tabselected');
 	$('.tabview').hide();
@@ -1116,7 +1192,7 @@ function onShowIndex() {
 	var x = 0;
 	var y = 0;
 	
-	for (var objid in objectSymbols) {
+	for (var objid in objects) {
 		var group = createIndexItem(objid, indexProject);
 		group.translate(new paper.Point(x*INDEX_CELL_SIZE, y*INDEX_CELL_SIZE));
 
@@ -1150,7 +1226,7 @@ function onNewObject() {
 	var objid = 'o'+nextObjectId;
 	nextObjectId++;
 	var tabid = 'tab_'+objid;
-	$('#tabs .footer').before('<div class="tab" id="'+tabid+'">'+objid+'</div>');
+	$('#tabs .footer').before('<div class="tab objecttab" id="'+tabid+'">'+objid+'</div>');	
 	
 	// new object Symbol
 	objectsProject.activate();
@@ -1168,14 +1244,19 @@ function onNewObject() {
 	//rect.fillColor = 'black';
 	//objectSymbol.definition.addChild(rect);
 
-	objectSymbols[objid] = objectSymbol;	
-	
+	var object = new Object();
+	objects[objid] = object;
+	object.symbol = objectSymbol;	
+	object.id = objid;
+	object.editorRank = $('#'+tabid).index();
+	object.description = 'Sketch '+objid;
+		
 	var settings = new Object();
+	object.editorSettings = settings;
 	settings.overviewZoom = 1;
 	settings.detailZoom = 1;
 	settings.overviewCenter = new paper.Point(0,0);
 	settings.detailCenter = new paper.Point(0,0);
-	objectEditorSettings[objid] = settings;
 	
 	var tabfn = function() {
 		showEditor(objid);
@@ -1186,7 +1267,7 @@ function onNewObject() {
 
 /** handle completed edit */
 function mergeChangesAndCopy(changedProject, copyProject) {
-	var objectSymbol = objectSymbols[currentObjectId];
+	var objectSymbol = objects[currentObjectId].symbol;
 	// group assumed first item in changedProject
 	var changedGroup = changedProject.activeLayer.firstChild;
 	console.log('from changed with '+changedProject.activeLayer.children.length+' items, first '+changedGroup);
@@ -1226,7 +1307,7 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 			var objid = getCachedSymbolId(changedProject, c);
 			if (objid) {
 				console.log('copying placed '+objid+' back to object');
-				var refSymbol = objectSymbols[objid];
+				var refSymbol = objects[objid] ? objects[objid].symbol : null;
 				if (refSymbol) {
 					var p2 = new paper.PlacedSymbol(refSymbol);
 					p2.matrix = c.matrix;
@@ -1257,7 +1338,7 @@ function handleEdit(tool, toolView) {
 			mergeChangesAndCopy(objectOverviewProject, objectDetailProject);
 		}
 		else if (currentObjectId) {
-			var settings = objectEditorSettings[currentObjectId];
+			var settings = objects[currentObjectId].editorSettings;
 			settings.overviewZoom = toolView.zoom;
 			settings.overviewCenter = toolView.center;
 		}
@@ -1267,7 +1348,7 @@ function handleEdit(tool, toolView) {
 			mergeChangesAndCopy(objectDetailProject, objectOverviewProject);
 		}
 		else if (currentObjectId) {
-			var settings = objectEditorSettings[currentObjectId];
+			var settings = objects[currentObjectId].editorSettings;
 			settings.detailZoom = toolView.zoom;
 			settings.detailCenter = toolView.center;
 		}
@@ -1366,6 +1447,320 @@ function checkHighlight() {
 		clearHighlight();
 }
 
+/** marshall matrix */
+function marshallMatrix(matrix) {
+	var jmatrix = matrix.values;
+	return jmatrix;
+}
+
+/** marshall paperjs color to JSON-compatible */
+function marshallColor(color) {
+	if (color) {
+		return { red: color.red, green: color.green, blue: color.blue };
+	}
+	return undefined;
+}
+/** marshall paperjs Symbol which is an object to JSON-stingifiability */
+function marshallItem(item) {
+	var jitem = {};
+	var matrix = item.matrix;
+	if (matrix)
+		jitem.matrix = marshallMatrix(matrix);
+	
+	if (item instanceof paper.Group) {
+		jitem.type = 'group';
+		jitem.children = [];
+		for (var ci=0; ci<item.children.length; ci++) {
+			var c = item.children[ci];
+			jitem.children.push(marshallItem(c));
+		}
+	} else if (item instanceof paper.PlacedSymbol) {
+		jitem.type = 'symbol';
+		var objid = getCachedSymbolId(objectsProject, item);
+		if (objid)
+			jitem.objid = objid;
+	} else if (item instanceof paper.Path) {
+		jitem.type = 'path';
+		jitem.strokeColor =  marshallColor(item.strokeColor);
+		jitem.fillColor = marshallColor(item.fillColor);
+		jitem.strokeWidth = item.strokeWidth;
+		jitem.closed = item.closed;
+		jitem.clockwise = item.clockwise;
+		jitem.segments = [];
+		for (var si=0; si<item.segments.length; si++) {
+			var s = item.segments[si];
+			var js = { point : { x: s.point.x, y: s.point.y },
+					handleIn : { x: s.handleIn.x, y: s.handleIn.y },
+					handleOut : { x: s.handleOut.x, y: s.handleOut.y } };
+			jitem.segments.push(js);
+		}
+	} else if (item instanceof paper.PointText) {
+		jitem.type = 'text';
+		jitem.content = item.content;
+		jitem.point = { x: item.point.x, y : item.point.y };
+		jitem.paragraphStyle = { justification: String(item.paragraphStyle.justification) };
+		jitem.characterStyle = { fontSize: item.characterStyle.fontSize, 
+				fillColor:  marshallColor(item.characterStyle.fillColor), 
+				font: String(item.characterStyle.font) };
+		//jitem.fillColor = item.fillColor;
+	} else {
+		console.log('marshallItem: Unsupported item '+item);
+	}
+	return jitem;
+}
+/** unmarshall color */
+function unmarshallColor(jcolor) {
+	if (jcolor)
+		return new paper.RgbColor(jcolor.red, jcolor.green, jcolor.blue);
+	return undefined;
+}
+/** unmarshallItem */
+function unmarshallItem(jitem) {
+	var item = null;
+	if (jitem.type=='group') {
+		var children = [];
+		for (var i=0; i<jitem.children.length; i++) {
+			var child = unmarshallItem(jitem.children[i]);
+			if (child)
+				children.push(child);
+		}
+		if (children.length==0)
+			// fix
+			children.push(new paper.Group());
+		item = new paper.Group(children);
+	}
+	else if (jitem.type=='symbol') {
+		if (jitem.objid) {
+			var objid = jitem.objid;
+			// already exists?!
+			if (objects[objid]) {
+				console.log('read reference to known '+objid);
+				item = new paper.PlacedSymbol(objects[objid].symbol);
+			} 
+			else {
+				console.log('warning: read reference to '+objid+' before definition - create place-holder');
+				var tmp = { objid: objid, tmp: true };
+				tmp.symbol = new paper.Symbol(new paper.Group(new paper.Group()));
+				item = new paper.PlacedSymbol(objects[objid].symbol);			
+			}			
+		}
+	}
+	else if (jitem.type=='path') {
+		var segments = [];
+		for (var si=0; si<jitem.segments.length; si++) {
+			var s = jitem.segments[si];
+			segments.push(new paper.Segment(new paper.Point(s.point.x, s.point.y),
+					new paper.Point(s.handleIn.x, s.handleIn.y), 
+					new paper.Point(s.handleOut.x, s.handleOut.y)));
+		}
+		item = new paper.Path(segments);
+		item.strokeColor =  unmarshallColor(jitem.strokeColor);
+		item.fillColor = unmarshallColor(jitem.fillColor);
+		item.strokeWidth = jitem.strokeWidth;
+		item.closed = jitem.closed;
+		item.clockwise = jitem.clockwise;
+	}
+	else if (jitem.type=='text') {
+		item = new paper.PointText(new paper.Point(jitem.point.x, jitem.point.y));
+		item.content = jitem.content;
+		item.paragraphStyle = jitem.paragraphStyle;
+		item.characterStyle = jitem.characterStyle;
+		item.characterStyle.fillColor = unmarshallColor(jitem.characterStyle.fillColor);
+	}
+	else {
+		console.log('unknown item type '+jitem.type);
+	}
+	if (jitem.matrix && item) 
+		item.matrix = new paper.Matrix(jitem.matrix);
+	return item;
+}
+/** save. 
+ * NB uses propsed/html5 FileSaver API, as supported by 
+ * https://github.com/eligrey/FileSaver.js https://github.com/eligrey/BlobBuilder.js
+ * see also http://eligrey.com/blog/post/saving-generated-files-on-the-client-side */
+function onSave() {
+	
+	// chance to persist some other bits
+	handleTabChange();
+	
+	var bb = new BlobBuilder();
+	// build current state into object representation
+	var jstate = { nextObjectId : nextObjectId };
+	jstate.objects = [];
+	for (var objid in objects) {
+		var object = objects[objid];
+		var jobject = { id: objid };
+		jstate.objects.push(jobject);
+		if (objid==currentObjectId)
+			jobject.editorVisible = true;
+		if (object.editorSettings)
+			jobject.editorSettings = object.editorSettings;
+		if (object.editorRank)
+			jobject.editorRank = object.editorRank;
+		jobject.symbol = marshallItem(object.symbol.definition);
+	}
+	jstate.selectionHistory = [];
+	for (var si=0; si<selectionHistory.length; si++) {
+		var selection = selectionHistory[si];
+		if (selection.item) {
+			console.log('partial selection omitted from save');
+		} else {
+			var jselection = { objid : selection.objid, current : selection.current };
+			jstate.selectionHistory.push(jselection);
+		}
+	}
+	console.log('state: '+jstate);
+	// save
+	bb.append(JSON.stringify(jstate));
+	var fileSaver = saveAs(bb.getBlob(), "sketch.json");
+	//fileSaver.onwriteend = myOnWriteEnd;
+}
+
+function clearProject(project) {
+	for (var li=0; li<project.layers.length; li++)
+		project.layers[li].removeChildren();
+	project.symbols = [];
+}
+/** clear everything! */
+function clearAll() {
+	// remove all objects
+	objects = new Object();
+	objectsProject.symbols = [];
+	
+	currentObjectId = undefined;
+	// clear selection history
+	selectionHistory = [];
+	
+	// remove all items
+	clearProject(indexProject);
+	clearProject(selectionProject);
+	clearProject(objectDetailProject);
+	clearProject(objectOverviewProject);
+
+	// remove all extra tabs
+	$('.objecttab').remove();
+	
+	// show index
+	onShowIndex();
+}
+
+/** restore state from JSON-compat object saved */
+function restoreState(jstate) {
+	// .nextObjectId
+	nextObjectId = jstate.nextObjectId;
+	// .objects
+	var currentObjectFn = null;
+	for (var i=0; i<jstate.objects.length; i++) {
+		var jobject = jstate.objects[i];
+		var objid = jobject.id;
+
+		var object = objects[objid] ? objects[objid] : new Object();
+		console.log('restore object '+objid);
+		// see also onNewObject
+		var tabid = 'tab_'+objid;
+		$('#tabs .footer').before('<div class="tab objecttab" id="'+tabid+'">'+objid+'</div>');	
+
+		// TODO editorRank
+		console.log('editorRank = '+jobject.editorRank);
+		
+		// new object Symbol
+		objectsProject.activate();
+
+		objects[objid] = object;
+
+		var defItem = unmarshallItem(jobject.symbol);
+		if (!object.symbol) {
+			var objectSymbol = new paper.Symbol(defItem);
+			object.symbol = objectSymbol;	
+		}
+		else {
+			object.symbol.definition = defItem;
+			console.log('replaced definition of '+objid+'(tmp? '+object.tmp+')');
+		}
+		object.id = objid;
+		object.editorRank = $('#'+tabid).index();
+		object.description = 'Sketch '+objid;
+			
+		object.editorSettings = jobject.editorSettings;
+		
+		(function (objid, tabid) {
+			var tabfn = function() {
+				showEditor(objid);
+			};
+			$('#'+tabid).on('click', tabfn);
+
+			if (jobject.editorVisible)
+				currentObjectFn = tabfn;
+		})(objid, tabid);
+	}
+	// .selectionHistory
+	for (var i=0; i<jstate.selectionHistory.length; i++) {
+		var jselection = jstate.selectionHistory[i];
+		var selection = { objid: jselection.objid, current: jselection.current };
+		if (selection.objid) {
+			selection.item = createIndexItem(selection.objid, selectionProject);
+			selection.item.translate(new paper.Point(i*INDEX_CELL_SIZE, 0));
+		}
+	}
+	selectionProject.view.zoom = 1;
+	selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
+	if (currentObjectFn) {
+		currentObjectFn();
+	}
+	else
+		onShowIndex();
+}
+
+/** load - from File select.
+ * NB uses new/html5 File API */
+function onLoad(evt) {
+	onSave();
+	
+	clearAll();
+	
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		// Great success! All the File APIs are supported.
+
+	    var files = evt.target.files; // FileList object
+		if (files.length==0) {
+			console.log('no file specified');
+			return;
+		}
+		var f = files[0];
+	    console.log('read file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
+	                  f.size+' bytes, last modified: '+
+	                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
+	      
+	    var reader = new FileReader();
+	    reader.onload = function(evt) {
+	        // Render thumbnail.
+	        console.log('file read: '+evt.target.result);
+	        var jstate;
+	        try {
+	        	jstate = JSON.parse(evt.target.result);
+	        }
+	        catch (err) {
+	        	console.log('error parsing JSON state: '+err.message);
+	        }
+        	restoreState(jstate);
+	    };
+	
+	    // Read in the file
+	    reader.readAsText(f);
+	}
+	else
+		console.log('sorry, file apis not supported');
+}
+
+/** change to object text (description). Note this is kind of lazy, i.e. not each key press, 
+ * but on loss of focus */
+function onObjectTextChange() {
+	//console.log('objectTextChange');
+	var text = $('#objectTextArea').val();
+	console.log('objectTextChange: '+text+' (current object '+currentObjectId+')');
+	if (currentObjectId && objects[currentObjectId])
+		objects[currentObjectId].description = text;
+}
 // Only executed our code once the DOM is ready.
 $(document).ready(function() {
 
@@ -1415,8 +1810,9 @@ $(document).ready(function() {
 	//test.content = 'Selection';
 	selectionProject.layers[0].activate();
 	
-	
-
+	$('#loadFile').on('change', onLoad);
+	console.log('textarea: '+$('#objectTextArea').attr('id'));
+	$('#objectTextArea').change(onObjectTextChange);
 	
 	$(document).on('mouseover', 'div .tab', function() {
 		$(this).addClass('tabhighlight');
@@ -1479,6 +1875,17 @@ $(document).ready(function() {
 		
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
+			if (ev.target.tagName && ev.target.tagName=='TEXTAREA') {
+				if (ev.which==KEY_BACKSPACE || ev.which=='C'.charCodeAt(0) || ev.which=='V'.charCodeAt(0)) {
+					console.log('textarea allowing special key down '+ev.which);
+					return true;
+				}
+				//else
+				//	console.log('textarea key '+ev.which+' target tagName = '+ev.target.tagName);
+
+			}
+			//else 
+			//	console.log('key target tagName = '+ev.target.tagName);
 			ev.stopPropagation();
 			return false;
 		}
@@ -1496,6 +1903,13 @@ $(document).ready(function() {
 		console.log('keyup: '+ev.which);
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
+			// except some things in text
+			if (ev.target.tagName && ev.target.tagName=='TEXTAREA') {
+				if (ev.which==KEY_BACKSPACE || ev.which=='C'.charCodeAt(0) || ev.which=='V'.charCodeAt(0)) {
+					console.log('textarea allowing special key up '+ev.which);
+					return true;
+				}
+			}
 			ev.stopPropagation();
 			return false;
 		}

@@ -7,26 +7,39 @@
 <script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
 <script type="text/javascript" src="paper-weiser.js"></script>
 <script type="text/javascript" src="sketcher.js"></script>
+<script type="text/javascript" src="BlobBuilder.js"></script>
+<script type="text/javascript" src="FileSaver.js"></script>
 </head>
 <body>
 <div id="page" class="page">
 <h1>Paperjs test(s) for sketching interface 3</h1>
+	<div class="indexHeader">
+		<div class="headerItem">
+			<form>
+				<input type="button" value="New Sketch" class="button" onclick="javascript:onNewObject();"/>
+			</form>
+		</div>
+		<div class="headerItem">
+			<form>
+				<input type="button" value="Save" class="button" onclick="javascript:onSave();"/>
+			</form>
+		</div>
+		<div class="headerItem">
+			<form>
+				Load:<input type="file" id="loadFile" name="files[]" accept="application/json" class="button"/>
+			</form>
+		</div>
+		<div class="footer"></div>
+	</div>
 	<!-- objects list -->
 	<div id="tabs" class="tabs">
 		<div class="tab" id="tabIndex" 
 			onclick="javascript:onShowIndex();"
-			>Objects</div>
-
-		<div class="tab" id="tabPages">Pages</div>
+			>Index</div>
 		<div class="footer"></div>
 	</div>
 	<div id="index" class="index tabview" style="display:none">
 		<div class="indexHeader">
-			<div class="headerItem">
-				<form>
-					<input type="button" value="New" class="button" onclick="javascript:onNewObject();"/>
-				</form>
-			</div>
 			<div class="headerItem">
 				<form>
 					<span class="label">Filter:</span><input type="text" id="indexFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
@@ -45,10 +58,10 @@
 			<p class="label">Overview</p>
 		   	<canvas id="objectOverviewCanvas" class="overviewCanvas" ></canvas>				
 			<!-- hidden text -->
-			<p class="label">Hidden text</p>
+			<p class="label">Description</p>
 	    	<!-- <canvas id="objectTextCanvas" class="textCanvas" ></canvas> -->
 	    	<form>
-	    		<textarea rows="10" cols="20" wrap="soft"></textarea>
+	    		<textarea id='objectTextArea' class='objectTextArea' rows="10" cols="20" wrap="soft"></textarea>
 	    	</form>
 		</div>
 		<!-- right / zoomable view -->
