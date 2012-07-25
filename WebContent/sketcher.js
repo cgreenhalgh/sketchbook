@@ -815,7 +815,18 @@ selectTool.move = function(point) {
 	}
 };
 
-
+/** get title, first line of description */
+function getObjectTitle(objid) {
+	var title = objects[objid].description;
+	if (title) {
+		var ix = title.indexOf('\n');
+		if (ix>=0)
+			title = title.substr(0, ix);
+	}
+	if (!title || title.length==0)
+		title = objid;
+	return title;
+}
 /** make an index icon in current project for a symbol. 
  * @return Item (Group) representing object in index/selection
  */
@@ -835,7 +846,8 @@ function createIndexItem(objid, indexProject) {
 	placed.name = objid;
 	placed.translate(new paper.Point(INDEX_CELL_SIZE/2-placed.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-placed.bounds.center.y));
 	var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
-	label.content = objid;
+	var title = getObjectTitle(objid);
+	label.content = title;
 	label.paragraphStyle.justification = 'center';
 	label.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
 	
@@ -1781,8 +1793,24 @@ function onObjectTextChange() {
 	//console.log('objectTextChange');
 	var text = $('#objectTextArea').val();
 	console.log('objectTextChange: '+text+' (current object '+currentObjectId+')');
-	if (currentObjectId && objects[currentObjectId])
+	if (currentObjectId && objects[currentObjectId]) {
 		objects[currentObjectId].description = text;
+		var title = getObjectTitle(currentObjectId);
+		// update icon title in selectionProject
+		for (var si=0; si<selectionHistory.length; si++) {
+			var selection = selectionHistory[si];
+			if (selection.historyItem && selection.objid==currentObjectId && !selection.item) {
+				// should be an icon			
+				for (var ci=0; ci<selection.historyItem.children.length; ci++) {
+					var c = selection.historyItem.children[ci];
+					if (c instanceof paper.PointText) {
+						console.log('update icon title for '+currentObjectId+' from '+c.content+' to '+title);
+						c.content = title;
+					}
+				}
+			}
+		}
+	}
 }
 // Only executed our code once the DOM is ready.
 $(document).ready(function() {
