@@ -1597,6 +1597,7 @@ function onSave() {
 			jobject.editorSettings = object.editorSettings;
 		if (object.editorRank)
 			jobject.editorRank = object.editorRank;
+		jobject.description = object.description;
 		jobject.symbol = marshallItem(object.symbol.definition);
 	}
 	jstate.selectionHistory = [];
@@ -1680,7 +1681,7 @@ function restoreState(jstate) {
 		}
 		object.id = objid;
 		object.editorRank = $('#'+tabid).index();
-		object.description = 'Sketch '+objid;
+		object.description = jobject.description;
 			
 		object.editorSettings = jobject.editorSettings;
 		
