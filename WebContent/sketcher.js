@@ -622,55 +622,49 @@ function createTextBlock(point, lines, justification) {
 	var characterStyle = { fillColor: 'black', fontSize: 12/toolView.zoom };
 	var lineSpacing = pt2px(characterStyle.fontSize)*1.15;
 	var texts = new Array();
+	var y = 0;
 	for (var li in lines) {
 		var line = lines[li];
-		var text = new paper.PointText(new paper.Point(point.x, point.y));
+		var text = new paper.PointText(new paper.Point(0, y));
 		text.content = line;
 		text.paragraphStyle.justification = justification;
 		text.characterStyle = characterStyle;
 		texts.push(text);//block.addChild(text);
-		point.y = point.y + lineSpacing;
+		y = y + lineSpacing;
 	}
 	var block = new paper.Group(texts);//[]?
-
+	block.translate(point);
+	return block;
 }
 
 /** text tool */
 var textTool = new Object();
-var textToolOutline = undefined;
+//var textToolOutline = undefined;
 var textToolText = undefined;
 var textToolBegin = undefined;
-var textToolPos = 0;
+//var textToolPos = 0;
 
 textTool.edits = true;
 textTool.begin = function(point) {
 	console.log('textTool.begin '+point);
 	textToolBegin = point;
+	var text = $('#orphanText').val();
+	$('#orphanText').val('');
+	if (text.length>0)
+	var lines = [text];
+	textToolText = createTextBlock(point, lines); //['testing','testing','1, 2, 3...']);
 };
 textTool.move = function(point) {
-	if (textToolBegin) {
-		//console.log('lineTool.move '+point);
-		if (textToolOutline)
-			textToolOutline.remove();
-		toolProject.layers[1].activate();
-		textToolOutline = new paper.Path.Rectangle(textToolBegin, point);
-		toolProject.layers[0].activate();
-		textToolOutline.strokeColor = 'grey';
-		textToolOutline.dashArray = [10,4];
+	if (textToolText) {
+		textToolText.translate(new paper.Point(point.x-textToolBegin.x, point.y-textToolBegin.y));
+		textToolBegin = point;
 	}
 };
 textTool.end = function(point) {
-	if (textToolBegin) {
+	if (textToolText) {
 		console.log('textTool.end'+point);
-		if (textToolOutline) {
-			textToolOutline.remove();
-			textToolOutline = undefined;
-		}
-		var width = Math.abs(point.x-textToolBegin.x);
-		var x = (point.x+textToolBegin.x)/2;
-		var y = (point.y+textToolBegin.y)/2;
+		textToolText = undefined;
 		textToolBegin = undefined;
-		createTextBlock(new paper.Point(x, y), ['testing','testing','1, 2, 3...']);
 	}
 };
 
@@ -1734,6 +1728,11 @@ if (!String.prototype.trim) {
 	String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
 }
 
+/** object filter changes */
+function onObjectFilterChanges() {
+	// TODO
+}
+
 /** load - from File select.
  * NB uses new/html5 File API */
 function onLoad(evt) {
@@ -1876,6 +1875,29 @@ $(document).ready(function() {
 	$(document).on('mouseout', 'div .tab', function() {
 		$(this).removeClass('tabhighlight');
 	});
+	$(document).on('mouseenter', 'textarea',function() {
+		$(this).focus();
+	});
+	$(document).on('mouseout', 'textarea',function() {
+		$(this).blur();
+		$('#orphanText').focus();
+	});
+	$(document).on('mouseenter', 'canvas',function() {
+		$('#orphanText').blur();
+	});
+	$(document).on('mouseout', 'canvas',function() {
+		$('#orphanText').focus();
+	});
+	$(document).on('mouseenter', 'body',function() {
+		$('#orphanText').focus();
+	});
+	$(document).on('mouseenter', 'input[type=text]',function() {
+		$(this).focus();
+	});
+	$(document).on('mouseout', 'input[type=text]',function() {
+		$(this).blur();
+		$('#orphanText').focus();
+	});
 	
 	onShowIndex();
 
@@ -1903,7 +1925,7 @@ $(document).ready(function() {
 		keyTarget = mouseTarget;
 		var p = getProject(keyTarget);
 		//var v = getView(keyTarget);
-		if (p && p.view) {
+		if (p && p.view && document.activeElement!=document.getElementById('orphanText')) {		
 			var v = p.view;
 			var t = tools[getToolKeyWhich(ev.which)];
 			if (t) {
@@ -1929,6 +1951,10 @@ $(document).ready(function() {
 			}
 		}
 		
+		// escape for orphan focus?
+		if (ev.which==KEY_ESCAPE) {
+			$('#orphanText').focus();
+		}
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
 			if (ev.target.tagName && (ev.target.tagName=='TEXTAREA' || ev.target.tagName=='INPUT')) {
@@ -1972,9 +1998,17 @@ $(document).ready(function() {
 	});
 	$(document).keypress(function(ev) {
 		console.log('keypress: '+ev.which+' at '+mousePageX+','+mousePageY+' on '+mouseTarget+' = '+(mousePageX-pageOffsetLeft(mouseTarget))+','+(mousePageY-pageOffsetTop(mouseTarget)));
+		if (ev.target.tagName.toUpperCase()!='CANVAS' && mouseTarget.tagName.toUpperCase()!='CANVAS' && ev.target.tagName!='TEXTAREA' && ev.target.tagName!='INPUT' && ev.charCode) {
+			console.log('key '+String.fromCharCode(ev.charCode)+' in <'+ev.target.tagName+'> (mouse <'+mouseTarget.tagName+'>)');
+			$('#orphanText').val($('#orphanText').val()+String.fromCharCode(ev.charCode));
+		}
 	});
 	$(document).mousemove(function(ev) {
 		//console.log('mousemove: '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		if (ev.target.tagName=='CANVAS' && (ev.pageX!=mousePageX || ev.pageY!=mousePageY)) {
+			console.log('blur orphan text on mousemove');
+			$('#orphanText').blur();
+		}
 		mouseTarget = ev.target;
 		mousePageX = ev.pageX;
 		mousePageY = ev.pageY;
@@ -1990,6 +2024,10 @@ $(document).ready(function() {
 		}
 	});
 	$(document).mousedown(function(ev) {
+		if (ev.target.tagName=='CANVAS') {
+			console.log('blur orphan text on mousedown');
+			$('#orphanText').blur();
+		}
 		mouseTarget = ev.target;
 		mousePageX = ev.pageX;
 		mousePageY = ev.pageY;
