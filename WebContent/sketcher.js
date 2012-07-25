@@ -1535,14 +1535,14 @@ function unmarshallItem(jitem) {
 			// already exists?!
 			if (objects[objid]) {
 				console.log('read reference to known '+objid);
-				item = new paper.PlacedSymbol(objects[objid].symbol);
 			} 
 			else {
 				console.log('warning: read reference to '+objid+' before definition - create place-holder');
 				var tmp = { objid: objid, tmp: true };
 				tmp.symbol = new paper.Symbol(new paper.Group(new paper.Group()));
-				item = new paper.PlacedSymbol(objects[objid].symbol);			
+				objects[objid] = tmp;
 			}			
+			item = new paper.PlacedSymbol(objects[objid].symbol);
 		}
 	}
 	else if (jitem.type=='path') {

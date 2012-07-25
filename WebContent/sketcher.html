@@ -15,21 +15,15 @@
 <h1>Paperjs test(s) for sketching interface 3</h1>
 	<div class="indexHeader">
 		<div class="headerItem">
-			<form>
-				<input type="button" value="New Sketch" class="button" onclick="javascript:onNewObject();"/>
-			</form>
+			<input type="button" value="New Sketch" class="button" onclick="javascript:onNewObject();"/>
 		</div>
 		<div class="headerItem">
-			<form>
-				Filename start:
-				<input type="text" value="sketch" id="filenameText"/>
-				<input type="button" value="Save" class="button" onclick="javascript:onSave();"/>
-			</form>
+			Filename start:
+			<input type="text" value="sketch" id="filenameText"/>
+			<input type="button" value="Save" class="button" onclick="javascript:onSave();"/>
 		</div>
 		<div class="headerItem">
-			<form>
-				Load:<input type="file" id="loadFile" name="files[]" accept="application/json" class="button"/>
-			</form>
+			Load:<input type="file" id="loadFile" name="files[]" accept="application/json" class="button"/>
 		</div>
 		<div class="footer"></div>
 	</div>
@@ -62,9 +56,7 @@
 			<!-- hidden text -->
 			<p class="label">Description</p>
 	    	<!-- <canvas id="objectTextCanvas" class="textCanvas" ></canvas> -->
-	    	<form>
-	    		<textarea id='objectTextArea' class='objectTextArea' rows="10" cols="20" wrap="soft"></textarea>
-	    	</form>
+    		<textarea id='objectTextArea' class='objectTextArea' rows="10" cols="20" wrap="soft"></textarea>
 		</div>
 		<!-- right / zoomable view -->
 		<div class="editorDetail">
@@ -78,9 +70,7 @@
 		<!-- orphan text -->
 		<div class="orphanText">
 			<p class="label">Orphan text</p>
-			<form>
-				<input type="text" width="20"/>
-			</form>
+			<input type="text" width="20"/>
 			<!-- <canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas> -->						
 		</div>
 		<div class="selectionHistory">
