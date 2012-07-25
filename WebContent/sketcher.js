@@ -1612,7 +1612,8 @@ function onSave() {
 	console.log('state: '+jstate);
 	// save
 	bb.append(JSON.stringify(jstate));
-	var fileSaver = saveAs(bb.getBlob(), "sketch.json");
+	var filename = $('#filenameText').val()+'.json';
+	var fileSaver = saveAs(bb.getBlob(), filename);
 	//fileSaver.onwriteend = myOnWriteEnd;
 }
 
@@ -1710,11 +1711,21 @@ function restoreState(jstate) {
 	else
 		onShowIndex();
 }
+//http://stackoverflow.com/questions/498970/how-do-i-trim-a-string-in-javascript
+if (!String.prototype.trim) {
+   //code for trim
+	String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
+}
 
 /** load - from File select.
  * NB uses new/html5 File API */
 function onLoad(evt) {
-	onSave();
+	handleTabChange();
+	
+	if (nextObjectId!=1)
+		onSave();
+	else
+		console.log('project believed empty - no extra save');
 	
 	clearAll();
 	
@@ -1730,7 +1741,18 @@ function onLoad(evt) {
 	    console.log('read file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
 	                  f.size+' bytes, last modified: '+
 	                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
-	      
+	    
+	    var name = f.name;
+	    // remove extension
+	    var ix = name.lastIndexOf('.');
+	    if (ix>0)
+	    	name = name.substr(0,ix);
+	    // remove (..) added by browser on save
+	    ix = name.lastIndexOf('(');
+	    if (ix>0)
+	    	name = name.substr(0,ix).trim();
+	    $('#filenameText').val(name);
+	    
 	    var reader = new FileReader();
 	    reader.onload = function(evt) {
 	        // Render thumbnail.
@@ -1875,7 +1897,7 @@ $(document).ready(function() {
 		
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
-			if (ev.target.tagName && ev.target.tagName=='TEXTAREA') {
+			if (ev.target.tagName && (ev.target.tagName=='TEXTAREA' || ev.target.tagName=='INPUT')) {
 				if (ev.which==KEY_BACKSPACE || ev.which=='C'.charCodeAt(0) || ev.which=='V'.charCodeAt(0)) {
 					console.log('textarea allowing special key down '+ev.which);
 					return true;
@@ -1904,7 +1926,7 @@ $(document).ready(function() {
 		// stop, e.g. backspace and ctrl-... propagating to browser itself
 		if (isSpecialKey(ev.which) || ev.ctrlKey) {
 			// except some things in text
-			if (ev.target.tagName && ev.target.tagName=='TEXTAREA') {
+			if (ev.target.tagName && (ev.target.tagName=='TEXTAREA' || ev.target.tagName=='INPUT')) {
 				if (ev.which==KEY_BACKSPACE || ev.which=='C'.charCodeAt(0) || ev.which=='V'.charCodeAt(0)) {
 					console.log('textarea allowing special key up '+ev.which);
 					return true;
