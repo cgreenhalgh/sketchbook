@@ -504,6 +504,10 @@ function copyDefinition(objectSymbol, toProject) {
 /** handle change of tab */
 function handleTabChange() {
 	// TODO tidy up selection history
+	// save any changes to description
+	if (currentObjectId) {
+		onObjectTextChange();
+	}
 }
 
 /** show editor for object ID */
@@ -1810,6 +1814,7 @@ function onObjectTextChange() {
 				}
 			}
 		}
+		redraw(paper);
 	}
 }
 // Only executed our code once the DOM is ready.
