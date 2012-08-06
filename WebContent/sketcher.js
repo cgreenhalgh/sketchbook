@@ -17,6 +17,17 @@ var objectsProject = undefined;
 // - editorSettings : per-object detail/ovewview/zoom/center 
 // - editorRank (if exists): i.e. position of editor tab in list, if present
 // - [save] editorVisible : currently visible?
+// - frames : array of Frame (Object):
+//   - id : unique for all frames and sequences in all objects
+//   - description : text
+//   - center (x,y), width, height
+// - sequences : array of Sequence (Object):
+//   - id : unique for all frames and sequences on all objects
+//   - description : text
+//   - items : array of (Object):
+//     - objid : (optional - if not this object) [TODO]
+//     - type : sequence or frame
+//     - id : of frame or sequence
 var objects = new Object();
 // Old: each object is a Symbol on the objectsProject
 // var objectSymbols = new Object();
