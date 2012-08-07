@@ -7,6 +7,10 @@
 
 // main application state
 
+// TODO save frame correctly
+// TODO load frame correctly
+// TODO sequence view including all frames and zoom to frame
+
 var nextObjectId = 1;
 
 var objectsProject = undefined;
@@ -17,10 +21,6 @@ var objectsProject = undefined;
 // - editorSettings : per-object detail/ovewview/zoom/center 
 // - editorRank (if exists): i.e. position of editor tab in list, if present
 // - [save] editorVisible : currently visible?
-// - frames : array of Frame (Object):
-//   - id : unique for all frames and sequences in all objects
-//   - description : text
-//   - center (x,y), width, height
 // - sequences : array of Sequence (Object):
 //   - id : unique for all frames and sequences on all objects
 //   - description : text
@@ -648,6 +648,17 @@ function createTextBlock(point, lines, justification) {
 	return block;
 }
 
+function createText(point, line, justification) {
+	if (justification===undefined)
+		justification = 'center';
+	var characterStyle = { fillColor: 'black', fontSize: 12/toolView.zoom };
+	var text = new paper.PointText(new paper.Point(0, y));
+	text.content = line;
+	text.paragraphStyle.justification = justification;
+	text.characterStyle = characterStyle;
+	return text;
+}
+
 /** text tool */
 var textTool = new Object();
 //var textToolOutline = undefined;
@@ -661,9 +672,10 @@ textTool.begin = function(point) {
 	textToolBegin = point;
 	var text = $('#orphanText').val();
 	$('#orphanText').val('');
-	if (text.length>0)
-	var lines = [text];
-	textToolText = createTextBlock(point, lines); //['testing','testing','1, 2, 3...']);
+	if (text.length>0) {
+		var lines = [text];
+		textToolText = createTextBlock(point, lines); //['testing','testing','1, 2, 3...']);
+	}
 };
 textTool.move = function(point) {
 	if (textToolText) {
@@ -677,6 +689,59 @@ textTool.end = function(point) {
 		textToolText = undefined;
 		textToolBegin = undefined;
 	}
+};
+
+/** frame tool */
+var frameTool = new Object();
+var frameToolOutline = undefined;
+var frameToolText = undefined;
+var frameToolBegin = undefined;
+//var textToolPos = 0;
+
+frameTool.edits = true;
+frameTool.begin = function(point) {
+	frameToolBegin = point;
+	frameToolText = $('#orphanText').val();
+	$('#orphanText').val('');
+};
+frameTool.move = function(point) {
+	if (frameToolOutline)
+		frameToolOutline.remove();
+
+	toolProject.layers[1].activate();
+	frameToolOutline = new paper.Path.Rectangle(frameToolBegin, point);
+	toolProject.layers[0].activate();	
+	frameToolOutline.strokeColor = 'red';
+	frameToolOutline.strokeWidth = 1/toolView.zoom;
+};
+frameTool.end = function(point) {
+	if (frameToolOutline) {
+		frameToolOutline.remove();
+		frameToolOutline = undefined;
+	}
+	
+	var frame = new paper.Path.Rectangle(0, new paper.Point(Math.abs(point.x-frameToolBegin.x), Math.abs(point.y-frameToolBegin.y)));
+	frame.strokeColor = '#808080';
+	frame.strokeWidth = 2/toolView.zoom;
+	frame.dashArray = [4/toolView.zoom, 10/toolView.zoom];
+	
+	var characterStyle = { fillColor: '#808080', fontSize: 12/toolView.zoom };
+	var text = new paper.PointText(new paper.Point(Math.abs(point.x-frameToolBegin.x)/2, -3/toolView.zoom));
+	text.content = frameToolText;
+	text.paragraphStyle.justification = 'center';
+	text.characterStyle = characterStyle;
+	var id = new paper.PointText();
+	id.content = 'f'+(nextObjectId++);
+	id.visible = false;
+	id.name = 'frameid';
+	console.log('created frame '+id.content);
+	var group = new paper.Group([frame,text,id]);
+	frame.name = 'frame';
+	text.name = 'framedescription';
+	group.translate(new paper.Point(Math.min(point.x, frameToolBegin.x), Math.min(point.y, frameToolBegin.y)));
+	
+	frameToolText = undefined;
+	frameToolBegin = undefined;
 };
 
 /** zoom in tool */
@@ -939,7 +1004,7 @@ function selectItem(project, item) {
 	selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
 	//redraw(paper);
 	
-	console.log('selection history has '+selectionHistorylength+' selections; project has '+selectionProject.layers[0].children.length+' children');
+	console.log('selection history has '+selectionHistory.length+' selections; project has '+selectionProject.layers[0].children.length+' children');
 }
 selectTool.end = function(point) {
 	if (selectToolPath) {
@@ -1113,16 +1178,109 @@ deleteTool.end = function(point) {
 	}
 };
 
+//temporary hack to show red box at bounds as highlight
+var highlightVisibleItem = undefined;
+
+/** clear any highlight */
+function clearHighlight() {
+	if (highlightItem) {
+		//highlightItem.strokeColor = 'black';
+		highlightItem = undefined;
+		if (highlightVisibleItem) {
+			// temporary hack to show red box at bounds as highlight
+			highlightVisibleItem.remove();
+			highlightVisibleItem = undefined;
+			console.log('cleared highlight');
+		}
+		
+		redraw(paper);
+	}
+}
+function highlight(project, item) {
+	//item.strokeColor = 'red';
+	if (item) {
+		// temporary hack to show red box at bounds as highlight
+		highlightProject = project;
+		highlightItem = item;
+		var bounds = highlightItem.bounds;
+		project.layers[1].activate();
+		highlightVisibleItem = new paper.Path.Rectangle(bounds);
+		highlightVisibleItem.strokeWidth = 1/project.view.zoom;
+		project.layers[0].activate();
+		highlightVisibleItem.strokeColor = 'red';
+		console.log('created highlight for '+item);
+	}
+}
+
+/** check/set highlight from mouse move */
+function checkHighlight() {
+	if (mouseTarget) {
+		var project = getProject(mouseTarget);
+		// if tool active, restrict to its home canvas
+		if (project && (project===toolProject || !(tool))) {
+			var point = view2project(project.view, 
+					mousePageX,
+					mousePageY);
+			/* Hit test doesn't seem to work by default on Text, or on groups
+			var options = { tolerance:2, fill:true, stroke:true, segments: true };
+			var res = project.hitTest(point, options);
+			console.log('highlight test at '+point+' -> '+res);
+			var item = (res) ? res.item : null;
+			*/
+			//console.log('highlight test at '+point+' in '+project);
+			
+			var tolerance = 2/project.view.zoom;
+			var items = new Array();
+			var children = project.layers[0].children;
+			if ((project===objectDetailProject || project===objectOverviewProject) && children.length>0)
+				// look inside top-level group in object editor
+				children = children[0].children;
+			for (var ci in children) {
+				var c = children[ci];
+				var bounds = c.bounds;
+				if (point.x>=bounds.left-tolerance &&
+						point.x<=bounds.right+tolerance &&
+						point.y>=bounds.top-tolerance &&
+						point.y<=bounds.bottom+tolerance) {
+					items.push(c);
+					//console.log('- hit '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+				}
+				else {
+					//console.log('- missed '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+				}
+			}
+			var item = (items.length>0) ? items[items.length-1] : null;
+			if (item) {
+				if (item===highlightItem && project===highlightProject) 
+					; // no-op
+				else {
+					clearHighlight();
+					project.activate();
+					highlight(project, item);
+					redraw(paper);
+				}
+			}
+			else
+				clearHighlight();
+		}
+		else
+			clearHighlight();
+	}
+	else
+		clearHighlight();
+}
+
 /** space tool, i.e. move to end of children */
 var spaceTool = new Object();
 spaceTool.edits = true;
 spaceTool.highlights = true;
 
 function moveHighlight() {
-	if (highlightItem && highlightItem.parent && highlightItem.parent instanceof paper.Group && highlightItem.parent.children.length>1 && highlightItem.parent.lastChild!==highlightItem) {
+	if (highlightItem && highlightItem.parent && highlightItem.parent instanceof paper.Group && highlightItem.parent.children.length>1 && highlightItem.parent.firstChild!==highlightItem) {
 		console.log('move highlight item to end of parent children');
-		highlightItem.moveBelow(highlightItem.parent.lastChild);
+		highlightItem.insertBelow(highlightItem.parent.firstChild);
 	}
+	checkHighlight();
 }
 spaceTool.begin = function(point) {
 	moveHighlight();
@@ -1131,7 +1289,7 @@ spaceTool.move = function(point) {
 	moveHighlight();
 };
 spaceTool.end = function(point) {
-	moveHighlight();	
+	//moveHighlight();	
 };
 
 /** global - all tools keys by key */
@@ -1145,6 +1303,7 @@ tools[getToolKeyChar('E')] = editTool;
 tools[getToolKeyChar('D')] = placeTool;
 tools[getToolKeyWhich(KEY_DELETE)] = deleteTool;
 tools[getToolKeyChar(' ')] = spaceTool;
+tools[getToolKeyChar('F')] = frameTool;
 
 
 function pageOffsetTop(target) {
@@ -1271,6 +1430,8 @@ function onNewObject() {
 	object.id = objid;
 	object.editorRank = $('#'+tabid).index();
 	object.description = 'Sketch '+objid;
+	object.frames = [];
+	object.sequences = [];
 		
 	var settings = new Object();
 	object.editorSettings = settings;
@@ -1340,6 +1501,21 @@ function mergeChangesAndCopy(changedProject, copyProject) {
 			else
 				console.log('cound not get id for placed symbol '+c);
 		} 
+		/*
+		else if (c instanceof paper.Group && c.children['frame']){
+			var frame = c.children['frame'];
+			var description = c.children['framedescription'];
+			var center = new paper.Point(c.matrix.translateX+frame.bounds.width/2, c.matrix.translateY+frame.bounds.height/2);
+			console.log('found frame: "'+description.content+'" at '+center+' size '+frame.bounds.size);
+			// create new frame
+			//   - id : unique for all frames and sequences in all objects
+			//   - description : text
+			//   - center (x,y), width, height			
+			var f = { description: description, center: { x: center.x, y: center.y }, width: frame.bounds.width, height: frame.bounds.height };
+			f.id = 'f'+(nextObjectId++);
+			objects[currentObjectId].frames.push(f);
+			console.log('added frame '+f.id+' to object '+currentObjectId);
+		} */
 		else {
 			c.copyTo(objectSymbol.definition);
 		}
@@ -1376,97 +1552,6 @@ function handleEdit(tool, toolView) {
 	}
 }
 
-// temporary hack to show red box at bounds as highlight
-var highlightVisibleItem = undefined;
-
-/** clear any highlight */
-function clearHighlight() {
-	if (highlightItem) {
-		//highlightItem.strokeColor = 'black';
-		highlightItem = undefined;
-		if (highlightVisibleItem) {
-			// temporary hack to show red box at bounds as highlight
-			highlightVisibleItem.remove();
-			highlightVisibleItem = undefined;
-			console.log('cleared highlight');
-		}
-		
-		redraw(paper);
-	}
-}
-function highlight(project, item) {
-	//item.strokeColor = 'red';
-	if (item) {
-		// temporary hack to show red box at bounds as highlight
-		highlightProject = project;
-		highlightItem = item;
-		var bounds = highlightItem.bounds;
-		project.layers[1].activate();
-		highlightVisibleItem = new paper.Path.Rectangle(bounds);
-		highlightVisibleItem.strokeWidth = 1/project.view.zoom;
-		project.layers[0].activate();
-		highlightVisibleItem.strokeColor = 'red';
-		console.log('created highlight for '+item);
-	}
-}
-
-/** check/set highlight from mouse move */
-function checkHighlight() {
-	if (mouseTarget) {
-		var project = getProject(mouseTarget);
-		// if tool active, restrict to its home canvas
-		if (project && (project===toolProject || !(tool))) {
-			var point = view2project(project.view, 
-					mousePageX,
-					mousePageY);
-			/* Hit test doesn't seem to work by default on Text, or on groups
-			var options = { tolerance:2, fill:true, stroke:true, segments: true };
-			var res = project.hitTest(point, options);
-			console.log('highlight test at '+point+' -> '+res);
-			var item = (res) ? res.item : null;
-			*/
-			//console.log('highlight test at '+point+' in '+project);
-			
-			var tolerance = 2/project.view.zoom;
-			var items = new Array();
-			var children = project.layers[0].children;
-			if ((project===objectDetailProject || project===objectOverviewProject) && children.length>0)
-				// look inside top-level group in object editor
-				children = children[0].children;
-			for (var ci in children) {
-				var c = children[ci];
-				var bounds = c.bounds;
-				if (point.x>=bounds.left-tolerance &&
-						point.x<=bounds.right+tolerance &&
-						point.y>=bounds.top-tolerance &&
-						point.y<=bounds.bottom+tolerance) {
-					items.push(c);
-					//console.log('- hit '+ci+':'+c+' '+bounds+'+/-'+tolerance);
-				}
-				else {
-					//console.log('- missed '+ci+':'+c+' '+bounds+'+/-'+tolerance);
-				}
-			}
-			var item = (items.length>0) ? items[0] : null;
-			if (item) {
-				if (item===highlightItem && project===highlightProject) 
-					; // no-op
-				else {
-					clearHighlight();
-					project.activate();
-					highlight(project, item);
-					redraw(paper);
-				}
-			}
-			else
-				clearHighlight();
-		}
-		else
-			clearHighlight();
-	}
-	else
-		clearHighlight();
-}
 
 /** marshall matrix */
 function marshallMatrix(matrix) {
