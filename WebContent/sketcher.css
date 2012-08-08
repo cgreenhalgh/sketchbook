@@ -139,3 +139,16 @@ canvas.selectionCanvas {
 div.footer {
 	clear:both;
 }
+div.sequencesColumn {
+	float: left;
+	width:33%; 
+	/*height:600px;*/
+}
+canvas.sequencesCanvas {
+	height:400px;
+	width: 99%;
+}
+canvas.sequencesViewCanvas {
+	height:400px;
+	width: 99%;
+}

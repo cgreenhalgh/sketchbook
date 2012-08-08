@@ -32,8 +32,12 @@
 		<div class="tab" id="tabIndex" 
 			onclick="javascript:onShowIndex();"
 			>Index</div>
+		<div class="tab" id="tabSequences" 
+			onclick="javascript:onShowSequences();"
+			>Sequences</div>
 		<div class="footer"></div>
 	</div>
+	<!--  object index -->
 	<div id="index" class="index tabview" style="display:none">
 		<div class="indexHeader">
 			<div class="headerItem">
@@ -45,6 +49,51 @@
 			<div class="footer"></div>
 		</div>
 		<canvas id="indexCanvas" class="indexCanvas" ></canvas>								
+	</div>
+	<!-- sequences -->
+	<div id="sequences" class="index tabview" style="display:none">
+		<div>
+			<div class="sequencesColumn">
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Sequences(1)</span>
+					</div>
+					<div class="headerItem">
+						<form>
+							<span class="label">Filter:</span><input type="text" id="sequences1FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+						</form>
+					</div>
+					
+					<div class="footer"></div>
+				</div>
+				<canvas id="sequences1Canvas" class="sequencesCanvas" ></canvas>								
+			</div>
+			<div class="sequencesColumn">
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Sequences(2)</span>
+					</div>
+					<div class="headerItem">
+						<form>
+							<span class="label">Filter:</span><input type="text" id="sequences2FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+						</form>
+					</div>
+					
+					<div class="footer"></div>
+				</div>
+				<canvas id="sequences2Canvas" class="sequencesCanvas" ></canvas>								
+			</div>
+			<div class="sequencesColumn">
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Current frame view</span>
+					</div>
+					
+					<div class="footer"></div>
+				</div>
+				<canvas id="sequencesViewCanvas" class="sequencesViewCanvas" ></canvas>								
+			</div>
+		</div>
 	</div>
 	<!-- object editor -->
 	<div class="editor tabview" id="editor">

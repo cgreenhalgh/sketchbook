@@ -49,6 +49,12 @@ var selectionProject = undefined;
 var indexProject = undefined;
 // current editor object id 
 var currentObjectId = undefined;
+// sequences1 project
+var sequences1Project = undefined;
+// sequences2 project
+var sequences2Project = undefined;
+// sequencesView project
+var sequencesViewProject = undefined;
 
 // current tool stuff
 var tool = undefined;
@@ -520,6 +526,8 @@ function handleTabChange() {
 	if (currentObjectId) {
 		onObjectTextChange();
 	}
+	if (currentFrameViewObjectId)
+		currentFrameViewObjectId = undefined;
 }
 
 /** show editor for object ID */
@@ -763,7 +771,9 @@ function zoomIn() {
 	var zoom = zoomView.zoom;
 	// had problems with main version - see top of file
 	//console.log('zoomIn point='+zoomPoint+' zoom='+zoomView.zoom+' center='+zoomView.center);
-	zoomView.zoom = Math.min(MAX_ZOOM, zoomView.zoom*(1+ZOOM_RATIO));
+	zoomView.zoom = zoomView.zoom*(1+ZOOM_RATIO);
+	// limit?!
+	//zoomView.zoom = Math.min(MAX_ZOOM, zoomView.zoom);
 	var dx = zoomPoint.x-zoomView.center.x;
 	var dy = zoomPoint.y-zoomView.center.y;
 	var sdx = (ZOOM_RATIO*dx*zoom)/zoomView.zoom;
@@ -960,6 +970,65 @@ function moveHistory() {
 		console.log('moved '+ci+' '+c+' to '+c.position);
 	}
 }
+
+/** current frame view object id */
+var currentFrameViewObjectId = undefined;
+var currentFrameViewFrameId = undefined;
+/** update current frame view (sequences) */
+function updateCurrentFrameView(objid, frameid) {
+	if (currentFrameViewObjectId!==objid) {
+		// switch to objid
+		sequencesViewProject.activeLayer.removeChildren();
+		currentFrameViewObjectId = undefined;
+		
+		if (objects[objid]) {
+			var objectSymbol = objects[objid] ? objects[objid].symbol : null;
+			currentFrameViewObjectId = objid;
+		
+			sequencesViewProject.activate();
+			clearSymbolCache(sequencesViewProject);
+		
+			copyDefinition(objectSymbol, sequencesViewProject);
+		}
+		else {
+			console.log('updateCurrentFrameView: could not find object '+objid)
+			return;
+		}
+	}
+	if (frameid!==currentFrameViewFrameId) {
+		var frame = null;
+		// everything should be in a top-level group
+		for (var ci=0; ci<sequencesViewProject.activeLayer.firstChild.children.length; ci++) {
+			var child = sequencesViewProject.activeLayer.firstChild.children[ci];
+			if (child instanceof paper.Group && child.children['frameid'] && child.children['frameid'].content==frameid) {
+				frame = child;
+				break;
+			}
+		}
+		if (frame==null) {
+			console.log('could not find frame '+frameid+' in object '+objid);
+			return;
+		}
+		currentFrameViewFrameId = frameid;
+		var bounds = frame.bounds;
+		sequencesViewProject.view.center = bounds.center;
+		sequencesViewProject.view.zoom = Math.min(sequencesViewProject.view.viewSize.width/bounds.width, sequencesViewProject.view.viewSize.height/bounds.height);
+		console.log('set current frame to '+frameid+' at '+bounds+' (zoom='+sequencesViewProject.view.zoom+')');
+	}
+}
+/** look for frame by id in all objects, return {objid, item} or null */
+function getFrame(frameid) {
+	// find frame
+	for (var objid in objects) {
+		var object = objects[objid];
+		for (var ci=0; ci<object.symbol.definition.children.length; ci++) {
+			var child = object.symbol.definition.children[ci];
+			if (child instanceof paper.Group && child.children['frameid'] && child.children['frameid'].content==frameid)
+				return { objid: objid, item: child };
+		}
+	}
+	return null;
+}
 function selectItem(project, item) {
 	// a selection
 	// - objid : object id
@@ -984,6 +1053,39 @@ function selectItem(project, item) {
 	} if (project===selectionProject) {
 		// TODO selection within selection history should bring to front
 		console.log('todo: selection within selection history ignored');
+		return false;
+	}
+	else if (project===sequences1Project || project==sequences2Project) {
+		// sequences selection
+		if (item.children['frameid'] && item.children['frameid'].content) {
+			var frameid = item.children['frameid'].content;
+			console.log('selected frame '+frameid+' in sequences view');
+			var ref = getFrame(frameid);
+			if (ref==null) {
+				console.log('could not find frame '+frameid);
+				return false;				
+			}
+			selection.objid = ref.objid;
+			selection.item = ref.item;
+
+			moveHistory();
+			selectionProject.activate();
+			var copy = copyItem(ref.item, objectsProject, selectionProject);
+			var group = new paper.Group([copy]);
+			var bounds = group.bounds;
+			var scale = Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(bounds.width+INDEX_CELL_MARGIN),
+					(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(bounds.height+INDEX_CELL_MARGIN));
+			group.scale(scale);
+			group.translate(new paper.Point(INDEX_CELL_SIZE/2-group.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-group.bounds.center.y));
+			selection.historyItem = group;
+			
+			// update current frame view
+			updateCurrentFrameView(ref.objid, frameid);
+		}
+		else {
+			console.log('ignore selection in sequences without frameid: '+item);
+			return false;
+		}
 	}
 	else {
 		// reference to an object, e.g. in index (or for now selection)?
@@ -1222,9 +1324,16 @@ function highlight(project, item) {
 		// temporary hack to show red box at bounds as highlight
 		highlightProject = project;
 		highlightItem = item;
-		var bounds = highlightItem.bounds;
+		var topLeft = highlightItem.bounds.topLeft;
+		var bottomRight = highlightItem.bounds.bottomRight;
+		var parent = highlightItem.parent;
+		while(parent instanceof paper.Group && parent.matrix) {
+			topLeft = parent.matrix.transform(topLeft);
+			bottomRight = parent.matrix.transform(bottomRight);
+			parent = parent.parent;
+		}
 		project.layers[1].activate();
-		highlightVisibleItem = new paper.Path.Rectangle(bounds);
+		highlightVisibleItem = new paper.Path.Rectangle(topLeft, bottomRight);
 		highlightVisibleItem.strokeWidth = 1/project.view.zoom;
 		project.layers[0].activate();
 		highlightVisibleItem.strokeColor = 'red';
@@ -1255,18 +1364,41 @@ function checkHighlight() {
 			if ((project===objectDetailProject || project===objectOverviewProject) && children.length>0)
 				// look inside top-level group in object editor
 				children = children[0].children;
-			for (var ci in children) {
+			for (var ci=0; ci<children.length; ci++) {
 				var c = children[ci];
-				var bounds = c.bounds;
-				if (point.x>=bounds.left-tolerance &&
-						point.x<=bounds.right+tolerance &&
-						point.y>=bounds.top-tolerance &&
-						point.y<=bounds.bottom+tolerance) {
-					items.push(c);
-					//console.log('- hit '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+				var grandchildren = [c];
+				var testpoint = point;
+				// look inside sequences
+				if (c.children && c.children['frames']) {
+					var frames = c.children['frames'];
+					grandchildren = frames.children;
+					var invcmat = c.matrix.createInverse();
+					if (invcmat==null) {
+						console.log('could not get inverse of sequence matrix');
+						continue;
+					}
+					var invfmat = frames.matrix.createInverse();
+					if (invfmat==null) {
+						console.log('could not get inverse of sequence frames matrix');
+						continue;
+					}
+					var matrix = invcmat.concatenate(invfmat);
+					testpoint = matrix.transform(point);
+					//console.log('in sequence, point '+point+' -> '+testpoint+' via '+matrix+' ('+invcmat+', '+invfmat+')');
 				}
-				else {
-					//console.log('- missed '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+				for (var gci=0; gci<grandchildren.length; gci++) {
+					var gc = grandchildren[gci];
+					var bounds = gc.bounds;
+					if (testpoint.x>=bounds.left-tolerance &&
+							testpoint.x<=bounds.right+tolerance &&
+							testpoint.y>=bounds.top-tolerance &&
+							testpoint.y<=bounds.bottom+tolerance) {
+						items.push(gc);
+						//console.log('- hit '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+					}
+					else {
+						//console.log('- missed '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+					}
 				}
 			}
 			var item = (items.length>0) ? items[items.length-1] : null;
@@ -1419,6 +1551,78 @@ function onShowIndex() {
 	handleResize();
 	
 	showAll(indexProject);
+}	
+
+function initSequencesProject(sequencesProject) {
+	sequencesProject.activate();
+	sequencesProject.activeLayer.removeChildren();
+	var characterStyle = { fillColor: 'black', fontSize: 12 };
+	var lineSpacing = pt2px(characterStyle.fontSize)*1.15;
+	// TODO current sequences
+	// All objects (with frames) / frames
+	var paragraphStyle = { justification: 'left' };
+	var oi = 0;
+	for (var objid in objects) {
+		var object = objects[objid];
+		if (object.symbol.definition.children.length==0)
+			continue;
+		var title = getObjectTitle(objid);
+		var frames = new Array();
+		// symbol definition should be a group
+		var fi = 0;
+		for (var ci=0; ci<object.symbol.definition.children.length; ci++) {
+			var child = object.symbol.definition.children[ci];
+			if (child instanceof paper.Group && child.children['frameid'] && child.children['framedescription'] && child.children['frame']) {
+				var copy = child.copyTo(sequencesProject);
+				copy.children['framedescription'].visible = true;
+				copy.children['framedescription'].characterStyle.fontSize = 12;
+				copy.children['framedescription'].paragraphStyle = paragraphStyle;
+				copy.children['frameid'].visible = false;
+				copy.children['frame'].visible = false;
+				copy.position = new paper.Point(5, lineSpacing*((fi++)+0.5));
+				frames.push(copy);
+			}
+		}
+		
+		var childGroup = new paper.Group(frames);
+		childGroup.name = 'frames';
+		childGroup.scale(1/childGroup.children.length);
+		childGroup.position = new paper.Point(childGroup.bounds.width/2, lineSpacing*1.5);
+		
+		var text = new paper.PointText(new paper.Point(0, lineSpacing*0.85));
+		text.content = title;
+		text.characterStyle = characterStyle;
+		text.paragraphStyle = paragraphStyle;
+		text.name = 'objdescription';
+		var idtext = new paper.PointText();
+		idtext.content = object.id;
+		idtext.name = 'objid';
+		idtext.visible = false;
+		
+		var group = new paper.Group([text, childGroup, idtext]);
+		group.position = new paper.Point(text.bounds.width/2, 2*lineSpacing*((oi++)+0.5));
+	}
+}
+function onShowSequences() {
+	
+	handleTabChange();
+	
+	$('.tab').removeClass('tabselected');
+	$('#tabSequences').addClass('tabselected');
+	$('.tabview').hide();
+	$('#sequences').show();
+	currentObjectId = undefined;
+
+	// re/build project content(s) for Sequences(1) and Sequences(2)
+	initSequencesProject(sequences1Project);
+	initSequencesProject(sequences2Project);
+	
+	sequencesViewProject.activeLayer.removeChildren();
+	
+	// TODO previous setting?!
+
+	// scaling problem workaround
+	handleResize();
 }	
 
 function onNewObject() {
@@ -2055,6 +2259,27 @@ $(document).ready(function() {
 	//test = new paper.PointText(new paper.Point(10,20));
 	//test.content = 'Selection';
 	selectionProject.layers[0].activate();
+	
+	var sequences1Canvas = document.getElementById('sequences1Canvas');
+	paper.setup(sequences1Canvas);
+	sequences1Project = paper.project;
+	// extra layer for highlights
+	new paper.Layer();
+	sequences1Project.layers[0].activate();
+	
+	var sequences2Canvas = document.getElementById('sequences2Canvas');
+	paper.setup(sequences2Canvas);
+	sequences2Project = paper.project;
+	// extra layer for highlights
+	new paper.Layer();
+	sequences2Project.layers[0].activate();
+
+	var sequencesViewCanvas = document.getElementById('sequencesViewCanvas');
+	paper.setup(sequencesViewCanvas);
+	sequencesViewProject = paper.project;
+	// extra layer for highlights
+	new paper.Layer();
+	sequencesViewProject.layers[0].activate();
 	
 	$('#loadFile').on('change', onLoad);
 	$('#loadImage').on('change', onLoadImage);
