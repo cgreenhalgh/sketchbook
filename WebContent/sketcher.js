@@ -10,7 +10,8 @@
 // TODO save frame correctly
 // TODO load frame correctly
 // TODO sequence view including all frames and zoom to frame
-
+// TODO save image
+// TODO ? change placeTool to have first click top-left, ? change keep-aspect-ration heuristic
 var nextObjectId = 1;
 
 var objectsProject = undefined;
@@ -38,7 +39,7 @@ var objectOverviewProject = undefined;
 // detail view in the editor
 var objectDetailProject = undefined;
 // a selection
-// - objid : object id
+// - objid : object id if is/in an object
 // - item : Item if partial selection within object
 // - current : is part of current selection
 var selectionHistory = new Array();
@@ -980,7 +981,11 @@ function selectItem(project, item) {
 		group.scale(scale);
 		group.translate(new paper.Point(INDEX_CELL_SIZE/2-group.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-group.bounds.center.y));
 		selection.historyItem = group;
-	} else {
+	} if (project===selectionProject) {
+		// TODO selection within selection history should bring to front
+		console.log('todo: selection within selection history ignored');
+	}
+	else {
 		// reference to an object, e.g. in index (or for now selection)?
 		var objid = getObjectId(item);
 		if (!objid || !objects[objid]) {
@@ -1099,9 +1104,24 @@ placeTool.begin = function(point) {
 			}
 		}
 	}
-	else {		
-		// TODO handle partial selection
-		console.log('Todo: paste item '+selection.item);
+	else if (selection.historyItem instanceof paper.Group) {
+		
+		if (selection.historyItem.children.length==1 && selection.historyItem.firstChild instanceof paper.Raster) {
+			placeToolItem = selection.historyItem.firstChild.copyTo(toolProject);
+			placeToolItem.scale(1/toolView.zoom);
+			console.log('scale = '+placeToolItem.matrix.scaleX+', width='+placeToolItem.width+', bounds.width='+placeToolItem.bounds.width);
+			placeToolItem.position = point;
+			placeToolBeginWidth = placeToolItem.bounds.width;
+			placeToolBeginHeight = placeToolItem.bounds.height;
+			console.log('placed image in project');
+		}
+		else {
+			// TODO handle partial selection
+			console.log('Todo: paste item '+selection.item);
+		}
+	}
+	else {
+		console.log('Unexpected history item not group: '+selection.historyItem);
 	}
 };
 placeTool.move = function(point) {
@@ -1886,6 +1906,81 @@ function onLoad(evt) {
 		console.log('sorry, file apis not supported');
 }
 
+var nextImageId = 1;
+
+/** load image into selection */
+function loadImageAndSelect(dataurl) {
+	var imageId = 'image'+(nextImageId++);
+	// need to create img tag first
+	$('#hiddenimages').append('<img id="'+imageId+'" class="hidden" style="display:none" src="'+dataurl+
+                      '" title="'+imageId+'"/>');
+	console.log('added image '+imageId);
+	var onload = function() {
+		console.log('loaded image '+imageId+' (width='+$('#'+imageId).attr('width'));
+
+		moveHistory();
+
+		var selection = new Object();
+		// selectionHistory
+		selectionProject.activate();
+		var raster = new paper.Raster(imageId);
+		var group = new paper.Group([raster]);
+		var bounds = group.bounds;
+		var scale = Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(bounds.width+INDEX_CELL_MARGIN),
+				(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(bounds.height+INDEX_CELL_MARGIN));
+		group.scale(scale);
+		group.translate(new paper.Point(INDEX_CELL_SIZE/2-group.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-group.bounds.center.y));
+		selection.historyItem = group;
+		//selection.objid = currentObjectId;
+		selection.item = raster;
+	
+		//raster.position = new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE/2);
+	
+		selection.current = true;
+		selectionHistory.splice(0,0,selection);
+		//selectionProject.activate();
+		//selectionProject.activate();
+		// initial position should be ok
+		selectionProject.view.zoom = 1;
+		selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
+		//redraw(paper);
+		
+		console.log('selection history has '+selectionHistory.length+' selections; project has '+selectionProject.layers[0].children.length+' children');
+	};
+	console.log('image width (immediate) = '+$('#'+imageId).attr('width'));
+	$('#'+imageId).load(onload);
+}
+
+/** load image (into selection) - from File select.
+ * NB uses new/html5 File API */
+function onLoadImage(evt) {
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		// Great success! All the File APIs are supported.
+
+	    var files = evt.target.files; // FileList object
+		if (files.length==0) {
+			console.log('no file specified');
+			return;
+		}
+		var f = files[0];
+	    console.log('read image file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
+	                  f.size+' bytes, last modified: '+
+	                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
+	    
+	    var reader = new FileReader();
+	    reader.onload = function(evt) {
+	        console.log('file read: '+evt.target.result);
+	        // TODO add to selection
+	        loadImageAndSelect(evt.target.result);
+	    };
+	
+	    // Read in the file
+	    reader.readAsDataURL(f);
+	}
+	else
+		console.log('sorry, file apis not supported');
+}
+
 /** change to object text (description). Note this is kind of lazy, i.e. not each key press, 
  * but on loss of focus */
 function onObjectTextChange() {
@@ -1962,6 +2057,7 @@ $(document).ready(function() {
 	selectionProject.layers[0].activate();
 	
 	$('#loadFile').on('change', onLoad);
+	$('#loadImage').on('change', onLoadImage);
 	console.log('textarea: '+$('#objectTextArea').attr('id'));
 	$('#objectTextArea').change(onObjectTextChange);
 	
