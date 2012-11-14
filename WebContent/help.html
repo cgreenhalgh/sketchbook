@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Sketcher Help</title>
+</head>
+<body>
+<h1>Sketcher Help</h1>
+<h2>Overview</h2>
+<p>A Sketch comprises a set of Objects.</p>
+<p>An Object has a title and description (the title is the first line of the description), and a drawing.</p>
+<p>An Object drawing can include (references to) other objects. For example one Object might represent a user, another a device, a third Object might then show the user and the device in a certain context.</p>
+<p>An Object drawing can include named Frames. These are rectangular regions which are highlighted as areas of particular interest, analogous to the frames in a cartoon.</p>
+<p>Frames can be organised into Sequences (not yet implemented), which can represent possible sequences of events or narrative flow.</p>
+<p>There can in principle be many Sequences.</p>
+<p>Drawings can also be annotated (not yet implemented) for various purposes, for example to raise questions about what is shown or identify key issues</p>
+<p>In principle (not yet implemented) Sketches could be developed collaboratively, and track changes made and who has made those changes, for example in a collaborative design process.</p>
+<h2>User interface</h2>
+<p>Note that the user interface is non-standard, representing in part some explorations of interaction proposals in Harold Thimbleby's book on User Interface Design</p>
+<p>The Index tab shows all current Objects. Objects also appear as tabs if/when they are edited.</p>
+<p>The Sequences tab is intended to show and edit sequences of Frames, but is not yet implemented.</p>
+<p>In a drawing area the main commands are: (key-press only, no mouse press required)</p>
+<ul>
+<li>E - edit item</li>
+<li>A - draw a freehand line item</li>
+<li>S - insert current Orphan text as text item</li>
+<li>D - 'place' current selection: if selection is an Object then insert a link to that object, else insert a copy. Hold and drag to specific the size.</li>
+<li>F - draw a Frame and label with current Orphan text. Hold and drag to specify size.</li>
+<li>Z - zoom in</li>
+<li>X - zoom out</li>
+<li>C - centre/zoom to show all content</li>
+<li>[Delete] - delete item(s)</li>
+<li>[Space] - move item(s) to back of drawing stack</li>
+<li>[LeftMouseButton] - select item(s)</li>
+<li>[Escape] - move text input focus to Orphan text, i.e. allow text to be typed for following Text or Frame command</li>
+</ul>
+<p>Not all commands will work in all areas, but most should (e.g. cannot insert lines or text directly in the Index area).</p>
+<p>The Selection history shows recently selected things (items, Objects, images). Selecting within the Selection history will bring that item to the front, e.g. ready to Place.</p>
+<p>An image can be inserted by Loading it into the Selection history and then Placing it in an Object</p>
+<p>Sketches can be saved as a JSON-encoded data file using the Save and Choose file buttons at the top.</p>
+</body>
+</html>
