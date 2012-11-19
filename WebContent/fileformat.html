@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
+<h1>Sketcher File Format</h1>
+This file describes the file format for the sketcher prototype. Not all
+features may be implemented/supported in the current version. Current
+usage may also differ from intended usage, and I will try to document
+this where known.<br>
+<h2>Overview</h2>
+The file format uses JSON (<a href="http://www.json.org/">http://www.json.org/</a>), and in particular the whole file is a single serialised JSON object. The character encoding - as usual - is UTF-8.<br>
+<h2>Syntax</h2>
+<h3>Current file format<br>
+</h3>
+state := <span style="font-family: monospace;">{</span> <br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"nextObjectId": </span>nextObjectId<sub>int</sub><span style="font-family: monospace;">, </span> // numeric (integer) ID to be allocated to next object created<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"objects": [</span> object* <span style="font-family: monospace;">],</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"selectionHistory": [ </span>selection* <span style="font-family: monospace;">]</span><br>
+<span style="font-family: monospace;">}</span><br>
+object := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub>, // numeric (integer) ID of this object<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"editorVisible": true, </span>// iff object is currently visible in UI top-most editor view<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"editorSettings":</span> editorSettings<span style="font-family: monospace;">,</span> // optional<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"editorRank":</span> editorRank<sub>int</sub>, // optional, position (integer) of editor view for this object in tab list (if present)<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span> // first line of description (to first \n, if any) is name/title of object<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"symbol":</span> item <br>
+}<br>
+editorSettings := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"detailZoom": </span>zoom<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"detailCenter": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}, </span>// assumed type (paperj2.Point2D)<br>
+&nbsp;&nbsp;&nbsp;<span style="font-family: monospace;"> "overviewZoom": </span>zoom<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"overviewCenter": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}</span> // assumed<br>
+<span style="font-family: monospace;">}</span><br>
+item := groupItem or symbolItem or pathItem or textIitem<br>
+groupItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "group",</span><br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"children": [</span> item* <span style="font-family: monospace;">]</span><br>
+<span style="font-family: monospace;">}</span><br>
+symbolItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "symbol",</span><br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"objid":</span> objectId<sub>int</sub><span style="font-family: monospace;"></span><br>
+
+<span style="font-family: monospace;">}</span><br>
+
+pathItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "path",</span><br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"strokeColor": </span>color<span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"strokeWidth": </span>strokeWidth<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"closed": </span>closed<sub>boolean</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"clockwise": </span>clockwise<sub>boolean</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"segments": [ </span>segment*<span style="font-family: monospace;"> ]</span><br>
+<span style="font-family: monospace;">}</span><br>
+textItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "text",</span><br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"content": </span>contentstring,<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"point": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> },</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"paragraphStyle": </span>paragraphStyle<span style="font-family: monospace;">,</span> <br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"characterStyle": </span>characterStyle<span style="font-family: monospace;"></span><br>
+
+<span style="font-family: monospace;">}<br>
+</span>color := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"red": </span>red<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // Amount of red, between 0 and 1<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"green": </span>green<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // Amount of green, between 0 and 1<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"blue": </span>blue<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span> // Amount of blue, between 0 and 1<br>
+<span style="font-family: monospace;">}</span><br>
+segment := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"point": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}, </span>// refer to paper.js Path segment specification<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"handleIn": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> }, </span><span style="font-family: monospace;"></span>// refer to paper.js Path segment specification<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"handleOut": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> } </span><span style="font-family: monospace;"></span>// refer to paper.js Path segment specification<br>
+
+<span style="font-family: monospace;">}</span><br>
+
+paragraphStyle := <span style="font-family: monospace;">{</span> <br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"justification": </span>justification // one of <span style="font-family: monospace;">"left"</span>, <span style="font-family: monospace;">"right"</span> or <span style="font-family: monospace;">"center"</span><br>
+<span style="font-family: monospace;">}</span><br>
+characterStyle := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fontSize": </span>fontSize<sub>number</sub><span style="font-family: monospace;">,<span style="font-family: monospace;"></span></span> // font size in points (?)<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"font": </span>font // name of font family, e.g. <span style="font-family: monospace;">"sans-serif"</span><br>
+<span style="font-family: monospace;">}</span><br>
+matrix := <span style="font-family: monospace;">[</span><br>
+&nbsp;&nbsp;&nbsp; a<sub>number</sub><span style="font-family: monospace;">,</span> // The scaleX coordinate of the transform<br>
+&nbsp;&nbsp;&nbsp; b<sub>number</sub><span style="font-family: monospace;">,</span> // The shearY coordinate of the transform<br>
+
+&nbsp;&nbsp;&nbsp; c<sub>number</sub><span style="font-family: monospace;">,</span> // The shearX coordinate of the transform<br>
+
+&nbsp;&nbsp;&nbsp; d<sub>number</sub><span style="font-family: monospace;">,</span> // The scaleY coordinate of the transform<br>
+
+&nbsp;&nbsp;&nbsp; tx<sub>number</sub><span style="font-family: monospace;">,</span> // The translateX coordinate of the transform<br>
+
+&nbsp;&nbsp;&nbsp; ty<sub>number</sub><span style="font-family: monospace;">,</span> // The translateY coordinate of the transform<br>
+<span style="font-family: monospace;">]</span><br>
+selection := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"objid": </span>objid<sub>int</sub><span style="font-family: monospace;">,</span> // selection item object ID<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"current": </span>current<sub>boolean</sub> // whether selection item is current, i.e. active as selection to place, etc.<br>
+&nbsp;&nbsp;&nbsp; // ? non-object selections ? selection with .item set currently omitted from save!<br>
+<span style="font-family: monospace;">}</span><br>
+<h3>Additional notes</h3>
+<h4>Frames</h4>
+A frame is currently modeled as:<br>
+<ul>
+  <li>paperjs Group <br>
+  </li>
+  <ul>
+    <li>with children</li>
+  </ul>
+  <ul>
+    <ul>
+      <li>name 'frameid' - invisible PointText with content 'f'N</li>
+      <li>name 'framedescription' - PointText with user-specified frame title as content, centered, grey, top of frame</li>
+      <li>name 'frame' - Path (Rectangle) with bounds matching drawn frame size<br>
+      </li>
+    </ul>
+  </ul>
+  <ul>
+    <li>with matrix that is translation to top-left of drawn frame region<br>
+    </li>
+  </ul>
+</ul>
+<h4>Image</h4>
+An image is currently modeled in selection (on load) as:<br>
+<ul>
+  <li>paperjs Group</li>
+  <ul>
+    <li>with child</li>
+    <ul>
+      <li>paperjs Raster (=image)</li>
+    </ul>
+    <li>with matrix to fit to selection item bounds<br>
+    </li>
+  </ul>
+</ul>
+but seems to be modeled in an object as:<br>
+<ul>
+  <li>paperjs Raster (=image)</li>
+  <ul>
+    <li>with zoom and position to place image</li>
+  </ul>
+</ul>
+<h4>Sequences</h4>
+There is a note in some comments that<br>
+sequences := [ sequence* ]<br>
+sequence := {<br>
+&nbsp;&nbsp;&nbsp; "id": id // unique for all frames and sequences on all objects<br>
+&nbsp;&nbsp;&nbsp; "description": string<br>
+&nbsp;&nbsp;&nbsp; "items": [ sequenceItem ]<br>
+}<br>
+sequenceItem := {<br>
+&nbsp;&nbsp;&nbsp; "id" : id // of frame/sequence<br>
+&nbsp;&nbsp;&nbsp; "type": type // one of "sequence" or "frame"<br>
+
+
+&nbsp;&nbsp;&nbsp; "objid" : id // optional, of object<br>
+}<br>
+But that is clearly incomplete...<br>
+ </body></html>
