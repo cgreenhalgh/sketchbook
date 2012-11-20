@@ -1,0 +1,154 @@
+/* sketcher2.css */
+h1 {
+	font-family: sans-serif;
+	font-size: medium;
+}
+canvas {
+	border:1px solid grey;
+}
+p.label {
+	line-height: 100%;
+	/*border: 1px solid gray;*/
+	margin: 0px;
+	padding: 1px;
+	font-family: sans-serif;
+	font-size: small;
+}
+span.label {
+	line-height: 100%;
+	/*border: 1px solid gray;*/
+	margin: 0px;
+	padding: 1px;
+	font-family: sans-serif;
+	font-size: small;
+}
+div { 
+	/*border:1px solid black;*/
+}
+div.page {
+	width:100%;
+/*	position: relative;
+	height:100%; */
+	background-color:#ffffff;
+}
+/* TABS */
+div.tabs {
+	width:100%;
+	border-bottom: 1px solid black;
+}
+div.tab {
+	border: 1px solid black;
+	float: left;
+}
+div.tabhighlight {
+	background-color:#cccccc;
+	float: left;
+}
+div.tabselected {
+	font-weight: bold;
+	float: left;
+}
+/* OBJECTS LIST */
+div.objects {
+	width:100%;
+}
+div.indexHeader {
+	width:100%;
+}
+div.headerItem {
+	float:left;
+}
+input.button {	
+}
+input.filterText {
+}
+canvas.indexCanvas {
+	height: 400px;
+	width: 100%;
+}
+/* EDITOR */
+div.editor {
+	width:100%;
+/*	clear:both; */
+/*	position: relative; */
+}
+div.editorLeft {
+	width:20%;
+	float: left;
+	/*position:absolute;
+	left:0%;
+	top:0%;*/
+	/*background-color:#f0f;*/
+}
+div.editorOverview {
+	background-color:#00f;
+}
+canvas.overviewCanvas {
+ /* sizing doesn't work with paper js here :-( A hack to use resize callback set paperjs size on resize */
+ /*	width: inherit; */
+	height: 198px;  
+	width: 99%;
+	/*border:none;*/
+}
+div.editorText {
+	/*background-color:#0ff;*/
+}
+canvas.textCanvas {
+	height: 250px;
+	width: 99%;
+}
+div.editorDetail {
+	float: left;
+	/*position:absolute;
+	left:25%;
+	top:0%;*/
+	/*background-color:#0f0;*/
+	width:79%; 
+	/*height:600px;*/
+}
+canvas.detailCanvas {
+	height:400px;
+	width: 99%;
+}
+div.commonFacilities {
+	clear:both;
+	position:relative;
+	/*height: 20%;*/
+}
+div.orphanText {
+	/*background-color:#f00;*/
+	width:20%;
+	float:left;
+	/*height: 10%;*/
+	/*position:absolute;
+	left:0%;
+	top:0%;*/
+}
+div.selectionHistory {
+	/*background-color:#ff0;*/
+	width:80%; /* could be 50% if no border */
+	/*position:absolute;
+	left:50%;
+	top:0%;*/
+	float:left;
+}
+canvas.selectionCanvas {
+	height: 100px;
+	width: 100%;
+}
+div.footer {
+	clear:both;
+}
+div.sequencesColumn {
+	float: left;
+	width:33%; 
+	/*height:600px;*/
+}
+canvas.sequencesCanvas {
+	height:400px;
+	width: 99%;
+}
+canvas.sequencesViewCanvas {
+	height:400px;
+	width: 99%;
+}

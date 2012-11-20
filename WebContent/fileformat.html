@@ -26,6 +26,26 @@ frames and transitions to described and annotated (commented on). <br>
 </p>
 <h2>Syntax <br>
 </h2>
+<h3>Sketcher2 file format</h3>
+
+<span style="font-style: italic;"></span>
+<p><span style="font-style: italic;">The complete state of the sketch and editor, as saved</span></p>
+
+state := <span style="font-family: monospace;">{</span> <br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"version": </span>version<span style="font-family: monospace;">,</span> // <span style="font-family: monospace;">"sketcher2.0"</span>?<br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"nextId": </span>nextId<sub>int</sub><span style="font-family: monospace;">, </span> // numeric (integer) ID to be allocated to next thing created (of any kind)<br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"sketches": [</span> sketch* <span style="font-family: monospace;">],</span><br>
+//TODO &nbsp;&nbsp; <span style="font-family: monospace;">"sequences": [</span> sequence* <span style="font-family: monospace;">]</span><br>
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span><br>
+
+sketch := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub> <br>
+//TODO<br>
+<span style="font-family: monospace;">}</span><br>
+<span style="font-style: italic;"></span>
 <h3>Sketcher1 file format</h3>
 <span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">
 state := <span style="font-family: monospace;">{</span> <br>

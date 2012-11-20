@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Sketcher2</title>
+<link rel="StyleSheet" href="sketcher2.css" type="text/css"> <!-- media=screen,print, -->
+<script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
+<script type="text/javascript" src="paper-weiser.js"></script>
+<script type="text/javascript" src="sketchbook.js"></script>
+<script type="text/javascript" src="sketcher2.js"></script>
+<script type="text/javascript" src="BlobBuilder.js"></script>
+<script type="text/javascript" src="FileSaver.js"></script>
+</head>
+<body>
+<div id="page" class="page">
+<h1>Sketcher2</h1>
+	<div class="indexHeader">
+		<a href="help.html" target="_blank">Help</a>
+		
+		<div class="headerItem">
+			<input type="button" value="New Sketch" class="button" onclick="javascript:onNewObject();"/>
+		</div>
+		<div class="headerItem">
+			Filename start:
+			<input type="text" value="sketch" id="filenameText"/>
+			<input type="button" value="Save" class="button" onclick="javascript:onSave();"/>
+		</div>
+		<div class="headerItem">
+			Load sketchbook:<input type="file" id="loadFile" name="files[]" accept="application/json" class="button"/>
+		</div>
+		<div class="footer"></div>
+	</div>
+	<!-- objects list -->
+	<div id="tabs" class="tabs">
+		<div class="tab" id="tabIndex" 
+			onclick="javascript:onShowIndex();"
+			>Index</div>
+		<div class="tab" id="tabSequences" 
+			onclick="javascript:onShowSequences();"
+			>Sequences</div>
+		<div class="footer"></div>
+	</div>
+	<!--  object index -->
+	<div id="index" class="index tabview" style="display:none">
+		<div class="indexHeader">
+			<div class="headerItem">
+				<form>
+					<span class="label">Filter:</span><input type="text" id="indexFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+				</form>
+			</div>
+			
+			<div class="footer"></div>
+		</div>
+		<canvas id="indexCanvas" class="indexCanvas" ></canvas>								
+	</div>
+	<!-- sequences -->
+	<div id="sequences" class="index tabview" style="display:none">
+		<div>
+			<div class="sequencesColumn">
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Sequences(1)</span>
+					</div>
+					<div class="headerItem">
+						<form>
+							<span class="label">Filter:</span><input type="text" id="sequences1FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+						</form>
+					</div>
+					
+					<div class="footer"></div>
+				</div>
+				<canvas id="sequences1Canvas" class="sequencesCanvas" ></canvas>								
+			</div>
+			<div class="sequencesColumn">
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Sequences(2)</span>
+					</div>
+					<div class="headerItem">
+						<form>
+							<span class="label">Filter:</span><input type="text" id="sequences2FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+						</form>
+					</div>
+					
+					<div class="footer"></div>
+				</div>
+				<canvas id="sequences2Canvas" class="sequencesCanvas" ></canvas>								
+			</div>
+			<div class="sequencesColumn">
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Current frame view</span>
+					</div>
+					
+					<div class="footer"></div>
+				</div>
+				<canvas id="sequencesViewCanvas" class="sequencesViewCanvas" ></canvas>								
+			</div>
+		</div>
+	</div>
+	<!-- object editor -->
+	<div class="editor tabview" id="editor">
+		<!-- left column -->
+		<div class="editorLeft">
+			<!-- overview -->
+			<p class="label">Overview</p>
+		   	<canvas id="objectOverviewCanvas" class="overviewCanvas" ></canvas>				
+			<!-- hidden text -->
+			<p class="label">Description</p>
+	    	<!-- <canvas id="objectTextCanvas" class="textCanvas" ></canvas> -->
+    		<textarea id='objectTextArea' class='objectTextArea' rows="10" cols="20" wrap="soft"></textarea>
+		</div>
+		<!-- right / zoomable view -->
+		<div class="editorDetail">
+			<p class="label">Detail (zoomable)</p>
+	    	<canvas id="objectDetailCanvas" class="detailCanvas" ></canvas>					
+		</div>
+		<div class="footer"></div>
+	</div>
+	<!-- common facilities -->
+	<div class="commonFacilities">
+		<!-- orphan text -->
+		<div class="orphanText">
+			<p class="label">Orphan text</p>
+			<input type="text" width="20" id="orphanText"/>
+			<!-- <canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas> -->						
+		</div>
+		<div class="selectionHistory">
+			<!-- selection history -->
+			<div class="indexHeader">
+				<div class="headerItem">
+					<span class="label">Selection history</span>
+				</div>
+				<div class="headerItem">
+					Load image:<input type="file" id="loadImage" name="imageFiles[]" accept="image/*" class="button"/>
+				</div>
+				<div class="footer"></div>
+			</div>
+			<canvas id="selectionCanvas" class="selectionCanvas" ></canvas>	
+		</div>
+		<div class="footer"></div>
+	</div>
+</div>
+<div id="ppitest" style="width:1in;visible:hidden;padding:0px"></div>
+<div id="hiddenimages" style="display:none"></div>
+</body>
+</html>
