@@ -1,3 +1,4 @@
+// sketcher1.js
 // Note, problems with paperjs versions.
 // Nightly build recent (July 2012) throws an exception early on in the View initialisation
 // with view apparently null.
