@@ -10,14 +10,30 @@ usage may also differ from intended usage, and I will try to document
 this where known.<br>
 <h2>Overview</h2>
 The file format uses JSON (<a href="http://www.json.org/">http://www.json.org/</a>), and in particular the whole file is a single serialised JSON object. The character encoding - as usual - is UTF-8.<br>
-<h2>Syntax</h2>
-<h3>Current file format<br>
-</h3>
+<h2>Requirements</h2>
+<p>Supports a paper/sketching metaphor, including freehand lines, text and (imported) images such as photos and maps.</p>
+<p>Allows composition of sketches:</p>
+<ul>
+  <li>as an icon (instantiable, repeated, transformed)</li>
+  <li>as a backdrop</li>
+</ul>
+<p>Allows comments and annotations to be made 'over' sketches, perhaps as a set of switchable overlays (layers).</p>
+<p>Allows sketches to be labelled, organised (categorised/tagged, ordered) and annotated (commented on).<br>
+</p>
+<p>Allows region(s) of a sketch to be identified, labelled ('framed') and shown/talked about.</p>
+<p>Allows frames to be organised into sequences, and those sequences,
+frames and transitions to described and annotated (commented on). <br>
+</p>
+<h2>Syntax <br>
+</h2>
+<h3>Current file format</h3>
+<span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">
 state := <span style="font-family: monospace;">{</span> <br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"nextObjectId": </span>nextObjectId<sub>int</sub><span style="font-family: monospace;">, </span> // numeric (integer) ID to be allocated to next object created<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"objects": [</span> object* <span style="font-family: monospace;">],</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"selectionHistory": [ </span>selection* <span style="font-family: monospace;">]</span><br>
 <span style="font-family: monospace;">}</span><br>
+<span style="font-style: italic;">A single 'object' or page within the 'sketch'; currently combines interface state as well as drawing state.</span><br style="font-style: italic;">
 object := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub>, // numeric (integer) ID of this object<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"editorVisible": true, </span>// iff object is currently visible in UI top-most editor view<br>
@@ -26,19 +42,26 @@ object := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span> // first line of description (to first \n, if any) is name/title of object<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"symbol":</span> item <br>
 }<br>
+<span style="font-style: italic;">Part of interface state - current drawing views.</span> - should not be present on a Path?!<br style="font-style: italic;">
 editorSettings := <span style="font-family: monospace;">{</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"detailZoom": </span>zoom<sub>number</sub><span style="font-family: monospace;">,</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"detailCenter": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}, </span>// assumed type (paperj2.Point2D)<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"detailZoom": </span>zoom<sub>number</sub><span style="font-family: monospace;">, </span>// ratio<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"detailCenter": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}, </span>// assumed type (paperj2.Point2D) - currently (2012-111-20) not written correctly<br>
 &nbsp;&nbsp;&nbsp;<span style="font-family: monospace;"> "overviewZoom": </span>zoom<sub>number</sub><span style="font-family: monospace;">,</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"overviewCenter": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}</span> // assumed<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"overviewCenter": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}</span> // assumed - currently (2012-111-20) not written correctly<br>
 <span style="font-family: monospace;">}</span><br>
+<span style="font-style: italic;">Primitive element within a drawing/object</span><br style="font-style: italic;">
 item := groupItem or symbolItem or pathItem or textIitem<br>
+<span style="font-style: italic;">A group of items, typically with a
+transformation. Not currently authored directly by the user, but can be
+exported reflecting internal encodings of objects/drawings. Should
+perhaps be removed for parsimony.</span><br>
 groupItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "group",</span><br>
 
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"children": [</span> item* <span style="font-family: monospace;">]</span><br>
 <span style="font-family: monospace;">}</span><br>
+<span style="font-style: italic;">A reference to (visual instantiation of) another object, subject to a transformation matrix.</span><br>
 symbolItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "symbol",</span><br>
 
@@ -47,13 +70,13 @@ symbolItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"objid":</span> objectId<sub>int</sub><span style="font-family: monospace;"></span><br>
 
 <span style="font-family: monospace;">}</span><br>
-
+<span style="font-style: italic;">A line, typically curved. Can also encode e.g. rectangle. Directly follows Paperjs Path.</span><br>
 pathItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
 
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "path",</span><br>
 
 
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation - should not be present on a Path?!<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"strokeColor": </span>color<span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"strokeWidth": </span>strokeWidth<sub>number</sub><span style="font-family: monospace;">,</span><br>
@@ -61,23 +84,28 @@ pathItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"clockwise": </span>clockwise<sub>boolean</sub><span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"segments": [ </span>segment*<span style="font-family: monospace;"> ]</span><br>
 <span style="font-family: monospace;">}</span><br>
-textItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
+<span style="font-style: italic;">A single line of text, positioned relative to a point.<br>
+</span>textItem :=&nbsp; <span style="font-family: monospace;">{</span><br>
 
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"type": "text",</span><br>
 
 
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"matrix": </span>matrix<span style="font-family: monospace;">,</span> // optional, transformation - should not be present on Text?!<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"content": </span>contentstring,<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"point": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> },</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"paragraphStyle": </span>paragraphStyle<span style="font-family: monospace;">,</span> <br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"characterStyle": </span>characterStyle<span style="font-family: monospace;"></span><br>
 
 <span style="font-family: monospace;">}<br>
+</span><span style="font-style: italic;">A color in RGB encoding.<br>
 </span>color := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"red": </span>red<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // Amount of red, between 0 and 1<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"green": </span>green<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // Amount of green, between 0 and 1<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"blue": </span>blue<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span> // Amount of blue, between 0 and 1<br>
 <span style="font-family: monospace;">}</span><br>
+<span style="font-style: italic;">A point on a Path (again, based
+directly on paperjs). Handles specify relative tangents of
+incoming/outgoing edge with respect to point.</span> <br>
 segment := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"point": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}, </span>// refer to paper.js Path segment specification<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"handleIn": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> }, </span><span style="font-family: monospace;"></span>// refer to paper.js Path segment specification<br>
@@ -85,14 +113,17 @@ segment := <span style="font-family: monospace;">{</span><br>
 
 <span style="font-family: monospace;">}</span><br>
 
-paragraphStyle := <span style="font-family: monospace;">{</span> <br>
+<span style="font-style: italic;">Text paragraph style. May be elaborated in future versions of paperjs.<br>
+</span>paragraphStyle := <span style="font-family: monospace;">{</span> <br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"justification": </span>justification // one of <span style="font-family: monospace;">"left"</span>, <span style="font-family: monospace;">"right"</span> or <span style="font-family: monospace;">"center"</span><br>
 <span style="font-family: monospace;">}</span><br>
-characterStyle := <span style="font-family: monospace;">{</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fontSize": </span>fontSize<sub>number</sub><span style="font-family: monospace;">,<span style="font-family: monospace;"></span></span> // font size in points (?)<br>
+<span style="font-style: italic;">Text character style. <br>
+</span>characterStyle := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fontSize": </span>fontSize<sub>number</sub><span style="font-family: monospace;">,<span style="font-family: monospace;"></span></span> // font size in points - presumably CSS defined, i.e. 1pt = (nominal) 1/72nd of 1in, and 4/3rd CSS (nominal) pixels<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"font": </span>font // name of font family, e.g. <span style="font-family: monospace;">"sans-serif"</span><br>
-<span style="font-family: monospace;">}</span><br>
+<span style="font-family: monospace;">}<span style="font-style: italic;"></span><br>
+</span><span style="font-style: italic;">Transformation matrix, especially for symbol reference.</span><br>
 matrix := <span style="font-family: monospace;">[</span><br>
 &nbsp;&nbsp;&nbsp; a<sub>number</sub><span style="font-family: monospace;">,</span> // The scaleX coordinate of the transform<br>
 &nbsp;&nbsp;&nbsp; b<sub>number</sub><span style="font-family: monospace;">,</span> // The shearY coordinate of the transform<br>
@@ -105,6 +136,7 @@ matrix := <span style="font-family: monospace;">[</span><br>
 
 &nbsp;&nbsp;&nbsp; ty<sub>number</sub><span style="font-family: monospace;">,</span> // The translateY coordinate of the transform<br>
 <span style="font-family: monospace;">]</span><br>
+<span style="font-style: italic;">Selection history - part of interface state, and only very slightly supported at present (2012-11-20).</span><br>
 selection := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"objid": </span>objid<sub>int</sub><span style="font-family: monospace;">,</span> // selection item object ID<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"current": </span>current<sub>boolean</sub> // whether selection item is current, i.e. active as selection to place, etc.<br>
@@ -167,5 +199,5 @@ sequenceItem := {<br>
 
 &nbsp;&nbsp;&nbsp; "objid" : id // optional, of object<br>
 }<br>
-But that is clearly incomplete...<br>
+But that is clearly incomplete (and not implemented)<br>
  </body></html>
