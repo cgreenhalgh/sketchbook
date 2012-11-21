@@ -7,6 +7,7 @@
 <script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
 <script type="text/javascript" src="paper-weiser.js"></script>
 <script type="text/javascript" src="sketchbook.js"></script>
+<script type="text/javascript" src="sketchertools.js"></script>
 <script type="text/javascript" src="sketcher2.js"></script>
 <script type="text/javascript" src="BlobBuilder.js"></script>
 <script type="text/javascript" src="FileSaver.js"></script>
@@ -36,7 +37,8 @@
 			onclick="javascript:onShowIndex();"
 			>Index</div>
 		<div class="tab" id="tabSequences" 
-			onclick="javascript:onShowSequences();"
+			onclick="javascript:onShowSequences();" 
+			style="display:none"
 			>Sequences</div>
 		<div class="footer"></div>
 	</div>
@@ -124,6 +126,35 @@
 			<p class="label">Orphan text</p>
 			<input type="text" width="20" id="orphanText"/>
 			<!-- <canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas> -->						
+		</div>
+		<div class="actions">
+			<div class="action actionSelected" id="selectAction">Select</div>
+			<div class="action" id="showAllAction">Show all</div>
+			<div class="action" id="zoomInAction">Zoom-in</div>
+			<div class="action" id="zoomOutAction">Zoom-out</div>
+			<div class="action actionDisabled" id="addLineAction">Line</div>
+			<div class="action actionDisabled" id="addTextAction">Text</div>
+			<div class="action actionDisabled" id="addFrameAction">Frame</div>
+			<div class="action" id="editAction">Edit</div>
+			<div class="action" id="copyAction">Copy</div>
+			<div class="action" id="deleteAction">Delete</div>
+		</div>
+		<div style="witdth:100%;clear:both"></div>
+		<div class="properties">
+			<table class="propertiesTable">
+				<tr class="propertyTitle" ><td>Property</td><td>Value</td></tr>
+				<tr class="property propertyDisabled" id="colorProperty"><td>Color</td>
+					<td id="colors">
+						<div class="color colorSelected" style="background-color:#000000"></div>
+						<div class="color" style="background-color:#ffffff"></div>
+						<div class="color" style="background-color:#808080"></div>
+						<div class="color" style="background-color:#ff0000"></div>
+						<div class="color" style="background-color:#00ff00"></div>
+						<div class="color" style="background-color:#0000ff"></div>
+						<div class="color" style="background-color:#ffff00"></div>
+					</td>
+				</tr>
+			</table>
 		</div>
 		<div class="selectionHistory">
 			<!-- selection history -->

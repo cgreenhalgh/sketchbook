@@ -40,13 +40,69 @@ state := <span style="font-family: monospace;">{</span> <br>
 //TODO &nbsp;&nbsp; <span style="font-family: monospace;">"sequences": [</span> sequence* <span style="font-family: monospace;">]</span><br>
 
 <span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span><br>
+<p><span style="font-style: italic;">A single sketch, i.e. "page", icon or background.</span></p>
+
 
 sketch := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><br>
-//TODO<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp;<span style="font-family: monospace;"> "elements": [ </span>element*<span style="font-family: monospace;"> ]</span> // the main sketch contents<br>
+//TODO more<br>
 <span style="font-family: monospace;">}</span><br>
 <span style="font-style: italic;"></span>
+<p><span style="font-style: italic;">A single "primitive" drawing element in a sketch.<br>
+</span></p>
+
+element := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>
+// one of:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;  <span style="font-family: monospace;">"line": </span>line<br>
+// TODO more<br>
+<span style="font-family: monospace;">}</span><br>
+<p><span style="font-style: italic;">A single (e.g. hand-drawn) line, which may have multiple segments. Based on paperjs Path.<br>
+</span></p>
+
+line := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"color": </span>color<span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"segments": [ </span>segment*<span style="font-family: monospace;"> ]</span><br>
+<span style="font-family: monospace;">}</span><br>
+<p><span style="font-style: italic;">A point on a Path (again, based
+directly on paperjs). Handles specify relative tangents of
+incoming/outgoing edge with respect to point.</span> </p>
+
+
+segment := <span style="font-family: monospace;">{</span><br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"point": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub> <span style="font-family: monospace;">}, </span>// refer to paper.js Path segment specification<br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"handleIn": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> }, </span><span style="font-family: monospace;"></span>// refer to paper.js Path segment specification<br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"handleOut": { "x": </span>x<sub>number</sub><span style="font-family: monospace;">, "y": </span>y<sub>number</sub><span style="font-family: monospace;"> } </span><span style="font-family: monospace;"></span>// refer to paper.js Path segment specification<br>
+
+
+
+<span style="font-family: monospace;">}</span><br>
+
+
+
+<span style="font-style: italic;"></span>
+<p><span style="font-style: italic;">A color in RGB encoding.</span></p>
+<p><span style="font-style: italic;"></span></p>
+<span style="font-style: italic;">
+</span>color := <span style="font-family: monospace;">{</span><br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"red": </span>red<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // Amount of red, between 0 and 1<br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"green": </span>green<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // Amount of green, between 0 and 1<br>
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"blue": </span>blue<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span> // Amount of blue, between 0 and 1<br>
+
+<span style="font-family: monospace;">}</span><br>
+<br>
 <h3>Sketcher1 file format</h3>
 <span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">
 state := <span style="font-family: monospace;">{</span> <br>

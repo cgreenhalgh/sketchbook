@@ -6,6 +6,9 @@ var sketchbook;
 // current (editor) sketch
 var currentSketch;
 
+// showing index?
+var showingIndex;
+
 // paperjs projects
 // paperjs project for indexCanvas
 var indexProject;
@@ -27,6 +30,11 @@ var editorSettings = new Object();
 
 var undoActions = new Array();
 var redoActions = new Array();
+
+// current (active) tool-related state
+var tool;
+var toolView;
+var toolProject;
 
 //==============================================================================
 // display constants
@@ -78,6 +86,23 @@ function clearAll() {
 }
 
 //GUI entry point
+function onActionSelected(event) {
+	var disabled = $(this).hasClass('actionDisabled');
+	if (disabled)
+		return false;
+	var id = $(this).attr('id');
+	$('.action').removeClass('actionSelected');
+	$(this).addClass('actionSelected');
+	// TODO immediate action?
+	console.log('Selected action '+id);
+	if ('addLineAction'==id) {
+		$('#colorProperty').removeClass('propertyDisabled');
+	} else {
+		$('#colorProperty').addClass('propertyDisabled');		
+	}
+}
+
+//GUI entry point
 function showIndex() {
 	// update tab classes
 	$('.tab').removeClass('tabselected');
@@ -86,11 +111,22 @@ function showIndex() {
 	$('#index').show();
 	currentSketch = undefined;
 	
+	// update actions & properties
+	$('.property').addClass('propertyDisabled');
+
+	$('.action').addClass('actionDisabled');
+	$('#selectAction').removeClass('actionDisabled');
+	$('#showAllAction').removeClass('actionDisabled');
+	$('#zoomInAction').removeClass('actionDisabled');
+	$('#zoomOutAction').removeClass('actionDisabled');
+	onActionSelected.call($('#selectAction'));
+
+	
 	var max = 0;
 	var x = 0;
 	var y = 0;
 	
-	indexProject.activate();
+	indexProject.layers[0].activate();
 	indexProject.activeLayer.removeChildren();
 	
 	for (var sid in sketchbook.sketches) {
@@ -117,6 +153,7 @@ function showIndex() {
 	// scaling problem workaround
 	handleResize();
 	
+	showingIndex = true;	
 	showAll(indexProject);
 }
 
@@ -127,40 +164,28 @@ function restoreState(jstate) {
 	showIndex();
 }
 
+// setup one canvas/project. Return project
+function setupCanvas(canvasId) {
+	var canvas = document.getElementById(canvasId);
+	paper.setup(canvas);
+	var project = paper.project;
+	// extra layer for highlights
+	new paper.Layer();
+	project.layers[0].activate();
+	return project;
+}
+
 // setup paper js (one-time)
 function setupPaperjs() {
 	paper.setup();
 
-	var indexCanvas = document.getElementById('indexCanvas');
-	paper.setup(indexCanvas);
-	indexProject = paper.project;
-	// extra layer for highlights
-	new paper.Layer();
-	indexProject.layers[0].activate();
-
-	var objectOverviewCanvas = document.getElementById('objectOverviewCanvas');
-	paper.setup(objectOverviewCanvas);
-	objectOverviewProject = paper.project;
-	
-	var objectDetailCanvas = document.getElementById('objectDetailCanvas');
-	paper.setup(objectDetailCanvas);
-	objectDetailProject = paper.project;
-	
-	var selectionCanvas = document.getElementById('selectionCanvas');
-	paper.setup(selectionCanvas);
-	selectionProject = paper.project;
-	
-	var sequences1Canvas = document.getElementById('sequences1Canvas');
-	paper.setup(sequences1Canvas);
-	sequences1Project = paper.project;
-	
-	var sequences2Canvas = document.getElementById('sequences2Canvas');
-	paper.setup(sequences2Canvas);
-	sequences2Project = paper.project;
-
-	var sequencesViewCanvas = document.getElementById('sequencesViewCanvas');
-	paper.setup(sequencesViewCanvas);
-	sequencesViewProject = paper.project;
+	indexProject = setupCanvas('indexCanvas');
+	objectOverviewProject = setupCanvas('objectOverviewCanvas');	
+	objectDetailProject = setupCanvas('objectDetailCanvas');
+	selectionProject = setupCanvas('selectionCanvas');
+	sequences1Project = setupCanvas('sequences1Canvas');
+	sequences2Project = setupCanvas('sequences2Canvas');
+	sequencesViewProject = setupCanvas('sequencesViewCanvas');
 }
 
 // register mouse-related events
@@ -170,6 +195,18 @@ function registerHighlightEvents() {
 	});
 	$(document).on('mouseout', 'div .tab', function() {
 		$(this).removeClass('tabhighlight');
+	});
+	$(document).on('mouseover', 'div .action', function() {
+		$(this).addClass('actionHighlight');
+	});
+	$(document).on('mouseout', 'div .action', function() {
+		$(this).removeClass('actionHighlight');
+	});
+	$(document).on('mouseover', 'div .color', function() {
+		$(this).addClass('colorHighlight');
+	});
+	$(document).on('mouseout', 'div .color', function() {
+		$(this).removeClass('colorHighlight');
 	});
 	$(document).on('mouseenter', 'textarea',function() {
 		$(this).focus();
@@ -193,6 +230,137 @@ function registerHighlightEvents() {
 	$(document).on('mouseout', 'input[type=text]',function() {
 		$(this).blur();
 		$('#orphanText').focus();
+	});
+
+}
+
+/** get paperjs project for event target iff it is a canvas.
+ * 
+ * @return View if found, else null
+ */ 
+function getProject(target) {
+	// for newer paperscript with one view/project
+	for (var pi in paper.projects) {
+		var p = paper.projects[pi];
+		if (p.view && p.view._element===target) {
+			//console.log('in project '+p);
+			return p;
+		}
+		//console.log('- not in project '+p);
+	}
+	return null;
+}
+
+//redraw all views 
+function redraw(ps) {
+	for (var vi in ps.View._views) {
+		var v = ps.View._views[vi];
+		if (ps===v._scope)
+			v.draw();
+	}
+}
+
+
+/** helper function to get page offset */
+function pageOffsetTop(target) {
+	var top = 0;
+	while (target) {
+		top += target.offsetTop;
+		target = target.offsetParent;
+	}
+	return top;
+}
+/** helper function to get page offset */
+function pageOffsetLeft(target) {
+	var left = 0;
+	while (target) {
+		left += target.offsetLeft;
+		target = target.offsetParent;
+	}
+	return left;
+}
+
+/** function to map view pixel position to project coordinates.
+ * @return Point */
+function view2project(view, pageX, pageY) {
+	return view.viewToProject(new paper.Point(pageX-pageOffsetLeft(view._element), pageY-pageOffsetTop(view._element)));
+}
+
+
+/** end of tool */
+function toolUp(ev) {
+	if (tool) {
+		// switch tool
+		toolProject.activate();
+		var action = tool.end(view2project(toolView, ev.pageX, ev.pageY));
+		tool = undefined;
+		if (action)
+			doAction(action);
+		//TODO handleEdit(tool, toolView);
+		redraw(paper);
+	}	
+}
+
+/** get new/current tool */
+function getNewTool(project, view) {
+	if ($('#addLineAction').hasClass('actionSelected')) {
+		if (currentSketch && currentSketch.id)
+			return new LineTool(project, sketchbook, currentSketch.id);
+	}
+	else if ($('#showAllAction').hasClass('actionSelected')) {
+		return new ShowAllTool(project);
+	}
+	else if ($('#zoomInAction').hasClass('actionSelected')) {
+		return new ZoomTool(project, true);
+	}
+	else if ($('#zoomOutAction').hasClass('actionSelected')) {
+		return new ZoomTool(project, false);
+	}
+	else {
+		console.log('current active tool unsupported: '+$('.actionSelected').attr('id'));
+		return new Tool('unknown', project);
+	}
+}
+
+/** register events for tool(s) */
+function registerMouseEvents() {
+	$(document).mousedown(function(ev) {
+		// which: 1=left, 2=middle, 3=right
+		//console.log('mousedown: '+ev.which+' at '+ev.pageX+','+ev.pageY+' on '+ev.target+' ('+$(ev.target).attr('id')+') = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		toolUp(ev);
+		//keyTarget = ev.target;
+		var p = getProject(ev.target);
+		//var v = getView(keyTarget);
+		if (p && p.view) {
+			var v = p.view;			
+			p.activate();
+			//console.log('begin select tool');
+			tool = getNewTool(p, v);
+			toolView = v;
+			toolProject = p;
+			if (tool)
+				tool.begin(view2project(toolView, ev.pageX, ev.pageY), v);
+			redraw(paper);
+		}
+		//checkHighlight();
+	});
+	$(document).mousemove(function(ev) {
+		//console.log('mousemove: '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		if (tool) {
+			toolProject.activate();
+			tool.move(view2project(toolView, ev.pageX, ev.pageY));
+			//if (tool.highlights)
+			//	checkHighlight();
+			redraw(paper);
+		}
+		else {
+			//checkHighlight();
+		}
+	});
+	$(document).mouseup(function(ev) {
+		//console.log('mouseup: '+ev.which+' on '+ev.target);
+		toolUp(ev);
+		//checkHighlight();
 	});
 
 }
@@ -257,8 +425,11 @@ function createIndexItem(sketchId, indexProject) {
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
 	indexProject.activate();
-		
-	var symbol = new paper.Symbol(new paper.Group()); //getCachedSymbol(indexProject, sketchId);
+
+	var items = new Array();
+	if (sketchbook.sketches[sketchId])
+		items = sketchbook.sketches[sketchId].toPaperjs();
+	var symbol = new paper.Symbol(new paper.Group(items)); //getCachedSymbol(indexProject, sketchId);
 	var symbolBounds = symbol.definition.bounds;
 
 	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
@@ -286,33 +457,58 @@ function createIndexItem(sketchId, indexProject) {
 	return group;
 }
 
+/** update display(s) for changed sketch - complete regenerate for now */
+function refreshSketchViews(sketchId) {
+	if (showingIndex) {
+		// rebuilds anyway...
+		showIndex();
+		return;
+	}
+	if (currentSketch && currentSketch.id==sketchId) {
+		objectDetailProject.activate();
+		objectDetailProject.layers[0].removeChildren();
+		objectDetailProject.layers[0].activate();
+		currentSketch.toPaperjs();
+
+		objectOverviewProject.activate();
+		objectOverviewProject.layers[0].removeChildren();
+		objectOverviewProject.layers[0].activate();
+		currentSketch.toPaperjs();	
+		
+		redraw(paper);
+	}
+}
+
 /** show editor for object ID */
 function showEditor(sketchId) {
 	
 	handleTabChange();
+	showingIndex = false;	
 	
 	$('.tab').removeClass('tabselected');
 	$('#tab_'+sketchId).addClass('tabselected');
 	$('.tabview').hide();
 
+	// update actions & properties
+	$('.property').addClass('propertyDisabled');
+
+	$('.action').addClass('actionDisabled');
+	$('#showAllAction').removeClass('actionDisabled');
+	$('#zoomInAction').removeClass('actionDisabled');
+	$('#zoomOutAction').removeClass('actionDisabled');
+	$('#selectAction').removeClass('actionDisabled');
+	$('#addLineAction').removeClass('actionDisabled');
+	//$('#addTextAction').removeClass('actionDisabled');
+	//$('#addFrameAction').removeClass('actionDisabled');
+	onActionSelected.call($('#selectAction'));
+	// TODO check other actions
+
 	// update editor state!
 	currentSketch = sketchbook.sketches[sketchId];
 	
-	objectDetailProject.activate();
-	// remove old
-	objectDetailProject.activeLayer.removeChildren();
-//	clearSymbolCache(objectDetailProject);
-	
-//	copyDefinition(objectSymbol, objectDetailProject);
-	
-	objectOverviewProject.activate();
-	// remove old
-	objectOverviewProject.activeLayer.removeChildren();
-//	clearSymbolCache(objectOverviewProject);
-	
-//	copyDefinition(objectSymbol, objectOverviewProject);
-	
 	$('#objectTextArea').val(currentSketch.description);
+	
+	refreshSketchViews(currentSketch.id);
 	
 	$('#editor').show();		
 	// scaling problem workaround
@@ -359,6 +555,11 @@ function doAction(action) {
 		$('#'+tabid).html(action.description);
 		// TODO fix other occurences, e.g. index, selection history
 		
+	}
+	else if (action.type=='addElement') {
+		// TODO
+		console.log('handle addElement '+action.element);
+		refreshSketchViews(action.sketchId);
 	}
 }
 
@@ -481,6 +682,15 @@ function onObjectTextChange() {
 	}
 }
 
+// GUI entry point
+function onColorSelected(event) {
+	$('.color').removeClass('colorSelected');
+	$(this).addClass('colorSelected');
+	var color = $(this).css('background-color');
+	// TODO immediate action?
+	console.log('Selected color '+color);
+}
+
 //Only executed our code once the DOM is ready.
 $(document).ready(function() {
 
@@ -493,8 +703,13 @@ $(document).ready(function() {
 	$('#loadFile').on('change', onLoad);
 	$('#loadImage').on('change', onLoadImage);
 	$('#objectTextArea').change(onObjectTextChange);
-		
+	
+	$('.action').on('click', onActionSelected);
+	$('.color').on('click', onColorSelected);
+	
 	registerHighlightEvents();
+	
+	registerMouseEvents();
 	
 	onShowIndex();
 	
