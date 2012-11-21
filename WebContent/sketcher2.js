@@ -300,6 +300,21 @@ function toolUp(ev) {
 		redraw(paper);
 	}	
 }
+/** check highlight */
+function checkHighlight(ev) {
+	if (!tool) {
+		if (!$('#selectAction').hasClass('actionSelected')) {
+			return;
+		}
+		var p = getProject(ev.target);
+		if (p && p.view) {
+			tool = new HighlightTool(p);
+			toolView = p.view;
+			toolProject = p;
+			tool.begin(view2project(toolView, ev.pageX, ev.pageY));
+		}	
+	}
+}
 
 /** get new/current tool */
 function getNewTool(project, view) {
@@ -339,7 +354,7 @@ function registerMouseEvents() {
 			toolView = v;
 			toolProject = p;
 			if (tool)
-				tool.begin(view2project(toolView, ev.pageX, ev.pageY), v);
+				tool.begin(view2project(toolView, ev.pageX, ev.pageY));
 			redraw(paper);
 		}
 		//checkHighlight();
@@ -350,17 +365,16 @@ function registerMouseEvents() {
 			toolProject.activate();
 			tool.move(view2project(toolView, ev.pageX, ev.pageY));
 			//if (tool.highlights)
-			//	checkHighlight();
 			redraw(paper);
 		}
 		else {
-			//checkHighlight();
+			checkHighlight(ev);
 		}
 	});
 	$(document).mouseup(function(ev) {
 		//console.log('mouseup: '+ev.which+' on '+ev.target);
 		toolUp(ev);
-		//checkHighlight();
+		checkHighlight(ev);
 	});
 
 }

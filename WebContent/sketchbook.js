@@ -47,6 +47,8 @@ Sketch.prototype.toPaperjs = function() {
 		var element = this.elements[ix];
 		if (element.line!==undefined) {
 			var path = new paper.Path();
+			// preserve id
+			path.sketchElementId = element.id;
 			items.push(path);
 			if (element.line.width)
 				path.strokeWidth = element.line.width;

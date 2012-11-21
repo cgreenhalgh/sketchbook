@@ -3,6 +3,7 @@
 function Tool(name, project) {
 	this.name = name;
 	this.project = project;
+	this.highlights = false;
 	
 	this.MAX_ZOOM = 2;
 }
@@ -185,3 +186,107 @@ ZoomTool.prototype.end = function(point) {
 };
 
 
+/** select tool */
+function SelectTool(project, sketchbook, sketchId) {
+	Tool.call(this, 'select', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;
+	this.highlights = true;
+}
+
+SelectTool.prototype.begin = function(point) {
+	// TODO
+};
+
+/** highlight tool */
+function HighlightTool(project) {
+	Tool.call(this, 'highlight', project);
+	this.highlightedItem = null;
+	this.highlightItem = null;
+	console.log('created HighlightTool for project '+project);
+}
+
+HighlightTool.prototype = new Tool();
+
+HighlightTool.prototype.clearHighlight = function() {
+	if (this.highlightItem) {
+		this.highlightItem.remove();
+		this.highlightItem = null;
+	}
+	this.highlightedItem = null;
+};
+
+HighlightTool.prototype.highlight = function(item) {
+	this.highlightedItem = item;
+	this.project.activate();
+	// highlight layer
+	this.project.layers[1].activate();
+	
+	// temporary hack to show red box at bounds as highlight
+	var topLeft = item.bounds.topLeft;
+	var bottomRight = item.bounds.bottomRight;
+	var parent = item.parent;
+	while(parent instanceof paper.Group && parent.matrix) {
+		topLeft = parent.matrix.transform(topLeft);
+		bottomRight = parent.matrix.transform(bottomRight);
+		parent = parent.parent;
+	}
+	this.highlightItem = new paper.Path.Rectangle(topLeft, bottomRight);
+	this.highlightItem.strokeWidth = 1;
+	this.project.layers[0].activate();
+	this.highlightItem.strokeColor = 'red';
+	console.log('created highlight for '+item);
+};
+
+HighlightTool.prototype.checkHighlight = function(point) {
+	// which item?
+	/* Hit test doesn't seem to work by default on Text, or on groups
+	var options = { tolerance:2, fill:true, stroke:true, segments: true };
+	var res = project.hitTest(point, options);
+	console.log('highlight test at '+point+' -> '+res);
+	var item = (res) ? res.item : null;
+	*/
+	//console.log('highlight test at '+point+' in '+project);
+	
+	var tolerance = 2/this.project.view.zoom;
+	var items = new Array();
+	var children = this.project.layers[0].children;
+	for (var ci=0; ci<children.length; ci++) {
+		var c = children[ci];
+		var bounds = c.bounds;
+		if (point.x>=bounds.left-tolerance &&
+			point.x<=bounds.right+tolerance &&
+			point.y>=bounds.top-tolerance &&
+			point.y<=bounds.bottom+tolerance) {
+			items.push(c);
+				//console.log('- hit '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+		}
+		else {
+				//console.log('- missed '+ci+':'+c+' '+bounds+'+/-'+tolerance);
+		}
+	}
+	var item = (items.length>0) ? items[items.length-1] : null;
+	if (item) {
+		if (item===this.highlightedItem) 
+			; // no-op
+		else {
+			this.clearHighlight();
+			this.highlight(item);
+			//redraw(paper); ??
+		}
+	}
+	else
+		this.clearHighlight();
+
+};
+
+HighlightTool.prototype.begin = function(point) {
+	this.checkHighlight(point);
+};
+HighlightTool.prototype.move = function(point) {
+	this.checkHighlight(point);
+};
+HighlightTool.prototype.end = function(point) {
+	this.clearHighlight();
+	return null;
+};
