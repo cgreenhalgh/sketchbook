@@ -157,7 +157,7 @@ function updatePropertiesForCurrentSelection() {
 									return;
 								}
 								else {
-									console.log('different colours '+JSON.stringify(color)+' vs '+JSON.stringify(el.line.color));
+									//console.log('different colours '+JSON.stringify(color)+' vs '+JSON.stringify(el.line.color));
 								}
 							}
 						}
@@ -184,6 +184,51 @@ function onActionSelected(event) {
 	console.log('Selected action '+id);
 	
 	updatePropertiesForCurrentSelection();
+	
+	if (id=='deleteAction') {
+		var action = sketchbook.deleteAction();
+		for (var si=0; si<currentSelections.length; si++) {
+			var cs = currentSelections[si];
+			if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
+				// delete sketch
+				action.addSketch(cs.record.selection.sketch.id);
+			} else if (cs.record.selection.elements) {
+				for (var ei=0; ei<cs.record.selection.elements; ei++) {
+					var element = cs.record.selection.elements;
+					action.addElement(cs.record.selection.sketchId, element.id);
+				}
+			}
+		}
+		$(this).removeClass('actionSelected');
+		$('#selectAction').addClass('actionSelected');
+
+		if (action.items.length>0)
+			doAction(action);
+	}
+	else if (id=='copyAction') {
+		// TODO
+	}
+	else if (id=='editAction') {
+		for (var si=0; si<currentSelections.length; si++) {
+			var cs = currentSelections[si];
+			var sketchId = null;
+			if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
+				sketchId = cs.record.selection.sketch.id;
+			}
+			else if (cs.record.selection.sketchId)
+				sketchId = cs.record.selection.sketchId;
+			if (sketchId) {
+				if (sketchbook.sketches[sketchId]) {
+					showEditor(sketchId);
+					// TODO element(s) within sketch? i.e. when currentSketch = sketch
+					// note: showEditor resets actions
+					return;
+				}
+				else 
+					console.log('Could not find to edit sketch '+sketchId);
+			}
+		}
+	}
 }
 
 //GUI entry point
@@ -606,8 +651,10 @@ function updateActionsForCurrentSelection() {
 	// edit - one thing?!
 	if (currentSelections.length==1) 
 		$('#editAction').removeClass('actionDisabled');
-	else
+	else {
+		console.log('edit disabled: '+currentSelections.length+' selections');
 		$('#editAction').addClass('actionDisabled');		
+	}
 	// copy - any number of things?
 	if (currentSelections.length>0)
 		$('#copyAction').removeClass('actionDisabled');
@@ -624,6 +671,22 @@ function updateActionsForCurrentSelection() {
 function showEditor(sketchId) {
 	
 	handleTabChange();
+	
+	var tab = $('#tab_'+sketchId);
+
+	currentSketch = sketchbook.sketches[sketchId];
+	
+	if (tab.size()==0) {
+		// add tab
+		var tabid = 'tab_'+sketchId;
+		$('#tabs .footer').before('<div class="tab objecttab" id="'+tabid+'">'+currentSketch.getTitle()+'</div>');	
+			
+		var tabfn = function() {
+			showEditor(sketchId);
+		};
+		$('#'+tabid).on('click', tabfn);
+	}
+	
 	showingIndex = false;	
 	
 	$('.tab').removeClass('tabselected');
@@ -759,15 +822,8 @@ function doAction(action) {
 	if (action.type=='newSketch') {
 		var sketch = action.sketch;
 		var sketchId = sketch.id;
-	
-		var tabid = 'tab_'+sketchId;
-		$('#tabs .footer').before('<div class="tab objecttab" id="'+tabid+'">'+sketch.getTitle()+'</div>');	
-			
-		var tabfn = function() {
-			showEditor(sketchId);
-		};
-		$('#'+tabid).on('click', tabfn);
-		tabfn();
+
+		showEditor(sketchId);
 	}
 	else if (action.type=='setSketchDescription') {
 		var tabid = 'tab_'+action.sketchId;
@@ -794,6 +850,29 @@ function doAction(action) {
 		//console.log('handle select '+JSON.stringify(action));
 		// TODO
 		handleSelections(action.selections);
+	}
+	else if (action.type=='delete') {
+		var deletedCurrent = false;
+		var sketchIds = [];
+		for (var ei=0; ei<action.items.length; ei++) {
+			var item = action.items[ei];
+			if (sketchIds.indexOf(item.sketchId)<0) {
+				sketchIds.push(item.sketchId);
+				if (item.elementId)
+					refreshSketchViews(item.sketchId);			
+				else {
+					// delete sketch itself
+					if (currentSketch && currentSketch.id==item.sketchId)
+						deletedCurrent = true;
+					// tabs
+					$('#tab_'+item.sketchId).remove();
+				}
+			}
+		}
+		// refresh index
+		if (deletedCurrent || showingIndex)
+			showIndex();
+		
 	}
 }
 

@@ -329,9 +329,11 @@ SelectTool.prototype.checkSelect = function(point) {
 			else {
 				var selectionRecordId = item.selectionRecordId;
 				if (selectionRecordId) {
-					this.selectedItems.push(item);
-					this.selectedSelectionRecordIds.push(selectionRecordId);
-					this.highlightItems.push(addHighlight(this.project, item));
+					if (this.selectedSelectionRecordIds.indexOf(selectionRecordId)<0) {
+						this.selectedItems.push(item);
+						this.selectedSelectionRecordIds.push(selectionRecordId);
+						this.highlightItems.push(addHighlight(this.project, item));
+					}
 				}
 				else 
 					console.log('could not select item without elementId, sketchId or selectionRecordId: '+item);

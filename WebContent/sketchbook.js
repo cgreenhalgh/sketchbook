@@ -254,6 +254,33 @@ Sketchbook.prototype.setColorAction = function(color) {
 	return new SetColorAction(this, color);
 };
 
+Sketchbook.prototype.setColorAction = function(color) {
+	return new SetColorAction(this, color);
+};
+
+
+
+function DeleteAction(sketchbook) {
+	Action.call(this, sketchbook, 'delete');
+	this.items = [];
+}
+
+DeleteAction.prototype = new Action();
+
+DeleteAction.prototype.addElement =  function(sketchId, elementId) {
+	this.items.push({ sketchId: sketchId, elementId : elementId});
+};
+
+DeleteAction.prototype.addSketch =  function(sketchId) {
+	this.items.push({ sketchId: sketchId });
+};
+
+Sketchbook.prototype.deleteAction = function() {
+	return new DeleteAction(this);
+};
+
+
+
 Sketchbook.prototype.doAction = function(action) {
 	if (action.type=='newSketch') {
 		this.sketches[action.sketch.id] = action.sketch;
@@ -300,6 +327,35 @@ Sketchbook.prototype.doAction = function(action) {
 						console.log('setColor cannot handle non-line element '+elementId+' in sketch '+sketchId);
 					}
 				}
+			}
+		}
+	}
+	else if (action.type=='delete') {
+		for (var si=0; si<action.items.length; si++) {
+			var item = action.items[si];
+			var sketch = this.sketches[item.sketchId];
+			if (sketch) {
+				if (item.elementId) {
+					var done = false;
+					for (var i=0; i<sketch.elements.length; i++) {
+						var element = sketch.elements[i];
+						if (element.id==id) {
+							item.undo = { element : element };
+							delete sketch.elements[i];
+							done = true;
+							break;
+						}
+					}
+					if (!done)
+						console.log('delete: could not find element '+item.elementId+' in sketch '+item.sketchId);
+				}
+				else {
+					item.undo = { sketch : sketch };
+					delete this.sketches[item.sketchId];
+				}
+			}
+			else {
+				console.log('delete: cannot find sketch '+sketchId);
 			}
 		}
 	}
@@ -359,6 +415,36 @@ Sketchbook.prototype.undoAction = function(action) {
 			}
 		}
 	}
+	else if (action.type=='delete') {
+		// NB in reverse order
+		for (var si=action.items.length-1; si>=0; si--) {
+			var item = action.items[si];
+			if (item.undo) {
+				if (item.undo.sketch) {
+					if (!this.sketches[item.undo.sketch.id]) {
+						this.sketches[item.undo.sketch.id] = item.undo.sketch;
+					} else {
+						console.log('undo delete: sketch '+item.undo.sketch.id+' already present');
+						continue;
+					}
+				}
+				else if (item.undo.element) {
+					var sketch = this.sketches[item.sketchId];
+					if (!sketch) {
+						console.log('undo delete: could not find sketch '+item.sketchId+' for element '+item.elementId);
+						continue;
+					}
+					var element = sketch.getElementById(item.elementId);
+					if (element) {
+						console.log('undo delete: element '+item.elementId+' in sketch '+item.sketchId+' already present');
+						continue;
+					}
+					sketch.elements.push(item.undo.element);
+				}
+			}
+		}
+	}
+
 	else
 		throw 'Unknown sketchbook undo action '+action.type;
 };
