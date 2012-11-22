@@ -36,6 +36,14 @@ var tool;
 var toolView;
 var toolProject;
 
+// selection history - next id
+var nextSelectionRecordId = 1;
+var selectionRecords = new Object();
+var currentSelections = new Array();
+
+// color(s)
+var lastSelectedColorElem = $('#defaultColor');
+
 //==============================================================================
 // display constants
 
@@ -71,7 +79,10 @@ function clearAll() {
 	sketchbook = new Sketchbook();
 	editorSettings = new Object();
 	currentSketch = undefined;
-
+	selectionRecords = new Object();
+	currentSelectionRecordIds = new Array();
+	nextSelectionRecordId = 1;
+	
 	// remove all items
 	clearProject(indexProject);
 	clearProject(selectionProject);
@@ -84,6 +95,82 @@ function clearAll() {
 	// show index
 	onShowIndex();
 }
+function propertiesShowSelection() {
+	var actionId = $('.actionSelected').attr('id');
+	console.log('current action '+actionId);
+	if ('addLineAction'==actionId) {
+		return false;
+	}
+	return true;
+}
+function parseCssColor(color) {
+	var dec = color.match(/^rgb[(](\d\d?\d?),[ ](\d\d?\d?),[ ](\d\d?\d?)[)]$/);
+	if (dec && dec.length >= 4) {
+		//console.log('color is '+dec[1]+','+dec[2]+','+dec[3]);
+		return { red : parseInt(dec[1])/255, green : parseInt(dec[2])/255, blue : parseInt(dec[3])/255 };
+	}
+	else {
+		console.log('could not parse color '+color);
+		return null;
+	}
+}
+function updatePropertiesForCurrentSelection() {
+	// color
+	if (!propertiesShowSelection()) {
+		$('#colorProperty').removeClass('propertyDisabled');
+		// update color to last selected
+		if(lastSelectedColorElem) {
+			$('.color').removeClass('colorSelected');
+			lastSelectedColorElem.addClass('colorSelected');
+		}
+	} else {
+		// element(s) with color(s)?
+		$('.color').removeClass('colorSelected');
+		
+		var hasColor = false;
+		for (var i=0; i<currentSelections.length; i++) {
+			var cs = currentSelections[i];
+			if (cs.record.selection.elements) {
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					var el = cs.record.selection.elements[ei];
+					if (el.line && el.line.color) {
+						hasColor = true;						
+					}
+				}
+			}
+		}
+		if (hasColor) {
+			$('.color').each(function(index, Element) {
+				var color = parseCssColor($(this).css('background-color'));
+				if (!color)
+					return;
+				for (var i=0; i<currentSelections.length; i++) {
+					var cs = currentSelections[i];
+					if (cs.record.selection.elements) {
+						for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+							var el = cs.record.selection.elements[ei];
+							if (el.line && el.line.color) {
+								if (color.red==el.line.color.red && 
+										color.green==el.line.color.green && 
+										color.blue==el.line.color.blue) {
+									$(this).addClass('colorSelected');
+									return;
+								}
+								else {
+									console.log('different colours '+JSON.stringify(color)+' vs '+JSON.stringify(el.line.color));
+								}
+							}
+						}
+					}
+				}				
+			});
+		}		
+		if (hasColor) 
+			$('#colorProperty').removeClass('propertyDisabled');
+		else
+			$('#colorProperty').addClass('propertyDisabled');		
+	}
+}
 
 //GUI entry point
 function onActionSelected(event) {
@@ -95,11 +182,8 @@ function onActionSelected(event) {
 	$(this).addClass('actionSelected');
 	// TODO immediate action?
 	console.log('Selected action '+id);
-	if ('addLineAction'==id) {
-		$('#colorProperty').removeClass('propertyDisabled');
-	} else {
-		$('#colorProperty').addClass('propertyDisabled');		
-	}
+	
+	updatePropertiesForCurrentSelection();
 }
 
 //GUI entry point
@@ -121,13 +205,14 @@ function showIndex() {
 	$('#zoomOutAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
 
+	updateActionsForCurrentSelection();
+	updatePropertiesForCurrentSelection();
 	
 	var max = 0;
 	var x = 0;
 	var y = 0;
 	
-	indexProject.layers[0].activate();
-	indexProject.activeLayer.removeChildren();
+	clearProject(indexProject);
 	
 	for (var sid in sketchbook.sketches) {
 		var group = createIndexItem(sid, indexProject);
@@ -302,6 +387,13 @@ function toolUp(ev) {
 }
 /** check highlight */
 function checkHighlight(ev) {
+	if (tool && tool.name=='highlight') {
+		var p = getProject(ev.target);
+		if (p!==tool.project) {
+			toolUp(tool);
+			tool = null;
+		}
+	}
 	if (!tool) {
 		if (!$('#selectAction').hasClass('actionSelected')) {
 			return;
@@ -330,6 +422,10 @@ function getNewTool(project, view) {
 	}
 	else if ($('#zoomOutAction').hasClass('actionSelected')) {
 		return new ZoomTool(project, false);
+	}
+	else if ($('#selectAction').hasClass('actionSelected')) {
+		var sketchId = currentSketch ? currentSketch.id : undefined;
+		return new SelectTool(project, sketchbook, sketchId);
 	}
 	else {
 		console.log('current active tool unsupported: '+$('.actionSelected').attr('id'));
@@ -361,14 +457,12 @@ function registerMouseEvents() {
 	});
 	$(document).mousemove(function(ev) {
 		//console.log('mousemove: '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		checkHighlight(ev);
 		if (tool) {
 			toolProject.activate();
 			tool.move(view2project(toolView, ev.pageX, ev.pageY));
 			//if (tool.highlights)
 			redraw(paper);
-		}
-		else {
-			checkHighlight(ev);
 		}
 	});
 	$(document).mouseup(function(ev) {
@@ -432,18 +526,18 @@ function showAll(project) {
 function getObjectTitle(sketchId) {
 	return sketchbook.sketches[sketchId].getTitle();
 }
-/** make an index icon in current project for a symbol. 
- * @return Item (Group) representing object in index/selection
- */
-function createIndexItem(sketchId, indexProject) {
+/** create sketch item from elements (sketch optional) */
+function createIndexItemFromElements(sketch, elements, indexProject) {
+	indexProject.activate();
+	var items = elementsToPaperjs(elements);
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
-	indexProject.activate();
-
-	var items = new Array();
-	if (sketchbook.sketches[sketchId])
-		items = sketchbook.sketches[sketchId].toPaperjs();
-	var symbol = new paper.Symbol(new paper.Group(items)); //getCachedSymbol(indexProject, sketchId);
+	var group;
+	if (items.length==0)
+		group = new paper.Group();
+	else
+		group = new paper.Group(items);
+	var symbol = new paper.Symbol(group); //getCachedSymbol(indexProject, sketchId);
 	var symbolBounds = symbol.definition.bounds;
 
 	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
@@ -453,22 +547,38 @@ function createIndexItem(sketchId, indexProject) {
 	placed.scale(scale);
 	// naming this makes the Group creation explode :-(
 	//placed.name = ''+sketchId;
-	var id = new paper.PointText(new paper.Point());
-	id.content = sketchId;
-	id.visible = false;
 	placed.translate(new paper.Point(INDEX_CELL_SIZE/2-placed.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-placed.bounds.center.y));
-	var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
-	var title = getObjectTitle(sketchId);
-	label.content = title;
-	label.paragraphStyle.justification = 'center';
-	label.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
-	
-	var box = new paper.Path.Rectangle(new paper.Point(INDEX_CELL_MARGIN/2, INDEX_CELL_MARGIN/2),
-			new paper.Point(INDEX_CELL_SIZE-INDEX_CELL_MARGIN/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN/2));
-	box.strokeColor = 'grey';		
-	var group = new paper.Group([placed, box, label, id]);
+	if (sketch) {
+		var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
+		var title = getSketchTitle(sketch);
+		label.content = title;
+		label.paragraphStyle.justification = 'center';
+		label.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
+		
+		var box = new paper.Path.Rectangle(new paper.Point(INDEX_CELL_MARGIN/2, INDEX_CELL_MARGIN/2),
+				new paper.Point(INDEX_CELL_SIZE-INDEX_CELL_MARGIN/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN/2));
+		box.strokeColor = 'grey';		
+		var group = new paper.Group([placed, box, label]);
+		return group;
+	}
+	else {
+		var group = new paper.Group([placed]);		
+		return group;
+	}
 
-	return group;
+}
+/** make an index icon in current project for a symbol. 
+ * @return Item (Group) representing object in index/selection
+ */
+function createIndexItem(sketchId, indexProject) {
+	if (sketchbook.sketches[sketchId]) {
+		var group = createIndexItemFromElements(sketchbook.sketches[sketchId], sketchbook.sketches[sketchId].elements, indexProject);
+		// keep sketchId
+		group.sketchId = sketchId;
+		
+		return group;
+	}
+	return new paper.Group();
 }
 
 /** update display(s) for changed sketch - complete regenerate for now */
@@ -480,17 +590,34 @@ function refreshSketchViews(sketchId) {
 	}
 	if (currentSketch && currentSketch.id==sketchId) {
 		objectDetailProject.activate();
-		objectDetailProject.layers[0].removeChildren();
+		clearProject(objectDetailProject);
 		objectDetailProject.layers[0].activate();
 		currentSketch.toPaperjs();
 
 		objectOverviewProject.activate();
-		objectOverviewProject.layers[0].removeChildren();
+		clearProject(objectOverviewProject);
 		objectOverviewProject.layers[0].activate();
 		currentSketch.toPaperjs();	
 		
 		redraw(paper);
 	}
+}
+function updateActionsForCurrentSelection() {
+	// edit - one thing?!
+	if (currentSelections.length==1) 
+		$('#editAction').removeClass('actionDisabled');
+	else
+		$('#editAction').addClass('actionDisabled');		
+	// copy - any number of things?
+	if (currentSelections.length>0)
+		$('#copyAction').removeClass('actionDisabled');
+	else
+		$('#copyAction').addClass('actionDisabled');		
+	// delete
+	if (currentSelections.length>0)
+		$('#deleteAction').removeClass('actionDisabled');
+	else
+		$('#deleteAction').addClass('actionDisabled');		
 }
 
 /** show editor for object ID */
@@ -515,7 +642,9 @@ function showEditor(sketchId) {
 	//$('#addTextAction').removeClass('actionDisabled');
 	//$('#addFrameAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
-	// TODO check other actions
+
+	updateActionsForCurrentSelection();
+	updatePropertiesForCurrentSelection();
 
 	// update editor state!
 	currentSketch = sketchbook.sketches[sketchId];
@@ -544,6 +673,82 @@ function showEditor(sketchId) {
 	objectOverviewProject.view.center = settings.overviewCenter;
 }
 
+function moveHistory() {
+	// move history along
+	for (var ci in selectionProject.activeLayer.children) {
+		var c = selectionProject.activeLayer.children[ci];
+		c.translate(new paper.Point(INDEX_CELL_SIZE,0));
+		console.log('moved '+ci+' '+c+' to '+c.position);
+	}
+}
+
+/** clear current selection */
+function clearCurrentSelection() {
+	for (var si=0; si<currentSelections.length; si++) {
+		var currentSelection = currentSelections[si];
+		for (var ii=0; ii<currentSelection.items.length; ii++) {
+			var item = currentSelection.items[ii];
+			item.remove();
+			console.log('removed selection for '+currentSelection.id);
+		}
+	}
+	currentSelections = new Array();
+}
+
+/** select - array of selections from select action */
+function handleSelections(selections) {
+	// selection may (currently) be sketch or element (with sketchId) or thing from selection history
+	// add to selection history
+	var newSelectionRecordIds = new Array();
+	for (var si=0; si<selections.length; si++) {
+		var selection = selections[si];
+		if (selection.selectionRecordId) {
+			console.log('Selection from selection history '+selection.selectionRecordId);
+			newSelectionRecordIds.push(selection.selectionRecordId);
+		} else {
+			moveHistory();
+			// either sketch or elements
+			var group = undefined;		
+			if (selection.sketch) {
+				group = createIndexItemFromElements(selection.sketch, selection.sketch.elements, selectionProject);
+			} else if (selection.elements) {
+				group = createIndexItemFromElements(undefined, selection.elements, selectionProject);
+			}
+			var selectionRecord = { id : nextSelectionRecordId++, selection : selection };
+			group.selectionRecordId = selectionRecord.id;
+			selectionRecords[selectionRecord.id] = selectionRecord;
+			newSelectionRecordIds.push(selectionRecord.id);
+			group.translate(new paper.Point(INDEX_CELL_SIZE/2-group.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-group.bounds.center.y));
+			selectionRecord.item = group;
+		}
+	}
+	//selectionProject.view.zoom = 1;
+	//selectionProject.view.center = new paper.Point($(selectionProject.view._element).width()/2, INDEX_CELL_SIZE/2);
+	// remove old selection(s)
+	clearCurrentSelection();
+	// update current selection
+	for (var si=0; si<newSelectionRecordIds.length; si++) {
+		var id = newSelectionRecordIds[si];
+		var selectionRecord = selectionRecords[id];
+		if (!selectionRecord) {
+			console.log('cannot find selection '+id);
+			continue;
+		}
+		var currentSelection = { id: id, record: selectionRecord };
+		currentSelections.push(currentSelection);
+		// highlight current selection in selection history
+		// addHighlight is from sketchertools.js
+		currentSelection.items = [];
+		var item = addHighlight(selectionProject, selectionRecord.item);
+		item.strokeWidth = 3;
+		item.strokeColor = '#808080';
+		currentSelection.items.push(item);
+		console.log('added history selection for '+currentSelection.id);
+		// TODO highlght current selection in object projects and/or index projects??
+	}
+	updateActionsForCurrentSelection();
+	updatePropertiesForCurrentSelection();
+}
 //==============================================================================
 // do/undo
 
@@ -571,9 +776,24 @@ function doAction(action) {
 		
 	}
 	else if (action.type=='addElement') {
-		// TODO
-		console.log('handle addElement '+action.element);
+		//console.log('handle addElement '+action.element);
 		refreshSketchViews(action.sketchId);
+		// TODO select it?
+	}
+	else if (action.type=='setColor') {
+		var sketchIds = [];
+		for (var ei=0; ei<action.elements.length; ei++) {
+			var element = action.elements[ei];
+			if (sketchIds.indexOf(element.sketchId)<0) {
+				sketchIds.push(element.sketchId);
+				refreshSketchViews(element.sketchId);			
+			}
+		}
+	}
+	else if (action.type=='select') {
+		//console.log('handle select '+JSON.stringify(action));
+		// TODO
+		handleSelections(action.selections);
 	}
 }
 
@@ -701,8 +921,36 @@ function onColorSelected(event) {
 	$('.color').removeClass('colorSelected');
 	$(this).addClass('colorSelected');
 	var color = $(this).css('background-color');
-	// TODO immediate action?
 	console.log('Selected color '+color);
+	lastSelectedColorElem = $(this);
+	// e.g. 'rgb(0, 0, 0)'
+	color = parseCssColor(color);
+	if (!color)
+		return;
+	// TODO immediate action?
+	// set color of currentSelection?
+	if (propertiesShowSelection()) {
+		var setColorAction = sketchbook.setColorAction(color);
+		var hasColor = false;
+		for (var i=0; i<currentSelections.length; i++) {
+			var cs = currentSelections[i];
+			if (cs.record.selection.elements) {
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					var el = cs.record.selection.elements[ei];
+					if (el.line && el.line.color) {
+						setColorAction.addElement(cs.record.selection.sketchId, el.id);
+						hasColor = true;
+					}
+				}
+			}
+		}
+		if (hasColor) {
+			console.log('setting color on current selection');
+			doAction(setColorAction);
+		}
+		else 
+			console.log('no color to set on current selection');
+	}
 }
 
 //Only executed our code once the DOM is ready.

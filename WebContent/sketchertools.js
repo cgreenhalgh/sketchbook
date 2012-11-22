@@ -3,7 +3,6 @@
 function Tool(name, project) {
 	this.name = name;
 	this.project = project;
-	this.highlights = false;
 	
 	this.MAX_ZOOM = 2;
 }
@@ -185,18 +184,7 @@ ZoomTool.prototype.end = function(point) {
 	this.zoomView = null;
 };
 
-
-/** select tool */
-function SelectTool(project, sketchbook, sketchId) {
-	Tool.call(this, 'select', project);
-	this.sketchbook = sketchbook;
-	this.sketchId = sketchId;
-	this.highlights = true;
-}
-
-SelectTool.prototype.begin = function(point) {
-	// TODO
-};
+console.log('defining HighlightTool');
 
 /** highlight tool */
 function HighlightTool(project) {
@@ -216,11 +204,11 @@ HighlightTool.prototype.clearHighlight = function() {
 	this.highlightedItem = null;
 };
 
-HighlightTool.prototype.highlight = function(item) {
-	this.highlightedItem = item;
-	this.project.activate();
+/** add a highlight for an item in a project */
+function addHighlight(project, item) {
+	project.activate();
 	// highlight layer
-	this.project.layers[1].activate();
+	project.layers[1].activate();
 	
 	// temporary hack to show red box at bounds as highlight
 	var topLeft = item.bounds.topLeft;
@@ -231,12 +219,43 @@ HighlightTool.prototype.highlight = function(item) {
 		bottomRight = parent.matrix.transform(bottomRight);
 		parent = parent.parent;
 	}
-	this.highlightItem = new paper.Path.Rectangle(topLeft, bottomRight);
-	this.highlightItem.strokeWidth = 1;
-	this.project.layers[0].activate();
-	this.highlightItem.strokeColor = 'red';
+	var highlightItem = new paper.Path.Rectangle(topLeft, bottomRight);
+	highlightItem.strokeWidth = 1;
+	project.layers[0].activate();
+	highlightItem.strokeColor = 'red';
+	return highlightItem;
+}
+
+HighlightTool.prototype.highlight = function(item) {
+	this.highlightedItem = item;
+	this.highlightItem = addHighlight(this.project, item);
 	console.log('created highlight for '+item);
 };
+
+/** find item (if any) at point in project - for select and highlight */
+function getItemAtPoint(project, point) {
+	var tolerance = 2/project.view.zoom;
+	var items = new Array();
+	var children = project.layers[0].children;
+	for (var ci=0; ci<children.length; ci++) {
+		var c = children[ci];
+		var bounds = c.bounds;
+		if (point.x>=bounds.left-tolerance &&
+			point.x<=bounds.right+tolerance &&
+			point.y>=bounds.top-tolerance &&
+			point.y<=bounds.bottom+tolerance) {
+			items.push(c);
+			//console.log('- hit '+ci+':'+point.x+','+point.y+' vs '+bounds+'+/-'+tolerance);
+		}
+		else {
+			//console.log('- missed '+ci+':'+point.x+','+point.y+' vs '+bounds+'+/-'+tolerance);
+		}
+	}
+	//if (children.length==0)
+		//console.log('- no children: '+point.x+','+point.y);
+	var item = (items.length>0) ? items[items.length-1] : null;
+	return item;
+}
 
 HighlightTool.prototype.checkHighlight = function(point) {
 	// which item?
@@ -247,25 +266,7 @@ HighlightTool.prototype.checkHighlight = function(point) {
 	var item = (res) ? res.item : null;
 	*/
 	//console.log('highlight test at '+point+' in '+project);
-	
-	var tolerance = 2/this.project.view.zoom;
-	var items = new Array();
-	var children = this.project.layers[0].children;
-	for (var ci=0; ci<children.length; ci++) {
-		var c = children[ci];
-		var bounds = c.bounds;
-		if (point.x>=bounds.left-tolerance &&
-			point.x<=bounds.right+tolerance &&
-			point.y>=bounds.top-tolerance &&
-			point.y<=bounds.bottom+tolerance) {
-			items.push(c);
-				//console.log('- hit '+ci+':'+c+' '+bounds+'+/-'+tolerance);
-		}
-		else {
-				//console.log('- missed '+ci+':'+c+' '+bounds+'+/-'+tolerance);
-		}
-	}
-	var item = (items.length>0) ? items[items.length-1] : null;
+	var item = getItemAtPoint(this.project, point);
 	if (item) {
 		if (item===this.highlightedItem) 
 			; // no-op
@@ -289,4 +290,71 @@ HighlightTool.prototype.move = function(point) {
 HighlightTool.prototype.end = function(point) {
 	this.clearHighlight();
 	return null;
+};
+
+/** select tool */
+function SelectTool(project, sketchbook, sketchId) {
+	Tool.call(this, 'select', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;	
+	this.selectedItems = new Array();
+	this.highlightItems = new Array();
+}
+
+SelectTool.prototype.clearHighlightItems = function() {
+	for (var ix=0; ix<this.highlightItems.length; ix++) 
+		this.highlightItems[ix].remove();
+	this.highlightItems = new Array();
+};
+SelectTool.prototype.checkSelect = function(point) {
+	var item = getItemAtPoint(this.project, point);
+	if (item) {
+		// item id?
+		var elementId = getSketchElementId(item);
+		if (elementId) {
+			if (this.selectedElementIds.indexOf(elementId)<0) {
+				this.selectedItems.push(item);
+				this.selectedElementIds.push(elementId);
+				this.highlightItems.push(addHighlight(this.project, item));
+			}
+		} else {
+			var sketchId = item.sketchId;
+			if (sketchId) {
+				if (this.selectedSketchIds.indexOf(sketchId)<0) {
+					this.selectedItems.push(item);
+					this.selectedSketchIds.push(sketchId);
+					this.highlightItems.push(addHighlight(this.project, item));
+				}
+			}
+			else {
+				var selectionRecordId = item.selectionRecordId;
+				if (selectionRecordId) {
+					this.selectedItems.push(item);
+					this.selectedSelectionRecordIds.push(selectionRecordId);
+					this.highlightItems.push(addHighlight(this.project, item));
+				}
+				else 
+					console.log('could not select item without elementId, sketchId or selectionRecordId: '+item);
+			}
+		}
+	}
+};
+SelectTool.prototype.begin = function(point) {
+	this.clearHighlightItems();
+	this.selectedItems = new Array();
+	this.selectedElementIds = [];
+	this.selectedSketchIds = [];
+	this.selectedSelectionRecordIds = [];
+	this.checkSelect(point);
+};
+SelectTool.prototype.move = function(point) {
+	this.checkSelect(point);
+};
+SelectTool.prototype.end = function(point) {
+	this.checkSelect(point);
+	this.clearHighlightItems();
+	var items = this.selectedItems;
+	this.selectedItems = [];
+	// we'll use an action for this although it doesn't actually modify the sketchbook state!
+	return sketchbook.selectItemsAction(this.sketchId, items);
 };
