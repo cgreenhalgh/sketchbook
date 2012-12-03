@@ -1,15 +1,21 @@
 // sketcher2.js
 // To do:
 // - sequences tab...
+// -- make visible
+// -- left: div per object, div per frame
+// -- select frame div
+// -- right: show current selected sketch/frame
+// -- middle: div per sequence, div per frame ref
+// -- add sequence
+// -- copy frame into sequence
+// -- select frame ref div
+// -- delete frame ref from sequence
 
-// - load/select image
-// - copy image
-// - save/load image
 // (- edit image position)
 // (- edit line)
 // (- edit frame title)
 // (- edit frame position)
-// - add text
+// (- edit sequence text)
 // - edit text content
 // (- edit text position)
 // - text styling (font, size) - new and edit
@@ -126,7 +132,7 @@ function clearAll() {
 function propertiesShowSelection() {
 	var actionId = $('.actionSelected').attr('id');
 	console.log('current action '+actionId);
-	if ('addLineAction'==actionId || 'addFrameAction'==actionId) {
+	if ('addLineAction'==actionId || 'addFrameAction'==actionId || 'addTextAction'==actionId) {
 		return false;
 	}
 	return true;
@@ -161,7 +167,7 @@ function updatePropertiesForCurrentSelection() {
 			if (cs.record.selection.elements) {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
-					if (el.line && el.line.color) {
+					if ((el.line && el.line.color) || (el.text && el.text.color)) {
 						hasColor = true;						
 					}
 				}
@@ -181,6 +187,17 @@ function updatePropertiesForCurrentSelection() {
 								if (color.red==el.line.color.red && 
 										color.green==el.line.color.green && 
 										color.blue==el.line.color.blue) {
+									$(this).addClass('colorSelected');
+									return;
+								}
+								else {
+									//console.log('different colours '+JSON.stringify(color)+' vs '+JSON.stringify(el.line.color));
+								}
+							}
+							else if (el.text && el.text.color) {
+								if (color.red==el.text.color.red && 
+										color.green==el.text.color.green && 
+										color.blue==el.text.color.blue) {
 									$(this).addClass('colorSelected');
 									return;
 								}
@@ -584,6 +601,10 @@ function getNewTool(project, view) {
 		if (currentSketch && currentSketch.id)
 			return new FrameTool(project, sketchbook, currentSketch.id, takeOrphanText());
 	}
+	else if ($('#addTextAction').hasClass('actionSelected')) {
+		if (currentSketch && currentSketch.id)
+			return new TextTool(project, sketchbook, currentSketch.id, takeOrphanText(), 12);// default
+	}
 	else if ($('#showAllAction').hasClass('actionSelected')) {
 		return new ShowAllTool(project);
 	}
@@ -860,7 +881,7 @@ function showEditor(sketchId) {
 	$('#zoomOutAction').removeClass('actionDisabled');
 	$('#selectAction').removeClass('actionDisabled');
 	$('#addLineAction').removeClass('actionDisabled');
-	//$('#addTextAction').removeClass('actionDisabled');
+	$('#addTextAction').removeClass('actionDisabled');
 	$('#addFrameAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
 
@@ -1212,7 +1233,7 @@ function onColorSelected(event) {
 			if (cs.record.selection.elements) {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
-					if (el.line && el.line.color) {
+					if ((el.line && el.line.color) || (el.text && el.text.color)) {
 						setColorAction.addElement(cs.record.selection.sketchId, el.id);
 						hasColor = true;
 					}

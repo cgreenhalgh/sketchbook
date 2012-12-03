@@ -444,3 +444,41 @@ FrameTool.prototype.end = function(point) {
 	var bounds = new paper.Rectangle(this.startPoint, point);
 	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds);
 };
+
+function TextTool(project, sketchbook, sketchId, content, fontSize) {
+	// call super cons
+	Tool.call(this, 'text', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;
+	this.content = content;
+	this.fontSize = fontSize;
+}
+
+TextTool.prototype = new Tool();
+
+TextTool.prototype.begin = function(point) {
+	// activate overlay layer
+	activateOverlay(this.project);
+	this.text = new paper.PointText(point);
+	this.text.characterStyle.fillColor = getColor();
+	this.text.paragraphStyle.justification = 'center';
+	this.text.characterStyle.fontSize = this.fontSize; //default
+	this.text.content = this.content;	
+};
+
+TextTool.prototype.move = function(point) {
+	if (this.text)
+		this.text.point = point;
+};
+
+TextTool.prototype.end = function(point) {
+	if (this.text) {
+		this.text.point = point;
+		var action = this.sketchbook.addTextAction(this.sketchId, this.text);
+		this.text.remove();
+		return action;
+	}
+	delete this.text;
+	return null;
+};
+

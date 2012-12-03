@@ -109,6 +109,7 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			// default
 			outline.strokeColor = 'grey';
 			outline.strokeWidth = 2;
+			outline.dashArray = [4, 10];
 			var title = new paper.PointText(new paper.Point(element.frame.x+element.frame.width/2, element.frame.y+element.frame.height-16));
 			title.content = element.frame.description;
 			title.paragraphStyle.justification = 'center';
@@ -142,6 +143,15 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			}
 			item.sketchElementId = element.id;
 			items.push(item);
+		}
+		if (element.text!==undefined) {
+			var text = new paper.PointText(new paper.Point(element.text.x, element.text.y));
+			text.content = element.text.content;
+			text.characterStyle.fontSize = element.text.size;
+			text.paragraphStyle.justification = 'center';
+			text.characterStyle.fillColor = colorToPaperjs(element.text.color);
+			text.sketchElementId = element.id;
+			items.push(text);
 		}
 	}
 	return items;
@@ -259,6 +269,15 @@ Sketchbook.prototype.addLineAction = function(sketchId, path) {
 	return action;
 };
 
+Sketchbook.prototype.addTextAction = function(sketchId, text) {
+	var action = new Action(this, 'addElements');
+	action.sketchId = sketchId;
+	var color = { red: text.fillColor.red, green: text.fillColor.green, blue: text.fillColor.blue };
+	var textel = { color: color, size: text.characterStyle.fontSize, content: text.content, x: text.point.x, y: text.point.y };
+	action.elements =  [{ text : textel }]; 
+	return action;
+};
+
 Sketchbook.prototype.addFrameAction = function(sketchId, description, bounds) {
 	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
@@ -305,6 +324,10 @@ Sketchbook.prototype.addElementsAction = function(sketchId, elements, fromBounds
 			}
 			if (newel.image) {
 				transformIcon(newel.image, fromBounds, toBounds);
+			}
+			if (newel.text) {
+				newel.text.x = (newel.text.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
+				newel.text.y = (newel.text.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
 			}
 		}
 		delete newel.id;
@@ -469,6 +492,10 @@ Sketchbook.prototype.doAction = function(action) {
 						el.undo = { color : element.line.color };
 						element.line.color = action.color;
 					}
+					else if (element.text) {
+						el.undo = { color : element.text.color };
+						element.text.color = action.color;
+					}
 					else {
 						console.log('setColor cannot handle non-line element '+elementId+' in sketch '+sketchId);
 					}
@@ -558,6 +585,12 @@ Sketchbook.prototype.undoAction = function(action) {
 					if (element.line) {
 						if (el.undo && el.undo.color)
 							element.line.color = el.undo.color;
+						else
+							console.log('setColor undo could not find undo color for '+elementId+' in sketch '+sketchId);
+					}
+					else if (element.text) {
+						if (el.undo && el.undo.color)
+							element.text.color = el.undo.color;
 						else
 							console.log('setColor undo could not find undo color for '+elementId+' in sketch '+sketchId);
 					}
