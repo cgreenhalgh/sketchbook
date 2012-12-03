@@ -1,4 +1,10 @@
 // sketcher2.js
+// To do:
+// (- edit line)
+// - copy line
+// - copy sketch to index
+// - copy sketch to sketch (link)
+// ...
 
 // global state
 // Sketchbook
@@ -193,9 +199,11 @@ function onActionSelected(event) {
 				// delete sketch
 				action.addSketch(cs.record.selection.sketch.id);
 			} else if (cs.record.selection.elements) {
-				for (var ei=0; ei<cs.record.selection.elements; ei++) {
-					var element = cs.record.selection.elements;
-					action.addElement(cs.record.selection.sketchId, element.id);
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					var element = cs.record.selection.elements[ei];
+					if (element.id)
+						action.addElement(cs.record.selection.sketchId, element.id);
+					console.log('delete element '+cs.record.selection.sketchId+'/'+element.id+' - '+JSON.stringify(element));
 				}
 			}
 		}
@@ -204,6 +212,9 @@ function onActionSelected(event) {
 
 		if (action.items.length>0)
 			doAction(action);
+		else {
+			console.log('nothing to delete');
+		}
 	}
 	else if (id=='copyAction') {
 		// TODO
@@ -649,12 +660,14 @@ function refreshSketchViews(sketchId) {
 }
 function updateActionsForCurrentSelection() {
 	// edit - one thing?!
-	if (currentSelections.length==1) 
-		$('#editAction').removeClass('actionDisabled');
-	else {
-		console.log('edit disabled: '+currentSelections.length+' selections');
-		$('#editAction').addClass('actionDisabled');		
-	}
+	// TODO not yet implemented
+	$('#editAction').addClass('actionDisabled');		
+//	if (currentSelections.length==1) 
+//		$('#editAction').removeClass('actionDisabled');
+//	else {
+//		console.log('edit disabled: '+currentSelections.length+' selections');
+//		$('#editAction').addClass('actionDisabled');		
+//	}
 	// copy - any number of things?
 	if (currentSelections.length>0)
 		$('#copyAction').removeClass('actionDisabled');

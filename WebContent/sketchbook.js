@@ -339,10 +339,11 @@ Sketchbook.prototype.doAction = function(action) {
 					var done = false;
 					for (var i=0; i<sketch.elements.length; i++) {
 						var element = sketch.elements[i];
-						if (element.id==id) {
+						if (element.id==item.elementId) {
 							item.undo = { element : element };
-							delete sketch.elements[i];
+							sketch.elements.splice(i, 1);
 							done = true;
+							console.log('delete sketch '+item.sketchId+' element '+item.elementId);
 							break;
 						}
 					}
@@ -352,6 +353,7 @@ Sketchbook.prototype.doAction = function(action) {
 				else {
 					item.undo = { sketch : sketch };
 					delete this.sketches[item.sketchId];
+					console.log('delete sketch '+item.sketchId);
 				}
 			}
 			else {
