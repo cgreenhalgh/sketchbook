@@ -363,11 +363,12 @@ SelectTool.prototype.end = function(point) {
 	return this.sketchbook.selectItemsAction(this.sketchId, items);
 };
 
-function CopyToSketchTool(project, sketchbook, sketchId, elements) {
+function CopyToSketchTool(project, sketchbook, sketchId, elements, images) {
 	Tool.call(this, 'copyToSketch', project);
 	this.sketchbook = sketchbook;
 	this.sketchId = sketchId;	
 	this.elements = elements;
+	this.images = images;
 }
 CopyToSketchTool.prototype = new Tool();
 
@@ -376,7 +377,7 @@ CopyToSketchTool.prototype.begin = function(point) {
 	// activate overlay layer
 	activateOverlay(this.project);
 	if (this.elements) {
-		var items = elementsToPaperjs(this.elements, this.sketchbook);
+		var items = elementsToPaperjs(this.elements, this.sketchbook, this.images);
 		this.group = new paper.Group(items);
 		console.log('copying '+items.length+' items');
 	}

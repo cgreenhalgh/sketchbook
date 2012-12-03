@@ -55,7 +55,7 @@ function colorToPaperjs(color) {
 }
 
 /** convert an array of elements to paperjs */
-function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
+function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 	if (iconSketchIds==undefined)
 		iconSketchIds = [];
 	var items = new Array();
@@ -97,7 +97,7 @@ function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
 				group = new paper.Group(outline);			
 			}
 			else {
-				var iconItems = sketch.toPaperjs(sketchbook, iconSketchIds);
+				var iconItems = sketch.toPaperjs(sketchbook, images, iconSketchIds);
 				group = new paper.Group(iconItems);
 			}
 			group.sketchElementId = element.id;
@@ -120,19 +120,42 @@ function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
 			group.sketchElementId = element.id;
 			items.push(group);
 		}
+		if (element.image!==undefined) {
+			var imageId = null;
+			for (var iid in images) {
+				if (images[iid].dataurl==element.image.dataurl) {
+					imageId = iid;
+					break;
+				} else
+					console.log('did not match image '+iid);
+			}
+			var item = null;
+			var bounds = new paper.Rectangle(element.image.x, element.image.y, element.image.width, element.image.height);
+			if (!imageId) {
+				console.log('Could not find image for dataurl');
+				item = new paper.Path.Rectangle(bounds);
+				// default
+				item.fillColor = 'grey';
+			} else {
+				item = new paper.Raster(imageId);
+				item.bounds = bounds;
+			}
+			item.sketchElementId = element.id;
+			items.push(item);
+		}
 	}
 	return items;
 }
 
 /** convert all elements to paperjs objects (in current/default paperjs project).
  * @return array of items added */
-Sketch.prototype.toPaperjs = function(sketchbook, iconSketchIds) {
+Sketch.prototype.toPaperjs = function(sketchbook, images, iconSketchIds) {
 	if (iconSketchIds==undefined)
 		iconSketchIds = [];
 	else
 		iconSketchIds = iconSketchIds.slice(0);
 	iconSketchIds.push(this.id);
-	return elementsToPaperjs(this.elements, sketchbook, iconSketchIds);
+	return elementsToPaperjs(this.elements, sketchbook, images, iconSketchIds);
 };
 
 /** get elementId (if any) for paperJs item */
@@ -249,6 +272,12 @@ function transformPoint(point, fromBounds, toBounds) {
 	return { x: (point.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left,
 		y: (point.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top };
 }
+function transformIcon(icon, fromBounds, toBounds) {
+	icon.x = (icon.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
+	icon.y = (icon.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
+	icon.width *= toBounds.width / fromBounds.width; 
+	icon.height *= toBounds.height / fromBounds.height; 
+}
 /** action to add (copy of) elements, including optional transformation from/to */
 Sketchbook.prototype.addElementsAction = function(sketchId, elements, fromBounds, toBounds) {
 	var action = new Action(this, 'addElements');
@@ -257,29 +286,26 @@ Sketchbook.prototype.addElementsAction = function(sketchId, elements, fromBounds
 	for (var ei=0; ei<elements.length; ei++) {
 		var el = elements[ei];
 		var newel = JSON.parse(JSON.stringify(el));
-		if (newel.line) {
-			for (var si=0; si<newel.line.segments.length;si++) {
-				var seg = newel.line.segments[si];
-				seg.point = transformPoint(seg.point, fromBounds, toBounds);
-				seg.handleIn.x *= toBounds.width / fromBounds.width;
-				seg.handleIn.y *= toBounds.height / fromBounds.height;
-				seg.handleOut.x *= toBounds.width / fromBounds.width;
-				seg.handleOut.y *= toBounds.height / fromBounds.height;
+		if (fromBounds && toBounds) {
+			if (newel.line) {
+				for (var si=0; si<newel.line.segments.length;si++) {
+					var seg = newel.line.segments[si];
+					seg.point = transformPoint(seg.point, fromBounds, toBounds);
+					seg.handleIn.x *= toBounds.width / fromBounds.width;
+					seg.handleIn.y *= toBounds.height / fromBounds.height;
+					seg.handleOut.x *= toBounds.width / fromBounds.width;
+					seg.handleOut.y *= toBounds.height / fromBounds.height;
+				}
 			}
-		}
-		if (newel.icon) {
-			var icon = newel.icon;
-			icon.x = (icon.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
-			icon.y = (icon.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
-			icon.width *= toBounds.width / fromBounds.width; 
-			icon.height *= toBounds.height / fromBounds.height; 
-		}
-		if (newel.frame) {
-			var icon = newel.frame;
-			icon.x = (icon.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
-			icon.y = (icon.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
-			icon.width *= toBounds.width / fromBounds.width; 
-			icon.height *= toBounds.height / fromBounds.height; 
+			if (newel.icon) {
+				transformIcon(newel.icon, fromBounds, toBounds);
+			}
+			if (newel.frame) {
+				transformIcon(newel.frame, fromBounds, toBounds);
+			}
+			if (newel.image) {
+				transformIcon(newel.image, fromBounds, toBounds);
+			}
 		}
 		delete newel.id;
 		action.elements.push(newel);

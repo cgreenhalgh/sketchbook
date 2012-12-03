@@ -3,7 +3,8 @@
 
 
 
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head>
+<body>
 <h1>Sketcher File Format</h1>
 This file describes the file format for the sketcher prototype. Not all
 features may be implemented/supported in the current version. Current
@@ -37,8 +38,7 @@ state := <span style="font-family: monospace;">{</span> <br>
 
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"nextId": </span>nextId<sub>int</sub><span style="font-family: monospace;">, </span> // numeric (integer) ID to be allocated to next thing created (of any kind)<br>
 
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"sketches": [</span> sketch* <span style="font-family: monospace;">],</span><br>
-//TODO &nbsp;&nbsp; <span style="font-family: monospace;">"sequences": [</span> sequence* <span style="font-family: monospace;">]</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"sketches": [</span> sketch* <span style="font-family: monospace;">],</span><br>//TODO &nbsp;&nbsp; <span style="font-family: monospace;">"sequences": [</span> sequence* <span style="font-family: monospace;">]</span><br>
 
 <span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span><br>
 <p><span style="font-style: italic;">A single sketch, i.e. "page", icon or background.</span></p>
@@ -58,7 +58,7 @@ element := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>
 // one of:<br>
 &nbsp;&nbsp;&nbsp; &nbsp; <span style="font-family: monospace;">"line": </span>line<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"icon": </span>icon<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"frame": </span>frame<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"icon": </span>icon<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"frame": </span>frame<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"image": </span>image<br>
 
 // TODO more<br>
 <span style="font-family: monospace;">}</span><br>
@@ -131,7 +131,19 @@ frame := <span style="font-family: monospace;">{</span><br>
 
 
 <span style="font-family: monospace;">}</span>
-<h3>Sketcher1 file format</h3>
+<p><span style="font-style: italic;">An image, i.e. as an element within a sketch</span> <br></p>
+image := <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp;<span style="font-family: monospace;">"dataurl": </span>dataurl<sub>string</sub><span style="font-family: monospace;">,</span><br>&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub><span style="font-family: monospace;">,</span><br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><br>
+
+
+<span style="font-family: monospace;">}</span><h3>Sketcher1 file format</h3>
 
 <span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">
 state := <span style="font-family: monospace;">{</span> <br>

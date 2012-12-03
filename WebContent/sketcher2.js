@@ -2,6 +2,10 @@
 // To do:
 // - sequences tab...
 
+// - load/select image
+// - copy image
+// - save/load image
+// (- edit image position)
 // (- edit line)
 // (- edit frame title)
 // (- edit frame position)
@@ -55,6 +59,11 @@ var currentSelections = new Array();
 // color(s)
 var lastSelectedColorElem = $('#defaultColor');
 
+//imageId -> { dataurl:string, info:{width:, height:}, withImages:[] } 
+var images = new Object();
+var nextImageId = 1;
+
+
 //==============================================================================
 // display constants
 
@@ -85,6 +94,12 @@ function clearProject(project) {
 	project.symbols = [];
 }
 
+function clearImages() {
+	images = new Object();
+	nextImageId = 1;
+	$('#hiddenimages img').remove();
+}
+
 /** clear everything! */
 function clearAll() {
 	sketchbook = new Sketchbook();
@@ -100,6 +115,8 @@ function clearAll() {
 	clearProject(objectDetailProject);
 	clearProject(objectOverviewProject);
 
+	clearImages();
+	
 	// remove all extra tabs
 	$('.objecttab').remove();
 	
@@ -208,7 +225,7 @@ function onActionSelected(event) {
 					var element = cs.record.selection.elements[ei];
 					if (element.id)
 						action.addElement(cs.record.selection.sketchId, element.id);
-					console.log('delete element '+cs.record.selection.sketchId+'/'+element.id+' - '+JSON.stringify(element));
+					console.log('delete element '+cs.record.selection.sketchId+'/'+element.id); //+' - '+JSON.stringify(element));
 				}
 			}
 		}
@@ -329,11 +346,67 @@ function showIndex() {
 	showAll(indexProject);
 }
 
+/** load image if not already then call withImage(image) */
+function withImage(dataurl, withImage) {
+	for (var imageId in images) {
+		var image = images[imageId];
+		if (image.dataurl==dataurl) {
+			var info = image.info;
+			if (info) {
+				if (withImage)
+					withImage(image);
+			} else {
+				image.withImages.push(withImage);
+			}
+		}
+	}
+	// add image
+	var imageId = 'image'+(nextImageId++);
+	var image = { dataurl: dataurl, withImages: [withImage] };
+	images[imageId] = image;
+	$('#hiddenimages').append('<img id="'+imageId+'" class="hidden" style="display:none" src="'+dataurl+
+            '" title="'+imageId+'"/>');
+	console.log('added image '+imageId);
+	var onload = function() {
+		console.log('loaded image '+imageId+' ('+this.width+'x'+this.height+')');
+		// image
+		image.info = { width: this.width, height: this.height };
+		for (var ici=0; ici<image.withImages.length; ici++) {
+			var cb = image.withImages[ici];
+			if (cb)
+				cb(image);
+		}
+		image.withImages = [];
+	};
+//	console.log('image width (immediate) = '+$('#'+imageId).attr('width'));
+	$('#'+imageId).load(onload);
+}
+
+
 // unmarshall and update interface, e.g. from onLoad
 function restoreState(jstate) {
 	sketchbook.unmarshall(jstate);
-	// TODO
-	showIndex();
+	var num = 0;
+	var count = 0;
+	var loaded = function(image) {
+		count++;
+		if (count==num)
+			showIndex();
+	};
+	// load any images...
+	for (var si in sketchbook.sketches) {
+		var sketch = sketchbook.sketches[si];
+		for (var ei=0; ei<sketch.elements.length; ei++) {
+			var el = sketch.elements[ei];
+			if (el.image && el.image.dataurl) {
+				num++;
+				withImage(el.image.dataurl, loaded);
+			}
+		}
+	}
+	if (num==0)
+		showIndex();
+	// TODO?
 }
 
 // setup one canvas/project. Return project
@@ -541,7 +614,7 @@ function getNewTool(project, view) {
 				}
 			}
 		}
-		return new CopyToSketchTool(project, sketchbook, sketchId, elements);
+		return new CopyToSketchTool(project, sketchbook, sketchId, elements, images);
 	}
 	console.log('current active tool unsupported: '+$('.actionSelected').attr('id'));
 	return new Tool('unknown', project);
@@ -657,7 +730,7 @@ function getBounds(layer) {
 /** create sketch item from elements (sketch optional) */
 function createIndexItemFromElements(sketch, elements, indexProject) {
 	indexProject.activate();
-	var items = elementsToPaperjs(elements, sketchbook);
+	var items = elementsToPaperjs(elements, sketchbook, images);
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
 	var group;
@@ -722,12 +795,12 @@ function refreshSketchViews(sketchId) {
 		objectDetailProject.activate();
 		clearProject(objectDetailProject);
 		objectDetailProject.layers[0].activate();
-		currentSketch.toPaperjs(sketchbook);
+		currentSketch.toPaperjs(sketchbook, images);
 
 		objectOverviewProject.activate();
 		clearProject(objectOverviewProject);
 		objectOverviewProject.layers[0].activate();
-		currentSketch.toPaperjs(sketchbook);	
+		currentSketch.toPaperjs(sketchbook, images);	
 		
 		redraw(paper);
 	}
@@ -956,10 +1029,24 @@ function doAction(action) {
 		}
 		// refresh index
 		if (deletedCurrent || showingIndex)
-			showIndex();
-		
+			showIndex();		
 	}
 }
+
+/** load image into selection */
+function loadImageAndSelect(dataurl) {
+	// select as callback/continuation (load may be delayed)
+	var select = function(image) {
+		// fake a select action for the image
+		var element = { image: { dataurl: image.dataurl, x: 0, y: 0, width: image.info.width, height: image.info.height } };
+		var selection = { elements: [ element ] };
+		var action = new Action(this, 'select');
+		action.selections = [ selection ];
+		doAction(action);
+	};
+	withImage(dataurl, select);
+}
+
 
 //===============================================================================
 // GUI Entry points from sketcher2.html:
@@ -1063,8 +1150,32 @@ function onObjectFilterChanges() {
 }
 
 // GUI Entry point
-function onLoadImage() {
-	// TODO
+function onLoadImage(evt) {
+	// note - uses html5 apis
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		// Great success! All the File APIs are supported.
+
+	    var files = evt.target.files; // FileList object
+		if (files.length==0) {
+			console.log('no image file specified');
+			return;
+		}
+		var f = files[0];
+	    console.log('read image file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
+	                  f.size+' bytes, last modified: '+
+	                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
+	    
+	    var reader = new FileReader();
+	    reader.onload = function(evt) {
+	        //console.log('file read: '+evt.target.result);
+	        loadImageAndSelect(evt.target.result);
+	    };
+	
+	    // Read in the file
+	    reader.readAsDataURL(f);
+	}
+	else
+		console.log('sorry, file apis not supported');
 }
 
 //GUI entry point
