@@ -86,12 +86,12 @@ function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
 			// copy sketch item(s)
 			var sketch = sketchbook.sketches[element.icon.sketchId];
 			var group;
-			if (!sketch) {
-				console.log('cannot find sketch '+element.icon.sketchId+' for icon');
-				group = new paper.Group();			
-			} else if (iconSketchIds.indexOf(element.icon.sketchId)>=0) {
-				console.log('found loop of sketches/icons for sketch '+element.icon.sketchId);
-				var outline = new paper.Path.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
+			if (!sketch || iconSketchIds.indexOf(element.icon.sketchId)>=0) {
+				if (!sketch)
+					console.log('cannot find sketch '+element.icon.sketchId+' for icon');
+				else
+					console.log('found loop of sketches/icons for sketch '+element.icon.sketchId);
+				var outline = new paper.Path.Rectangle(new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height));
 				outline.fillColor = 'grey';
 				//outline.strokeWidth = 2;
 				group = new paper.Group(outline);			
@@ -101,9 +101,23 @@ function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
 				group = new paper.Group(iconItems);
 			}
 			group.sketchElementId = element.id;
-			group.sketchIconSketchId = element.sketchId;
 			group.bounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
 			items.push(group);
+		}
+		if (element.frame!==undefined) {
+			var outline = new paper.Path.Rectangle(new paper.Rectangle(element.frame.x, element.frame.y, element.frame.width, element.frame.height));
+			// default
+			outline.strokeColor = 'grey';
+			outline.strokeWidth = 2;
+			var title = new paper.PointText(new paper.Point(element.frame.x+element.frame.width/2, element.frame.y+element.frame.height-16));
+			title.content = element.frame.description;
+			title.paragraphStyle.justification = 'center';
+			// default
+			title.characterStyle.fillColor = outline.strokeColor;
+			// default
+			title.characterStyle.fontSize = 12;
+			group = new paper.Group([outline, title]);			
+			group.sketchElementId = element.id;
 		}
 	}
 	return items;
@@ -221,6 +235,14 @@ Sketchbook.prototype.addLineAction = function(sketchId, path) {
 	return action;
 };
 
+Sketchbook.prototype.addFrameAction = function(sketchId, description, bounds) {
+	var action = new Action(this, 'addElements');
+	action.sketchId = sketchId;
+	var frame = { description: description, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+	action.elements = [{frame : frame}];
+	return action;	
+};
+
 /** transform {x:, y:} from paperjs fromBounds to paperjs toBounds */
 function transformPoint(point, fromBounds, toBounds) {
 	return { x: (point.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left,
@@ -246,6 +268,13 @@ Sketchbook.prototype.addElementsAction = function(sketchId, elements, fromBounds
 		}
 		if (newel.icon) {
 			var icon = newel.icon;
+			icon.x = (icon.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
+			icon.y = (icon.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
+			icon.width *= toBounds.width / fromBounds.width; 
+			icon.height *= toBounds.height / fromBounds.height; 
+		}
+		if (newel.frame) {
+			var icon = newel.frame;
 			icon.x = (icon.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
 			icon.y = (icon.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
 			icon.width *= toBounds.width / fromBounds.width; 

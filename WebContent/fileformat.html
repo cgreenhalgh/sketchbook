@@ -58,7 +58,8 @@ element := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>
 // one of:<br>
 &nbsp;&nbsp;&nbsp; &nbsp; <span style="font-family: monospace;">"line": </span>line<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"icon": </span>icon<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"icon": </span>icon<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"frame": </span>frame<br>
+
 // TODO more<br>
 <span style="font-family: monospace;">}</span><br>
 <p><span style="font-style: italic;">A single (e.g. hand-drawn) line, which may have multiple segments. Based on paperjs Path.<br>
@@ -106,16 +107,32 @@ segment := <span style="font-family: monospace;">{</span><br>
 <span style="font-family: monospace;">}</span><br>
 <p style="font-style: italic;">An icon, i.e. an instance of another sketch</p>
 icon := <span style="font-family: monospace;">{</span><br>
-&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId": </span>id<sub>number</sub>,<br>
-&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub>,<br>
-&nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub>,<br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId": </span>id<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
-&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub>,<br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
-&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub>,<br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><span style="font-family: monospace;"></span><br>
 
 <span style="font-family: monospace;">}</span><br>
+<p style="font-style: italic;">A frame, i.e. a titled region of interest within a sketch</p>
+frame := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub><span style="font-family: monospace;">,</span><br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><br>
+
+
+<span style="font-family: monospace;">}</span>
 <h3>Sketcher1 file format</h3>
+
 <span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">
 state := <span style="font-family: monospace;">{</span> <br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"nextObjectId": </span>nextObjectId<sub>int</sub><span style="font-family: monospace;">, </span> // numeric (integer) ID to be allocated to next object created<br>

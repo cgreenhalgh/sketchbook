@@ -1,8 +1,6 @@
 // sketcher2.js
 // To do:
-// - add frame
-// -- draw frame(s)
-// -- save/load frame
+// - add frame => fix scaling of index element with frame in it
 // - sequences tab...
 
 // (- edit line)
@@ -112,7 +110,7 @@ function clearAll() {
 function propertiesShowSelection() {
 	var actionId = $('.actionSelected').attr('id');
 	console.log('current action '+actionId);
-	if ('addLineAction'==actionId) {
+	if ('addLineAction'==actionId || 'addFrameAction'==actionId) {
 		return false;
 	}
 	return true;
@@ -498,11 +496,21 @@ function checkHighlight(ev) {
 	}
 }
 
+function takeOrphanText() {
+	var text = $('#orphanText').val();
+	$('#orphanText').val('');
+	return text;
+}
+
 /** get new/current tool */
 function getNewTool(project, view) {
 	if ($('#addLineAction').hasClass('actionSelected')) {
 		if (currentSketch && currentSketch.id)
 			return new LineTool(project, sketchbook, currentSketch.id);
+	}
+	else if ($('#addFrameAction').hasClass('actionSelected')) {
+		if (currentSketch && currentSketch.id)
+			return new FrameTool(project, sketchbook, currentSketch.id, takeOrphanText());
 	}
 	else if ($('#showAllAction').hasClass('actionSelected')) {
 		return new ShowAllTool(project);
@@ -644,12 +652,14 @@ function createIndexItemFromElements(sketch, elements, indexProject) {
 		group = new paper.Group();
 	else
 		group = new paper.Group(items);
-	var symbol = new paper.Symbol(group); //getCachedSymbol(indexProject, sketchId);
-	var symbolBounds = symbol.definition.bounds;
-
+	//var symbol = new paper.Symbol(group); //getCachedSymbol(indexProject, sketchId);
+	//var symbolBounds = symbol.definition.bounds;
+	// try just a group...
+	var symbolBounds = group.bounds;
+	
 	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
 			(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
-	var placed = symbol.place();
+	var placed = group; //symbol.place();
 	//console.log('symbolbounds='+symbolBounds+', placed bounds='+placed.bounds);
 	placed.scale(scale);
 	// naming this makes the Group creation explode :-(
@@ -765,7 +775,7 @@ function showEditor(sketchId) {
 	$('#selectAction').removeClass('actionDisabled');
 	$('#addLineAction').removeClass('actionDisabled');
 	//$('#addTextAction').removeClass('actionDisabled');
-	//$('#addFrameAction').removeClass('actionDisabled');
+	$('#addFrameAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
 
 	updateActionsForCurrentSelection();

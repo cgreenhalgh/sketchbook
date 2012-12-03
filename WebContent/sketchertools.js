@@ -391,7 +391,6 @@ CopyToSketchTool.prototype.move = function(point) {
 	}
 	// activate overlay layer
 	activateOverlay(this.project);
-	// TODO preview elements in place
 	this.path = new paper.Path.Rectangle(this.startPoint, point);
 	this.path.strokeColor = 'red';
 	this.path.strokeWidth = 1;
@@ -413,4 +412,34 @@ CopyToSketchTool.prototype.end = function(point) {
 		return this.sketchbook.addElementsAction(this.sketchId, this.elements, this.elementBounds, bounds);
 	}
 	return null;
+};
+
+function FrameTool(project, sketchbook, sketchId, description) {
+	Tool.call(this, 'frame', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;	
+	this.description = description;
+}
+FrameTool.prototype = new Tool();
+
+FrameTool.prototype.begin = function(point) {
+	this.startPoint = point;
+};
+FrameTool.prototype.move = function(point) {
+	if (this.path) {
+		this.path.remove();
+	}
+	// activate overlay layer
+	activateOverlay(this.project);
+	this.path = new paper.Path.Rectangle(this.startPoint, point);
+	this.path.strokeColor = 'red';
+	this.path.strokeWidth = 1;
+};
+FrameTool.prototype.end = function(point) {
+	if (this.path) {
+		this.path.remove();
+		delete this.path;
+	}
+	var bounds = new paper.Rectangle(this.startPoint, point);
+	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds);
 };
