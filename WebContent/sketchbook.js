@@ -118,6 +118,7 @@ function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
 			title.characterStyle.fontSize = 12;
 			group = new paper.Group([outline, title]);			
 			group.sketchElementId = element.id;
+			items.push(group);
 		}
 	}
 	return items;

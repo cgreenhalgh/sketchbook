@@ -1,6 +1,5 @@
 // sketcher2.js
 // To do:
-// - add frame => fix scaling of index element with frame in it
 // - sequences tab...
 
 // (- edit line)
@@ -641,6 +640,20 @@ function showAll(project) {
 function getObjectTitle(sketchId) {
 	return sketchbook.sketches[sketchId].getTitle();
 }
+
+function getBounds(layer) {
+	// layer.bounds doesn't seem to work with Groups
+	var bounds = new paper.Rectangle(layer.bounds);
+	for (var ci=0; ci<layer.children.length; ci++) {
+		var c = layer.children[ci];
+		var b = c.bounds;
+		if (b) {
+			bounds = bounds.unite(b);
+		}
+	}
+	return bounds;
+}
+
 /** create sketch item from elements (sketch optional) */
 function createIndexItemFromElements(sketch, elements, indexProject) {
 	indexProject.activate();
@@ -655,7 +668,7 @@ function createIndexItemFromElements(sketch, elements, indexProject) {
 	//var symbol = new paper.Symbol(group); //getCachedSymbol(indexProject, sketchId);
 	//var symbolBounds = symbol.definition.bounds;
 	// try just a group...
-	var symbolBounds = group.bounds;
+	var symbolBounds = getBounds(group);
 	
 	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
 			(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;

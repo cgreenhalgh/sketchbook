@@ -99,7 +99,7 @@ ShowAllTool.prototype.begin = function(point) {
 		var b = c.bounds;
 		if (b) {
 			if (bounds==null)
-				bounds = b;
+				bounds = new paper.Rectangle(b);
 			else
 				bounds = bounds.unite(b);
 		}
