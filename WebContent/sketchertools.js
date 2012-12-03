@@ -20,6 +20,7 @@ Tool.prototype.end = function(point) {
 };
 
 function activateOverlay(project) {
+	project.activate();
 	project.layers[1].activate();
 }
 
@@ -300,6 +301,7 @@ function SelectTool(project, sketchbook, sketchId) {
 	this.selectedItems = new Array();
 	this.highlightItems = new Array();
 }
+SelectTool.prototype = new Tool();
 
 SelectTool.prototype.clearHighlightItems = function() {
 	for (var ix=0; ix<this.highlightItems.length; ix++) 
@@ -358,5 +360,57 @@ SelectTool.prototype.end = function(point) {
 	var items = this.selectedItems;
 	this.selectedItems = [];
 	// we'll use an action for this although it doesn't actually modify the sketchbook state!
-	return sketchbook.selectItemsAction(this.sketchId, items);
+	return this.sketchbook.selectItemsAction(this.sketchId, items);
+};
+
+function CopyToSketchTool(project, sketchbook, sketchId, elements) {
+	Tool.call(this, 'copyToSketch', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;	
+	this.elements = elements;
+}
+CopyToSketchTool.prototype = new Tool();
+
+CopyToSketchTool.prototype.begin = function(point) {
+	this.startPoint = point;
+	// activate overlay layer
+	activateOverlay(this.project);
+	if (this.elements) {
+		var items = elementsToPaperjs(this.elements, this.sketchbook);
+		this.group = new paper.Group(items);
+		console.log('copying '+items.length+' items');
+	}
+	else
+		this.group = new paper.Group();
+	this.elementBounds = new paper.Rectangle(this.group.bounds);
+	this.group.visible = false;
+};
+CopyToSketchTool.prototype.move = function(point) {
+	if (this.path) {
+		this.path.remove();
+	}
+	// activate overlay layer
+	activateOverlay(this.project);
+	// TODO preview elements in place
+	this.path = new paper.Path.Rectangle(this.startPoint, point);
+	this.path.strokeColor = 'red';
+	this.path.strokeWidth = 1;
+
+	this.group.bounds = new paper.Rectangle(this.startPoint, point);
+	this.group.visible = true;
+};
+CopyToSketchTool.prototype.end = function(point) {
+	if (this.path) {
+		this.path.remove();
+		delete this.path;
+	}
+	if (this.group) {
+		this.group.remove();
+		delete this.group;
+	}
+	if (this.elements) {
+		var bounds = new paper.Rectangle(this.startPoint, point);
+		return this.sketchbook.addElementsAction(this.sketchId, this.elements, this.elementBounds, bounds);
+	}
+	return null;
 };

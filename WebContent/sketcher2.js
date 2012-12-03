@@ -1,9 +1,17 @@
 // sketcher2.js
 // To do:
+// - add frame
+// -- draw frame(s)
+// -- save/load frame
+// - sequences tab...
+
 // (- edit line)
-// - copy line
-// - copy sketch to index
-// - copy sketch to sketch (link)
+// (- edit frame title)
+// (- edit frame position)
+// - add text
+// - edit text content
+// (- edit text position)
+// - text styling (font, size) - new and edit
 // ...
 
 // global state
@@ -209,6 +217,7 @@ function onActionSelected(event) {
 		}
 		$(this).removeClass('actionSelected');
 		$('#selectAction').addClass('actionSelected');
+		updatePropertiesForCurrentSelection();
 
 		if (action.items.length>0)
 			doAction(action);
@@ -217,7 +226,29 @@ function onActionSelected(event) {
 		}
 	}
 	else if (id=='copyAction') {
-		// TODO
+		// if showing Index view then immediately copy selected sketch(es)
+		if (showingIndex) {
+			// each current selection -> new sketch
+			for (var si=0; si<currentSelections.length; si++) {
+				var cs = currentSelections[si];
+				var action = sketchbook.newSketchAction();
+				if (cs.record.selection.sketch) {
+					// copy an entire sketch
+					action.sketch.description = cs.record.selection.sketch.description;
+					action.addElements(cs.record.selection.sketch.elements);
+				} else if (cs.record.selection.elements) {
+					// copy elements into a new sketch
+					action.addElements(cs.record.selection.elements);
+				}
+				doAction(action);
+			}
+			// revert to select
+			$(this).removeClass('actionSelected');
+			$('#selectAction').addClass('actionSelected');
+			updatePropertiesForCurrentSelection();
+			return;
+		}
+		// copy within sketch... uses copy tool
 	}
 	else if (id=='editAction') {
 		for (var si=0; si<currentSelections.length; si++) {
@@ -233,6 +264,9 @@ function onActionSelected(event) {
 					showEditor(sketchId);
 					// TODO element(s) within sketch? i.e. when currentSketch = sketch
 					// note: showEditor resets actions
+					$(this).removeClass('actionSelected');
+					$('#selectAction').addClass('actionSelected');
+					updatePropertiesForCurrentSelection();
 					return;
 				}
 				else 
@@ -483,10 +517,27 @@ function getNewTool(project, view) {
 		var sketchId = currentSketch ? currentSketch.id : undefined;
 		return new SelectTool(project, sketchbook, sketchId);
 	}
-	else {
-		console.log('current active tool unsupported: '+$('.actionSelected').attr('id'));
-		return new Tool('unknown', project);
+	else if ($('#copyAction').hasClass('actionSelected') && !showingIndex) {
+		var sketchId = currentSketch ? currentSketch.id : undefined;
+		var elements = [];
+		// convert selection to elements to add
+		for (var si=0; si<currentSelections.length; si++) {
+			var cs = currentSelections[si];
+			if (cs.record.selection.sketch) {
+				// copy an entire sketch = icon/link
+				var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
+				elements.push(icon);
+			} else if (cs.record.selection.elements) {
+				// copy elements into a new sketch
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					elements.push(cs.record.selection.elements[ei]);
+				}
+			}
+		}
+		return new CopyToSketchTool(project, sketchbook, sketchId, elements);
 	}
+	console.log('current active tool unsupported: '+$('.actionSelected').attr('id'));
+	return new Tool('unknown', project);
 }
 
 /** register events for tool(s) */
@@ -585,7 +636,7 @@ function getObjectTitle(sketchId) {
 /** create sketch item from elements (sketch optional) */
 function createIndexItemFromElements(sketch, elements, indexProject) {
 	indexProject.activate();
-	var items = elementsToPaperjs(elements);
+	var items = elementsToPaperjs(elements, sketchbook);
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
 	var group;
@@ -648,26 +699,24 @@ function refreshSketchViews(sketchId) {
 		objectDetailProject.activate();
 		clearProject(objectDetailProject);
 		objectDetailProject.layers[0].activate();
-		currentSketch.toPaperjs();
+		currentSketch.toPaperjs(sketchbook);
 
 		objectOverviewProject.activate();
 		clearProject(objectOverviewProject);
 		objectOverviewProject.layers[0].activate();
-		currentSketch.toPaperjs();	
+		currentSketch.toPaperjs(sketchbook);	
 		
 		redraw(paper);
 	}
 }
 function updateActionsForCurrentSelection() {
 	// edit - one thing?!
-	// TODO not yet implemented
-	$('#editAction').addClass('actionDisabled');		
-//	if (currentSelections.length==1) 
-//		$('#editAction').removeClass('actionDisabled');
-//	else {
-//		console.log('edit disabled: '+currentSelections.length+' selections');
-//		$('#editAction').addClass('actionDisabled');		
-//	}
+	if (currentSelections.length==1) 
+		$('#editAction').removeClass('actionDisabled');
+	else {
+		console.log('edit disabled: '+currentSelections.length+' selections');
+		$('#editAction').addClass('actionDisabled');		
+	}
 	// copy - any number of things?
 	if (currentSelections.length>0)
 		$('#copyAction').removeClass('actionDisabled');
@@ -844,7 +893,7 @@ function doAction(action) {
 		// TODO fix other occurences, e.g. index, selection history
 		
 	}
-	else if (action.type=='addElement') {
+	else if (action.type=='addElements') {
 		//console.log('handle addElement '+action.element);
 		refreshSketchViews(action.sketchId);
 		// TODO select it?

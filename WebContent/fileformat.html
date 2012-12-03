@@ -2,6 +2,7 @@
 <html><head>
 
 
+
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
 <h1>Sketcher File Format</h1>
 This file describes the file format for the sketcher prototype. Not all
@@ -56,7 +57,8 @@ sketch := <span style="font-family: monospace;">{</span><br>
 element := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>
 // one of:<br>
-&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;  <span style="font-family: monospace;">"line": </span>line<br>
+&nbsp;&nbsp;&nbsp; &nbsp; <span style="font-family: monospace;">"line": </span>line<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"icon": </span>icon<br>
 // TODO more<br>
 <span style="font-family: monospace;">}</span><br>
 <p><span style="font-style: italic;">A single (e.g. hand-drawn) line, which may have multiple segments. Based on paperjs Path.<br>
@@ -102,7 +104,17 @@ segment := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"blue": </span>blue<sub>number</sub><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span> // Amount of blue, between 0 and 1<br>
 
 <span style="font-family: monospace;">}</span><br>
-<br>
+<p style="font-style: italic;">An icon, i.e. an instance of another sketch</p>
+icon := <span style="font-family: monospace;">{</span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId": </span>id<sub>number</sub>,<br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub>,<br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub>,<br>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub>,<br>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub>,<br>
+
+<span style="font-family: monospace;">}</span><br>
 <h3>Sketcher1 file format</h3>
 <span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">
 state := <span style="font-family: monospace;">{</span> <br>

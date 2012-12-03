@@ -55,7 +55,9 @@ function colorToPaperjs(color) {
 }
 
 /** convert an array of elements to paperjs */
-function elementsToPaperjs(elements) {
+function elementsToPaperjs(elements, sketchbook, iconSketchIds) {
+	if (iconSketchIds==undefined)
+		iconSketchIds = [];
 	var items = new Array();
 	for (var ix=0; ix<elements.length; ix++) {
 		var element = elements[ix];
@@ -80,14 +82,42 @@ function elementsToPaperjs(elements) {
 				}
 			}
 		}
+		if (element.icon!==undefined) {
+			// copy sketch item(s)
+			var sketch = sketchbook.sketches[element.icon.sketchId];
+			var group;
+			if (!sketch) {
+				console.log('cannot find sketch '+element.icon.sketchId+' for icon');
+				group = new paper.Group();			
+			} else if (iconSketchIds.indexOf(element.icon.sketchId)>=0) {
+				console.log('found loop of sketches/icons for sketch '+element.icon.sketchId);
+				var outline = new paper.Path.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
+				outline.fillColor = 'grey';
+				//outline.strokeWidth = 2;
+				group = new paper.Group(outline);			
+			}
+			else {
+				var iconItems = sketch.toPaperjs(sketchbook, iconSketchIds);
+				group = new paper.Group(iconItems);
+			}
+			group.sketchElementId = element.id;
+			group.sketchIconSketchId = element.sketchId;
+			group.bounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
+			items.push(group);
+		}
 	}
 	return items;
 }
 
 /** convert all elements to paperjs objects (in current/default paperjs project).
  * @return array of items added */
-Sketch.prototype.toPaperjs = function() {
-	return elementsToPaperjs(this.elements);
+Sketch.prototype.toPaperjs = function(sketchbook, iconSketchIds) {
+	if (iconSketchIds==undefined)
+		iconSketchIds = [];
+	else
+		iconSketchIds = iconSketchIds.slice(0);
+	iconSketchIds.push(this.id);
+	return elementsToPaperjs(this.elements, sketchbook, iconSketchIds);
 };
 
 /** get elementId (if any) for paperJs item */
@@ -145,9 +175,23 @@ function Action(sketchbook, type) {
 	this.type = type;
 }
 
+function NewSketchAction(sketchbook, sketchId) {
+	Action.call(this, sketchbook, 'newSketch');
+	this.sketch = new Sketch(sketchId);
+}
+NewSketchAction.prototype = new Action();
+
+NewSketchAction.prototype.addElements = function(elements) {
+	for (var ei=0; ei<elements.length; ei++) {
+		var el = elements[ei];
+		var newel = JSON.parse(JSON.stringify(el));
+		delete newel.id;
+		this.sketch.elements.push(newel);
+	}
+};
+
 Sketchbook.prototype.newSketchAction = function() {
-	var action = new Action(this, 'newSketch');
-	action.sketch = new Sketch(this.nextId++);
+	var action = new NewSketchAction(this, this.nextId++);
 	return action;
 };
 
@@ -160,11 +204,11 @@ Sketchbook.prototype.setSketchDescriptionAction = function(sketchId, description
 
 /** return action to add a new line to a sketch, from provided paperjs Path */
 Sketchbook.prototype.addLineAction = function(sketchId, path) {
-	var action = new Action(this, 'addElement');
+	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
 	var color = { red: path.strokeColor.red, green: path.strokeColor.green, blue: path.strokeColor.blue };
 	var line = { color: color, width: path.strokeWidth, segments: [] };
-	action.element = { line : line }; // id?
+	action.elements =  [{ line : line }]; // id?
 	for (var six=0; six<path.segments.length; six++) {
 		var psegment = path.segments[six];
 		var segment = { 
@@ -176,6 +220,43 @@ Sketchbook.prototype.addLineAction = function(sketchId, path) {
 	}
 	return action;
 };
+
+/** transform {x:, y:} from paperjs fromBounds to paperjs toBounds */
+function transformPoint(point, fromBounds, toBounds) {
+	return { x: (point.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left,
+		y: (point.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top };
+}
+/** action to add (copy of) elements, including optional transformation from/to */
+Sketchbook.prototype.addElementsAction = function(sketchId, elements, fromBounds, toBounds) {
+	var action = new Action(this, 'addElements');
+	action.sketchId = sketchId;
+	action.elements =  [];
+	for (var ei=0; ei<elements.length; ei++) {
+		var el = elements[ei];
+		var newel = JSON.parse(JSON.stringify(el));
+		if (newel.line) {
+			for (var si=0; si<newel.line.segments.length;si++) {
+				var seg = newel.line.segments[si];
+				seg.point = transformPoint(seg.point, fromBounds, toBounds);
+				seg.handleIn.x *= toBounds.width / fromBounds.width;
+				seg.handleIn.y *= toBounds.height / fromBounds.height;
+				seg.handleOut.x *= toBounds.width / fromBounds.width;
+				seg.handleOut.y *= toBounds.height / fromBounds.height;
+			}
+		}
+		if (newel.icon) {
+			var icon = newel.icon;
+			icon.x = (icon.x-fromBounds.left)*toBounds.width/fromBounds.width+toBounds.left;
+			icon.y = (icon.y-fromBounds.top)*toBounds.height/fromBounds.height+toBounds.top;
+			icon.width *= toBounds.width / fromBounds.width; 
+			icon.height *= toBounds.height / fromBounds.height; 
+		}
+		delete newel.id;
+		action.elements.push(newel);
+	}
+	return action;
+};
+
 
 /** return action to select a list of elements within a sketch - not really a model action */
 Sketchbook.prototype.selectItemsAction = function(defaultSketchId, items) {
@@ -284,6 +365,12 @@ Sketchbook.prototype.deleteAction = function() {
 Sketchbook.prototype.doAction = function(action) {
 	if (action.type=='newSketch') {
 		this.sketches[action.sketch.id] = action.sketch;
+		// fix element IDs
+		for (var ei=0; ei<action.sketch.elements.length; ei++) {
+			var el = action.sketch.elements[ei];
+			if (!el.id)
+				el.id = this.nextId++;
+		}
 		this.changed = true;
 	}
 	else if (action.type=='setSketchDescription') {
@@ -294,13 +381,16 @@ Sketchbook.prototype.doAction = function(action) {
 		}
 		this.changed = true;
 	}
-	else if (action.type=='addElement') {
+	else if (action.type=='addElements') {
 		var sketch = sketchbook.sketches[action.sketchId];
-		if (sketch!==undefined && action.element!=undefined) {
-			if (!action.element.id)
-				// only allocate once else causes problems for undo/redo
-				action.element.id = this.nextId++;
-			sketch.elements.push(action.element);
+		if (sketch!==undefined && action.elements!=undefined) {
+			for (var ei=0; ei<action.elements.length; ei++) {
+				var el = action.elements[ei];
+				if (!el.id)
+					// only allocate once else causes problems for undo/redo
+					el.id = this.nextId++;
+				sketch.elements.push(el);
+			}
 		}
 		this.changed = true;		
 	}
@@ -377,13 +467,18 @@ Sketchbook.prototype.undoAction = function(action) {
 		}
 		this.changed = true;
 	}
-	else if (action.type=='addElement') {
+	else if (action.type=='addElements') {
 		var sketch = sketchbook.sketches[action.sketchId];
-		if (sketch!==undefined && action.element!==undefined && action.element.id!==undefined) {
-			for (var ix=0; ix<sketch.elements.length; ix++) {
-				if (sketch.elements[ix].id==action.element.id) {
-					delete sketch.elements[ix];
-					break;
+		if (sketch!==undefined && action.elements!==undefined) {
+			for (var ei=0; ei<actions.elements.length; ei++) {
+				var el = actions.elements[ei];
+				if (el.id!==undefined) {
+					for (var ix=0; ix<sketch.elements.length; ix++) {
+						if (sketch.elements[ix].id==el.id) {
+							sketch.elements.splice(ix,1);
+							break;
+						}
+					}
 				}
 			}
 		}
