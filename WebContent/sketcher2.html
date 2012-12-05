@@ -38,7 +38,6 @@
 			>Index</div>
 		<div class="tab" id="tabSequences" 
 			onclick="javascript:onShowSequences();" 
-			style="display:none"
 			>Sequences</div>
 		<div class="footer"></div>
 	</div>
@@ -56,7 +55,7 @@
 		<canvas id="indexCanvas" class="indexCanvas" ></canvas>								
 	</div>
 	<!-- sequences -->
-	<div id="sequences" class="index tabview" style="display:none">
+	<div id="sequences" class="index tabview">
 		<div>
 			<div class="sequencesColumn">
 				<div class="indexHeader">
@@ -71,7 +70,7 @@
 					
 					<div class="footer"></div>
 				</div>
-				<canvas id="sequences1Canvas" class="sequencesCanvas" ></canvas>								
+				<div id="sequences1Div" class="sequencesDiv" ></div>								
 			</div>
 			<div class="sequencesColumn">
 				<div class="indexHeader">
@@ -86,7 +85,7 @@
 					
 					<div class="footer"></div>
 				</div>
-				<canvas id="sequences2Canvas" class="sequencesCanvas" ></canvas>								
+				<div id="sequences2Div" class="sequencesDiv" ></div>								
 			</div>
 			<div class="sequencesColumn">
 				<div class="indexHeader">
@@ -136,6 +135,7 @@
 			<div class="action actionDisabled" id="addTextAction">Text</div>
 			<div class="action actionDisabled" id="addFrameAction">Frame</div>
 			<div class="action" id="editAction">Edit</div>
+			<div class="action" id="moveAction">Edit</div>
 			<div class="action" id="copyAction">Copy</div>
 			<div class="action" id="deleteAction">Delete</div>
 		</div>
@@ -154,6 +154,8 @@
 						<div class="color" style="background-color:#ffff00"></div>
 					</td>
 				</tr>
+				<!-- font size -->
+				<!-- frame/text content (?) -->
 			</table>
 		</div>
 		<div class="selectionHistory">

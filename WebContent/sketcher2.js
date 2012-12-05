@@ -26,9 +26,13 @@
 var sketchbook;
 // current (editor) sketch
 var currentSketch;
+// current selections view sketch
+var currentSequencesSketch;
 
 // showing index?
 var showingIndex;
+// showing sequences?
+var showingSequences;
 
 // paperjs projects
 // paperjs project for indexCanvas
@@ -69,6 +73,10 @@ var lastSelectedColorElem = $('#defaultColor');
 var images = new Object();
 var nextImageId = 1;
 
+//dom id -> frame element 
+var sequencesFrames = new Object();
+
+var animateToInfo;
 
 //==============================================================================
 // display constants
@@ -78,14 +86,38 @@ var INDEX_CELL_MARGIN = 10;
 var INDEX_LABEL_HEIGHT = 20;
 var LABEL_FONT_SIZE = 12;
 var MIN_SIZE = 10;
-var MAX_ZOOM = 2;
-
+var MAX_ZOOM = 10;
+var FRAME_TRANSITION_INTERVAL_MS = 50;
+var FRAME_TRANSITION_DURATION_S = 0.5;
 
 //==============================================================================
 // symbol (sketch) caches
 
 //==============================================================================
 // various internal functions
+
+function animateTo(project, zoom, center) {
+	if (animateToInfo && animateToInfo.interval) {
+		clearInterval(animateToInfo.interval);
+	}
+	animateToInfo = { project: project, zoomFrom: project.view.zoom, zoomTo: zoom, centerFrom: project.view.center, centerTo: center,
+			timeFrom: new Date().getTime() };
+	animateToInfo.interval= setInterval(function() {
+		var time = new Date().getTime();
+		var elapsed = (time-animateToInfo.timeFrom)/1000.0;
+		if (elapsed>FRAME_TRANSITION_DURATION_S) {
+			clearInterval(animateToInfo.interval);
+			animateToInfo.interval = null;
+			elapsed = FRAME_TRANSITION_DURATION_S;
+		}
+		var a = elapsed/FRAME_TRANSITION_DURATION_S;
+		console.log('animate a='+a+' at '+time);//+' '+JSON.stringify(animateToInfo));
+		project.view.zoom = a*animateToInfo.zoomTo+(1-a)*animateToInfo.zoomFrom;
+		project.view.center = new paper.Point(a*animateToInfo.centerTo.x+(1-a)*animateToInfo.centerFrom.x, 
+				a*animateToInfo.centerTo.y+(1-a)*animateToInfo.centerFrom.y);
+	}, FRAME_TRANSITION_INTERVAL_MS);
+}
+
 
 /** convert CSS points to screen pixels, see http://stackoverflow.com/questions/279749/detecting-the-system-dpi-ppi-from-js-css */
 function pt2px(pt) {
@@ -315,6 +347,7 @@ function showIndex() {
 	$('.tabview').hide();
 	$('#index').show();
 	currentSketch = undefined;
+	showingSequences = false;
 	
 	// update actions & properties
 	$('.property').addClass('propertyDisabled');
@@ -361,6 +394,86 @@ function showIndex() {
 	
 	showingIndex = true;	
 	showAll(indexProject);
+}
+
+/** GUI entry from sequences frame div mousedown */
+function onSequenceFrameSelected(ev) {
+	var id = $(this).attr('id');
+	
+	$('.sequenceFrame').removeClass('sequenceFrameSelected');
+	$(this).addClass('sequenceFrameSelected');
+	
+	var fr = sequencesFrames[id];
+	if (fr) {
+		console.log('selected frame '+fr.sketchId+'/'+fr.elementId);
+		
+		var sketch = sketchbook.sketches[fr.sketchId];
+		if (sketch) {
+			var el = sketch.getElementById(fr.elementId);
+			var action = sketchbook.selectElementsAction(sketch.id, [el]);
+			doAction(action);
+		}
+	}
+	else 
+		console.log('could not find sequencesFrames '+id);
+}
+/** update sequences 1 list */
+function updateSequences1() {
+	var div = $('#sequences1Div');
+	div.empty();
+
+	sequencesFrames = new Object();
+
+	for (var si in sketchbook.sketches) {
+		var frames = [];
+		var sketch = sketchbook.sketches[si];
+		for (var ei=0; ei<sketch.elements.length; ei++) {
+			var el = sketch.elements[ei];
+			if (el.frame)
+				frames.push(el);
+		}
+		if (frames.length>0) {
+			div.append('<div id="#seq1_obj'+sketch.id+'" class="sequenceObject">Object '+sketch.getTitle()+'</div>');
+			for (var fi=0; fi<frames.length; fi++) {
+				var el = frames[fi];
+				var id = '#seq1_obj'+sketch.id+'_frame'+el.id;
+				sequencesFrames[id] = { frame: el.frame, sketchId: sketch.id, elementId: el.id };
+				div.append('<div id="'+id+'" class="sequenceFrame">Frame '+el.frame.description+'</div>');
+			}
+		}
+	}
+	// TODO
+}
+
+//GUI entry point
+function showSequences() {
+	// update tab classes
+	$('.tab').removeClass('tabselected');
+	$('#tabSequences').addClass('tabselected');
+	$('.tabview').hide();
+	$('#index').hide();
+	$('#sequences').show();
+	currentSketch = undefined;
+	showingIndex = false;	
+	
+	// update actions & properties
+	$('.property').addClass('propertyDisabled');
+
+	$('.action').addClass('actionDisabled');
+	$('#selectAction').removeClass('actionDisabled');
+	onActionSelected.call($('#selectAction'));
+
+	updateActionsForCurrentSelection();
+	updatePropertiesForCurrentSelection();
+	
+	updateSequences1();
+	clearProject(sequencesViewProject);
+	currentSequencesSketch = undefined;
+
+	// scaling problem workaround
+	handleResize();
+	
+	showingSequences = true;	
 }
 
 /** load image if not already then call withImage(image) */
@@ -445,8 +558,6 @@ function setupPaperjs() {
 	objectOverviewProject = setupCanvas('objectOverviewCanvas');	
 	objectDetailProject = setupCanvas('objectDetailCanvas');
 	selectionProject = setupCanvas('selectionCanvas');
-	sequences1Project = setupCanvas('sequences1Canvas');
-	sequences2Project = setupCanvas('sequences2Canvas');
 	sequencesViewProject = setupCanvas('sequencesViewCanvas');
 }
 
@@ -867,6 +978,7 @@ function showEditor(sketchId) {
 	}
 	
 	showingIndex = false;	
+	showingSequences = false;
 	
 	$('.tab').removeClass('tabselected');
 	$('#tab_'+sketchId).addClass('tabselected');
@@ -969,6 +1081,7 @@ function handleSelections(selections) {
 	// remove old selection(s)
 	clearCurrentSelection();
 	// update current selection
+	var showFrame = showingSequences;
 	for (var si=0; si<newSelectionRecordIds.length; si++) {
 		var id = newSelectionRecordIds[si];
 		var selectionRecord = selectionRecords[id];
@@ -987,6 +1100,35 @@ function handleSelections(selections) {
 		currentSelection.items.push(item);
 		console.log('added history selection for '+currentSelection.id);
 		// TODO highlght current selection in object projects and/or index projects??
+		// if sequences view, first frame selection, show/zoom to...
+		if (showFrame && selectionRecord.selection.sketchId && selectionRecord.selection.elements) {
+			for (var ei=0; ei<selectionRecord.selection.elements.length; ei++) {
+				var el = selectionRecord.selection.elements[ei];
+				if (el.frame) { 
+					showFrame = false; // only once
+					var sketch = sketchbook.sketches[selectionRecord.selection.sketchId];
+
+					sequencesViewProject.activate();
+					var bounds = new paper.Rectangle(el.frame.x, el.frame.y, el.frame.width, el.frame.height);
+					if (sketch!=currentSequencesSketch) {
+						clearProject(sequencesViewProject);
+						sequencesViewProject.layers[0].activate();
+						currentSequencesSketch = sketch;
+						currentSequencesSketch.toPaperjs(sketchbook, images);
+						showAll(sequencesViewProject);
+					}
+					var w = $(sequencesViewProject.view._element).width();
+					var h = $(sequencesViewProject.view._element).height();
+					var zoom = Math.min(MAX_ZOOM, w/bounds.width, h/bounds.height);
+					//console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
+					animateTo(sequencesViewProject, zoom, bounds.center);
+					//sequencesViewProject.view.zoom = zoom;
+					//sequencesViewProject.view.center = bounds.center;
+					// zoom 
+					break;
+				}
+			}
+		}
 	}
 	updateActionsForCurrentSelection();
 	updatePropertiesForCurrentSelection();
@@ -1162,7 +1304,7 @@ function onLoad(evt) {
 
 // GUI entry point
 function onShowSequences() {
-	// TODO
+	showSequences();
 }
 
 // GUI entry point 
@@ -1264,6 +1406,7 @@ $(document).ready(function() {
 	
 	$('.action').on('click', onActionSelected);
 	$('.color').on('click', onColorSelected);
+	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);
 	
 	registerHighlightEvents();
 	

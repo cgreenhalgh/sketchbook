@@ -148,6 +148,12 @@ canvas.sequencesCanvas {
 	height:400px;
 	width: 99%;
 }
+div.sequencesDiv {
+	height:400px;
+	width: 99%;
+	border:1px solid grey;
+	overflow: scroll;
+}
 canvas.sequencesViewCanvas {
 	height:400px;
 	width: 99%;
@@ -204,4 +210,16 @@ div.colorHighlight {
 }
 div.colorSelected {
 	border: 3px solid black;
+}
+div.sequenceObject {
+	font-size: large;
+	color: grey;
+	/*border: 1px solid gray;*/	
+}
+div.sequenceFrame {
+	/*border: 1px solid gray;*/	
+}
+div.sequenceFrameSelected {
+	background-color: #c0c0c0;
+	/*border: 1px solid gray;*/	
 }

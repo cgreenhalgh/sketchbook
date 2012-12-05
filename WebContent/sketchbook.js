@@ -397,6 +397,20 @@ Sketchbook.prototype.selectItemsAction = function(defaultSketchId, items) {
 	return action;
 };
 
+/** return action to select a list of elements within a sketch - not really a model action */
+Sketchbook.prototype.selectElementsAction = function(sketchId, elements) {
+	var action = new Action(this, 'select');
+	var defaultSelection = { sketchId: sketchId, elements: [] };
+	action.selections = [defaultSelection];
+	for (var i=0; i<elements.length; i++) {
+		var el = elements[i];
+		// clone element state to avoid problems with subsequent/parallel modifications (delete, etc.)
+		var cloned = JSON.parse(JSON.stringify(el));
+		defaultSelection.elements.push(cloned);
+	}
+	return action;
+};
+
 function SetColorAction(sketchbook, color) {
 	Action.call(this, sketchbook, 'setColor');
 	this.color = color;
