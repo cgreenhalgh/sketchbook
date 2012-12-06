@@ -43,10 +43,6 @@ var objectOverviewProject;
 var objectDetailProject;
 //paperjs project for selectionCanvas
 var selectionProject;
-//paperjs project for sequences1Canvas
-var sequences1Project;
-//paperjs project for sequences2Canvas
-var sequences2Project;
 //paperjs project for sequencesViewCanvas
 var sequencesViewProject;
 
@@ -704,51 +700,55 @@ function takeOrphanText() {
 
 /** get new/current tool */
 function getNewTool(project, view) {
-	if ($('#addLineAction').hasClass('actionSelected')) {
-		if (currentSketch && currentSketch.id)
-			return new LineTool(project, sketchbook, currentSketch.id);
-	}
-	else if ($('#addFrameAction').hasClass('actionSelected')) {
-		if (currentSketch && currentSketch.id)
-			return new FrameTool(project, sketchbook, currentSketch.id, takeOrphanText());
-	}
-	else if ($('#addTextAction').hasClass('actionSelected')) {
-		if (currentSketch && currentSketch.id)
-			return new TextTool(project, sketchbook, currentSketch.id, takeOrphanText(), 12);// default
-	}
-	else if ($('#showAllAction').hasClass('actionSelected')) {
-		return new ShowAllTool(project);
-	}
-	else if ($('#zoomInAction').hasClass('actionSelected')) {
-		return new ZoomTool(project, true);
-	}
-	else if ($('#zoomOutAction').hasClass('actionSelected')) {
-		return new ZoomTool(project, false);
-	}
-	else if ($('#selectAction').hasClass('actionSelected')) {
+	if ($('#selectAction').hasClass('actionSelected')) {
 		var sketchId = currentSketch ? currentSketch.id : undefined;
 		return new SelectTool(project, sketchbook, sketchId);
 	}
-	else if ($('#copyAction').hasClass('actionSelected') && !showingIndex) {
-		var sketchId = currentSketch ? currentSketch.id : undefined;
-		var elements = [];
-		// convert selection to elements to add
-		for (var si=0; si<currentSelections.length; si++) {
-			var cs = currentSelections[si];
-			if (cs.record.selection.sketch) {
-				// copy an entire sketch = icon/link
-				var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
-				elements.push(icon);
-			} else if (cs.record.selection.elements) {
-				// copy elements into a new sketch
-				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
-					elements.push(cs.record.selection.elements[ei]);
+	if (project!=selectionProject) {
+		if ($('#showAllAction').hasClass('actionSelected')) {
+			return new ShowAllTool(project);
+		}
+		else if ($('#zoomInAction').hasClass('actionSelected')) {
+			return new ZoomTool(project, true);
+		}
+		else if ($('#zoomOutAction').hasClass('actionSelected')) {
+			return new ZoomTool(project, false);
+		}
+	}
+	if (project==objectOverviewProject || project==objectDetailProject) {
+		if ($('#addLineAction').hasClass('actionSelected')) {
+			if (currentSketch && currentSketch.id)
+				return new LineTool(project, sketchbook, currentSketch.id);
+		}
+		else if ($('#addFrameAction').hasClass('actionSelected')) {
+			if (currentSketch && currentSketch.id)
+				return new FrameTool(project, sketchbook, currentSketch.id, takeOrphanText());
+		}
+		else if ($('#addTextAction').hasClass('actionSelected')) {
+			if (currentSketch && currentSketch.id)
+				return new TextTool(project, sketchbook, currentSketch.id, takeOrphanText(), 12);// default
+		}
+		else if ($('#copyAction').hasClass('actionSelected')/* && !showingIndex*/) {
+			var sketchId = currentSketch ? currentSketch.id : undefined;
+			var elements = [];
+			// convert selection to elements to add
+			for (var si=0; si<currentSelections.length; si++) {
+				var cs = currentSelections[si];
+				if (cs.record.selection.sketch) {
+					// copy an entire sketch = icon/link
+					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
+					elements.push(icon);
+				} else if (cs.record.selection.elements) {
+					// copy elements into a new sketch
+					for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+						elements.push(cs.record.selection.elements[ei]);
+					}
 				}
 			}
+			return new CopyToSketchTool(project, sketchbook, sketchId, elements, images);
 		}
-		return new CopyToSketchTool(project, sketchbook, sketchId, elements, images);
 	}
-	console.log('current active tool unsupported: '+$('.actionSelected').attr('id'));
+	console.log('current active tool unsupported in this project: '+$('.actionSelected').attr('id'));
 	return new Tool('unknown', project);
 }
 
@@ -848,6 +848,8 @@ function getObjectTitle(sketchId) {
 
 function getBounds(layer) {
 	// layer.bounds doesn't seem to work with Groups
+	if (layer.children.length==0)
+		return null;
 	var bounds = new paper.Rectangle(layer.bounds);
 	for (var ci=0; ci<layer.children.length; ci++) {
 		var c = layer.children[ci];
@@ -865,41 +867,45 @@ function createIndexItemFromElements(sketch, elements, indexProject) {
 	var items = elementsToPaperjs(elements, sketchbook, images);
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
-	var group;
-	if (items.length==0)
-		group = new paper.Group();
-	else
+	var children = [];
+	if (items.length>0) {
+		var group;
 		group = new paper.Group(items);
-	//var symbol = new paper.Symbol(group); //getCachedSymbol(indexProject, sketchId);
-	//var symbolBounds = symbol.definition.bounds;
-	// try just a group...
-	var symbolBounds = getBounds(group);
+		//var symbol = new paper.Symbol(group); //getCachedSymbol(indexProject, sketchId);
+		//var symbolBounds = symbol.definition.bounds;
+		// try just a group...
+		var symbolBounds = getBounds(group);
 	
-	var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
-			(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
-	var placed = group; //symbol.place();
-	//console.log('symbolbounds='+symbolBounds+', placed bounds='+placed.bounds);
-	placed.scale(scale);
-	// naming this makes the Group creation explode :-(
-	//placed.name = ''+sketchId;
-	placed.translate(new paper.Point(INDEX_CELL_SIZE/2-placed.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-placed.bounds.center.y));
+		var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
+				(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
+		var placed = group; //symbol.place();
+		//console.log('symbolbounds='+symbolBounds+', placed bounds='+placed.bounds);
+		placed.scale(scale);
+		// naming this makes the Group creation explode :-(
+		//placed.name = ''+sketchId;
+		placed.translate(new paper.Point(INDEX_CELL_SIZE/2-placed.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-placed.bounds.center.y));
+		children.push(placed);
+	}
 	if (sketch) {
 		var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
 		var title = getSketchTitle(sketch);
 		label.content = title;
 		label.paragraphStyle.justification = 'center';
 		label.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
-		
+		children.push(label);
 		var box = new paper.Path.Rectangle(new paper.Point(INDEX_CELL_MARGIN/2, INDEX_CELL_MARGIN/2),
 				new paper.Point(INDEX_CELL_SIZE-INDEX_CELL_MARGIN/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN/2));
-		box.strokeColor = 'grey';		
-		var group = new paper.Group([placed, box, label]);
+		box.strokeColor = 'grey';
+		children.push(box);
+		var group = new paper.Group(children);
 		return group;
 	}
-	else {
-		var group = new paper.Group([placed]);		
+	else if (children.length>0){
+		var group = new paper.Group(children);		
 		return group;
 	}
+	else
+		return new paper.Group();
 
 }
 /** make an index icon in current project for a symbol. 
@@ -939,19 +945,31 @@ function refreshSketchViews(sketchId) {
 }
 function updateActionsForCurrentSelection() {
 	// edit - one thing?!
-	if (currentSelections.length==1) 
-		$('#editAction').removeClass('actionDisabled');
-	else {
-		console.log('edit disabled: '+currentSelections.length+' selections');
-		$('#editAction').addClass('actionDisabled');		
+	$('#editAction').addClass('actionDisabled');		
+	if (currentSelections.length==1) {
+		// sketch exists?			
+		var cs = currentSelections[0];
+		var sketchId = null;
+		if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
+			sketchId = cs.record.selection.sketch.id;
+		}
+		else if (cs.record.selection.sketchId)
+			sketchId = cs.record.selection.sketchId;
+		if (sketchId && sketchbook.sketches[sketchId]) 
+			// OK to edit
+			$('#editAction').removeClass('actionDisabled');
 	}
+	// TODO move 
+	$('#moveAction').addClass('actionDisabled');		
 	// copy - any number of things?
-	if (currentSelections.length>0)
+	// TODO copy in seqeuences
+	if (currentSelections.length>0 && !showingSequences)
 		$('#copyAction').removeClass('actionDisabled');
 	else
 		$('#copyAction').addClass('actionDisabled');		
 	// delete
-	if (currentSelections.length>0)
+	// TODO delete in seqeuences
+	if (currentSelections.length>0 && !showingSequences)
 		$('#deleteAction').removeClass('actionDisabled');
 	else
 		$('#deleteAction').addClass('actionDisabled');		
