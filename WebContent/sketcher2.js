@@ -1,15 +1,20 @@
 // sketcher2.js
 // To do:
 // - sequences tab...
-// -- make visible
-// -- left: div per object, div per frame
-// -- select frame div
-// -- right: show current selected sketch/frame
+// -- left div, sketches selectable
 // -- middle: div per sequence, div per frame ref
 // -- add sequence
 // -- copy frame into sequence
-// -- select frame ref div
-// -- delete frame ref from sequence
+// -- copy sketch into sequence
+// -- add text into sequence
+// -- copy sequence into sequence
+// -- copy sequence into new sequence
+// -- select sequence item div
+// -- change sequence item channel
+// -- multiple views
+// -- toggle frame/toFrame
+// -- show channel in frame
+// -- delete frame/sketch/sequence ref/text from sequence
 
 // (- edit image position)
 // (- edit line)
