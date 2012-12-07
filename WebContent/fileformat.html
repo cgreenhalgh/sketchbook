@@ -3,8 +3,8 @@
 
 
 
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head>
-<body>
+
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
 <h1>Sketcher File Format</h1>
 This file describes the file format for the sketcher prototype. Not all
 features may be implemented/supported in the current version. Current
@@ -47,8 +47,10 @@ state := <span style="font-family: monospace;">{</span> <br>
 sketch := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span><br>
-&nbsp;&nbsp;&nbsp;<span style="font-family: monospace;"> "elements": [ </span>element*<span style="font-family: monospace;"> ]</span> // the main sketch contents<br>
-//TODO background<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"elements": [ </span>element*<span style="font-family: monospace;"> ]</span><span style="font-family: monospace;">,</span> // the main sketch contents<br>&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"background": {</span> // optional<br style="font-family: monospace;">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId":</span> id<sub>int</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"alpha": </span>opacity<sub>number</sub> // default 1.0 (range 0.0-1.0)<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">}</span><br>
 <span style="font-family: monospace;">}</span><br>
 <span style="font-style: italic;"></span>
 <p><span style="font-style: italic;">A single "primitive" drawing element in a sketch.<br>

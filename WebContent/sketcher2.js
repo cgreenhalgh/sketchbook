@@ -15,6 +15,9 @@
 // -- toggle frame/toFrame
 // -- show channel in frame
 // -- delete frame/sketch/sequence ref/text from sequence
+// -- set background from selected sketch
+// -- render background(s) for editor, index, sequence view
+// -- change background alpha
 
 // (- edit image position)
 // (- edit line)
