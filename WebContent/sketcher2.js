@@ -15,7 +15,7 @@
 // -- toggle frame/toFrame
 // -- show channel in frame
 // -- delete frame/sketch/sequence ref/text from sequence
-// -- set background from selected sketch
+// - set background from selected sketch
 // -- render background(s) for editor, index, sequence view
 // -- change background alpha
 
@@ -27,6 +27,9 @@
 // - edit text content
 // (- edit text position)
 // - text styling (font, size) - new and edit
+// - filter in index
+// - filter in sequences 1
+// - filter in sequences 2
 // ...
 
 // global state
