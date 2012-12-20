@@ -109,7 +109,25 @@
 			<!-- hidden text -->
 			<p class="label">Description</p>
 	    	<!-- <canvas id="objectTextCanvas" class="textCanvas" ></canvas> -->
-    		<textarea id='objectTextArea' class='objectTextArea' rows="10" cols="20" wrap="soft"></textarea>
+    		<textarea id='objectTextArea' class='objectTextArea' rows="6" cols="20" wrap="soft"></textarea>
+    		<table class="sketchPropertiesTable">
+				<tr class="sketchProperty"><td>Background</td>
+					<td>
+						<div class="action" id="setBackgroundAction">Set</div>
+						<div class="action" id="clearBackgroundAction">Clear</div>
+					</td>
+				</tr>
+				<tr class="sketchProperty" id="backgroundAlphaProperty"><td>Fade</td>
+					<td>
+						<div class="alpha" style="background-color:#000000"></div>
+						<div class="alpha" style="background-color:#404040"></div>
+						<div class="alpha" style="background-color:#808080"></div>
+						<div class="alpha" style="background-color:#a0a0a0"></div>
+						<div class="alpha" style="background-color:#c0c0c0"></div>
+						<div class="alpha" style="background-color:#e0e0e0"></div>
+					</td>
+				</tr>
+    		</table>
 		</div>
 		<!-- right / zoomable view -->
 		<div class="editorDetail">

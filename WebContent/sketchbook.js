@@ -5,10 +5,11 @@ function Sketch(id) {
 	this.id = id;
 	this.description = '';
 	this.elements = [];
+	this.background = {};
 }
 
 Sketch.prototype.marshall = function() {
-	var jsketch = { id : this.id, description: this.description, elements: this.elements };
+	var jsketch = { id : this.id, description: this.description, elements: this.elements, background: this.background };
 	return jsketch;
 };
 
@@ -22,6 +23,9 @@ Sketch.prototype.unmarshall = function(jsketch) {
 			// TODO any more checking??
 			this.elements.push(jelement);
 		}
+	}
+	if (jsketch.background) {
+		this.background = jsketch.background;
 	}
 };
 
@@ -453,7 +457,12 @@ Sketchbook.prototype.deleteAction = function() {
 	return new DeleteAction(this);
 };
 
-
+Sketchbook.prototype.setBackgroundAction = function(sketchId, backgroundSketchId, alpha) {
+	var action = new Action(this,'setBackground');
+	action.sketchId = sketchId;
+	action.background = { sketchId : backgroundSketchId, alpha : alpha };
+	return action;
+};
 
 Sketchbook.prototype.doAction = function(action) {
 	if (action.type=='newSketch') {
@@ -545,6 +554,20 @@ Sketchbook.prototype.doAction = function(action) {
 			}
 			else {
 				console.log('delete: cannot find sketch '+sketchId);
+			}
+		}
+	}
+	else if (action.type=='setBackground') {
+		var sketch = this.sketches[action.sketchId];
+		if (sketch) {
+			if (sketch.background)
+				action.undo = { background : { sketchId: sketch.background.sketchId, alpha: sketch.background.alpha } };
+			else
+				action.undo = {};
+			if (!action.background) {
+				delete sketch.background;
+			} else {
+				sketch.background = { sketchId : action.background.sketchId, alpha : action.background.alpha };
 			}
 		}
 	}
@@ -640,6 +663,18 @@ Sketchbook.prototype.undoAction = function(action) {
 						continue;
 					}
 					sketch.elements.push(item.undo.element);
+				}
+			}
+		}
+	}
+	else if (action.type=='setBackground') {
+		var sketch = this.sketches[action.sketchId];
+		if (sketch) {
+			if (action.undo) {
+				if (!action.undo.background) {
+					delete sketch.background;
+				} else {
+					sketch.background = { sketchId : action.undo.background.sketchId, alpha : action.undo.background.alpha };
 				}
 			}
 		}

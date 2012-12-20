@@ -21,7 +21,7 @@ Tool.prototype.end = function(point) {
 
 function activateOverlay(project) {
 	project.activate();
-	project.layers[1].activate();
+	project.layers[2].activate();
 }
 
 function LineTool(project, sketchbook, sketchId) {
@@ -209,7 +209,7 @@ HighlightTool.prototype.clearHighlight = function() {
 function addHighlight(project, item) {
 	project.activate();
 	// highlight layer
-	project.layers[1].activate();
+	project.layers[2].activate();
 	
 	// temporary hack to show red box at bounds as highlight
 	var topLeft = item.bounds.topLeft;
@@ -222,7 +222,7 @@ function addHighlight(project, item) {
 	}
 	var highlightItem = new paper.Path.Rectangle(topLeft, bottomRight);
 	highlightItem.strokeWidth = 1;
-	project.layers[0].activate();
+	project.layers[1].activate();
 	highlightItem.strokeColor = 'red';
 	return highlightItem;
 }
@@ -237,7 +237,7 @@ HighlightTool.prototype.highlight = function(item) {
 function getItemAtPoint(project, point) {
 	var tolerance = 2/project.view.zoom;
 	var items = new Array();
-	var children = project.layers[0].children;
+	var children = project.layers[1].children;
 	for (var ci=0; ci<children.length; ci++) {
 		var c = children[ci];
 		var bounds = c.bounds;

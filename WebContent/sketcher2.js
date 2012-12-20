@@ -15,9 +15,6 @@
 // -- toggle frame/toFrame
 // -- show channel in frame
 // -- delete frame/sketch/sequence ref/text from sequence
-// - set background from selected sketch
-// -- render background(s) for editor, index, sequence view
-// -- change background alpha
 
 // (- edit image position)
 // (- edit line)
@@ -187,6 +184,28 @@ function parseCssColor(color) {
 		return null;
 	}
 }
+function updatePropertiesForCurrentSketch() {
+	// background alpha
+	if (currentSketch) {
+		if (currentSketch.background && currentSketch.background.sketchId)
+			$('#backgroundAlphaProperty').removeClass('propertyDisabled');
+		else
+			$('#backgroundAlphaProperty').addClass('propertyDisabled');
+		var alpha = 1;
+		if (currentSketch.background && currentSketch.background.alpha)
+			alpha = currentSketch.background.alpha;
+		$('.alpha').removeClass('colorSelected');
+		$('.alpha').each(function(index, Element) {
+			var color = parseCssColor($(this).css('background-color'));
+			if (!color)
+				return;
+			var alpha2 = 1-(color.red*255/256);
+			if (Math.abs(alpha-alpha2)<(1/256))
+				$(this).addClass('colorSelected');
+		});
+	}
+}
+
 function updatePropertiesForCurrentSelection() {
 	// color
 	if (!propertiesShowSelection()) {
@@ -262,6 +281,30 @@ function onActionSelected(event) {
 	if (disabled)
 		return false;
 	var id = $(this).attr('id');
+	
+	// instantaneous actions / no toggle
+	if (id=='setBackgroundAction') {
+		if (currentSelections.length>0 && currentSelections[0].record.selection.sketch && currentSelections[0].record.selection.sketch.id) {
+			var sketchId = currentSelections[0].record.selection.sketch.id;
+			if (currentSketch && sketchbook.sketches[sketchId]) {
+				if (!currentSketch.background || !currentSketch.background.sketchId || currentSketch.background.sketchId!=sketchId) {
+					var alpha = (currentSketch.background) ? currentSketch.background.alpha : undefined;
+					var action = sketchbook.setBackgroundAction(currentSketch.id, sketchId, alpha);
+					doAction(action);
+				}
+			}
+		}
+		return;
+	}
+	else if (id=='clearBackgroundAction') {
+		if (currentSketch && currentSketch.background && currentSketch.background.sketchId) {
+			var action = sketchbook.setBackgroundAction(currentSketch.id);
+			doAction(action);
+		}
+		return;
+	}
+
+	
 	$('.action').removeClass('actionSelected');
 	$(this).addClass('actionSelected');
 	// TODO immediate action?
@@ -551,9 +594,11 @@ function setupCanvas(canvasId) {
 	var canvas = document.getElementById(canvasId);
 	paper.setup(canvas);
 	var project = paper.project;
+	// extra layer for background
+	new paper.Layer();
 	// extra layer for highlights
 	new paper.Layer();
-	project.layers[0].activate();
+	project.layers[1].activate();
 	return project;
 }
 
@@ -586,6 +631,12 @@ function registerHighlightEvents() {
 		$(this).addClass('colorHighlight');
 	});
 	$(document).on('mouseout', 'div .color', function() {
+		$(this).removeClass('colorHighlight');
+	});
+	$(document).on('mouseover', 'div .alpha', function() {
+		$(this).addClass('colorHighlight');
+	});
+	$(document).on('mouseout', 'div .alpha', function() {
 		$(this).removeClass('colorHighlight');
 	});
 	$(document).on('mouseenter', 'textarea',function() {
@@ -875,7 +926,14 @@ function getBounds(layer) {
 /** create sketch item from elements (sketch optional) */
 function createIndexItemFromElements(sketch, elements, indexProject) {
 	indexProject.activate();
+	var backgroundGroups = [];
+	if (sketch)
+		backgroundGroups = refreshBackground(sketch);
+
 	var items = elementsToPaperjs(elements, sketchbook, images);
+	if (backgroundGroups.length>0) {
+		items = backgroundGroups.concat(items);
+	}
 	// make a visual icon for the object comprising a group with box, scaled view and text label
 	// (currently id)
 	var children = [];
@@ -933,6 +991,36 @@ function createIndexItem(sketchId, indexProject) {
 	return new paper.Group();
 }
 
+/** draw background(s) stack */
+function refreshBackground(sketch) {
+	var stopSketchIds = new Array();
+	var alpha = 1;
+	var groups = new Array();
+	while (sketch!=null && alpha>0) {
+		stopSketchIds.push(sketch.id);
+		if (sketch.background && sketch.background.alpha)
+			alpha *= sketch.background.alpha;
+		if (!sketch.background || !sketch.background.sketchId || alpha<=0)
+			return groups;
+		var sketchId = sketch.background.sketchId;
+		if (stopSketchIds.indexOf(sketchId)>=0)
+			// avoid loops etc.
+			return groups;
+		// draw
+		sketch = sketchbook.sketches[sketchId];
+		if (!sketch) {
+			console.log('could not find background sketch '+sketchId);
+			return groups;
+		}
+		var items = sketch.toPaperjs(sketchbook, images);
+		if (items && items.length>0) {
+			var group = new paper.Group(items);
+			group.opacity = alpha;
+			groups.push(group);
+		}
+	}
+}
+
 /** update display(s) for changed sketch - complete regenerate for now */
 function refreshSketchViews(sketchId) {
 	if (showingIndex) {
@@ -944,15 +1032,26 @@ function refreshSketchViews(sketchId) {
 		objectDetailProject.activate();
 		clearProject(objectDetailProject);
 		objectDetailProject.layers[0].activate();
+		refreshBackground(currentSketch);
+		objectDetailProject.layers[1].activate();
 		currentSketch.toPaperjs(sketchbook, images);
 
 		objectOverviewProject.activate();
 		clearProject(objectOverviewProject);
 		objectOverviewProject.layers[0].activate();
+		refreshBackground(currentSketch);
+		objectOverviewProject.layers[1].activate();
 		currentSketch.toPaperjs(sketchbook, images);	
 		
 		redraw(paper);
 	}
+}
+function updateActionsForCurrentSketch() {
+	// clear background
+	if (currentSketch && currentSketch.background && currentSketch.background.sketchId)
+		$('#clearBackgroundAction').removeClass('actionDisabled');
+	else
+		$('#clearBackgroundAction').addClass('actionDisabled');
 }
 function updateActionsForCurrentSelection() {
 	// edit - one thing?!
@@ -984,6 +1083,17 @@ function updateActionsForCurrentSelection() {
 		$('#deleteAction').removeClass('actionDisabled');
 	else
 		$('#deleteAction').addClass('actionDisabled');		
+	// set background
+	$('#setBackgroundAction').addClass('actionDisabled');
+	if (currentSketch && currentSelections.length==1) {
+		var cs = currentSelections[0];
+		if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
+			var sketchId = cs.record.selection.sketch.id;
+			if (sketchId!=currentSketch.id && (!currentSketch.background || sketchId!=currentSketch.background.sketchId)) {
+				$('#setBackgroundAction').removeClass('actionDisabled');
+			}
+		}
+	}
 }
 
 /** show editor for object ID */
@@ -1026,8 +1136,10 @@ function showEditor(sketchId) {
 	$('#addFrameAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
 
+	updateActionsForCurrentSketch();
 	updateActionsForCurrentSelection();
 	updatePropertiesForCurrentSelection();
+	updatePropertiesForCurrentSketch();
 
 	// update editor state!
 	currentSketch = sketchbook.sketches[sketchId];
@@ -1142,6 +1254,8 @@ function handleSelections(selections) {
 					if (sketch!=currentSequencesSketch) {
 						clearProject(sequencesViewProject);
 						sequencesViewProject.layers[0].activate();
+						refreshBackground(sketch);
+						sequencesViewProject.layers[1].activate();
 						currentSequencesSketch = sketch;
 						currentSequencesSketch.toPaperjs(sketchbook, images);
 						showAll(sequencesViewProject);
@@ -1195,6 +1309,13 @@ function doAction(action) {
 				refreshSketchViews(element.sketchId);			
 			}
 		}
+	}
+	else if (action.type=='setBackground') {
+		console.log('done setBackground: background='+JSON.stringify(currentSketch.background)+', action='+JSON.stringify(action));
+		refreshSketchViews(action.sketchId);
+		updateActionsForCurrentSketch();
+		updatePropertiesForCurrentSketch();
+		updatePropertiesForCurrentSelection();
 	}
 	else if (action.type=='select') {
 		//console.log('handle select '+JSON.stringify(action));
@@ -1420,6 +1541,23 @@ function onColorSelected(event) {
 	}
 }
 
+function onAlphaSelected(event) {
+	$('.alpha').removeClass('colorSelected');
+	$(this).addClass('colorSelected');
+	var color = $(this).css('background-color');
+	console.log('Selected alpha '+color);
+	// this does /255
+	color = parseCssColor(color);
+	if (!color)
+		return;
+	var alpha = 1-(color.red*255/256);
+	if (currentSketch) {
+		var background = (currentSketch.background) ? currentSketch.background : { };
+		var action = sketchbook.setBackgroundAction(currentSketch.id, background.sketchId, alpha);
+		doAction(action);
+	}
+}
+
 //Only executed our code once the DOM is ready.
 $(document).ready(function() {
 
@@ -1435,6 +1573,7 @@ $(document).ready(function() {
 	
 	$('.action').on('click', onActionSelected);
 	$('.color').on('click', onColorSelected);
+	$('.alpha').on('click', onAlphaSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);
 	
 	registerHighlightEvents();
