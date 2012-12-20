@@ -194,14 +194,14 @@ function updatePropertiesForCurrentSketch() {
 		var alpha = 1;
 		if (currentSketch.background && currentSketch.background.alpha)
 			alpha = currentSketch.background.alpha;
-		$('.alpha').removeClass('colorSelected');
+		$('.alpha').removeClass('alphaSelected');
 		$('.alpha').each(function(index, Element) {
 			var color = parseCssColor($(this).css('background-color'));
 			if (!color)
 				return;
 			var alpha2 = 1-(color.red*255/256);
 			if (Math.abs(alpha-alpha2)<(1/256))
-				$(this).addClass('colorSelected');
+				$(this).addClass('alphaSelected');
 		});
 	}
 }
@@ -634,10 +634,10 @@ function registerHighlightEvents() {
 		$(this).removeClass('colorHighlight');
 	});
 	$(document).on('mouseover', 'div .alpha', function() {
-		$(this).addClass('colorHighlight');
+		$(this).addClass('alphaHighlight');
 	});
 	$(document).on('mouseout', 'div .alpha', function() {
-		$(this).removeClass('colorHighlight');
+		$(this).removeClass('alphaHighlight');
 	});
 	$(document).on('mouseenter', 'textarea',function() {
 		$(this).focus();
@@ -1542,8 +1542,8 @@ function onColorSelected(event) {
 }
 
 function onAlphaSelected(event) {
-	$('.alpha').removeClass('colorSelected');
-	$(this).addClass('colorSelected');
+	$('.alpha').removeClass('alphaSelected');
+	$(this).addClass('alphaSelected');
 	var color = $(this).css('background-color');
 	console.log('Selected alpha '+color);
 	// this does /255

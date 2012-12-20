@@ -223,7 +223,13 @@ div.alpha {
 div.colorHighlight {
 	border: 3px solid gray;
 }
+div.alphaHighlight {
+	border: 3px solid gray;
+}
 div.colorSelected {
+	border: 3px solid black;
+}
+div.alphaSelected {
 	border: 3px solid black;
 }
 div.sequenceObject {
