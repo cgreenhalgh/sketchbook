@@ -415,6 +415,21 @@ Sketchbook.prototype.selectElementsAction = function(sketchId, elements) {
 	return action;
 };
 
+/** return action to select a sketch - not really a model action */
+Sketchbook.prototype.selectSketchAction = function(sketchId) {
+	var action = new Action(this, 'select');
+	var selection = { sketchId: sketchId };
+	action.selections = [selection];
+	sketch = this.sketches[sketchId];
+	if (!sketch) {
+		console.log('selectSketchAction sketch '+sketchId+' unknown');
+	} else {
+		selection.sketch = JSON.parse(JSON.stringify(sketch));
+		
+	}
+	return action;
+};
+
 function SetColorAction(sketchbook, color) {
 	Action.call(this, sketchbook, 'setColor');
 	this.color = color;

@@ -1,7 +1,6 @@
 // sketcher2.js
 // To do:
 // - sequences tab...
-// -- left div, sketches selectable
 // -- middle: div per sequence, div per frame ref
 // -- add sequence
 // -- copy frame into sequence
@@ -451,6 +450,7 @@ function onSequenceFrameSelected(ev) {
 	var id = $(this).attr('id');
 	
 	$('.sequenceFrame').removeClass('sequenceFrameSelected');
+	$('.sequenceObject').removeClass('sequenceFrameSelected');
 	$(this).addClass('sequenceFrameSelected');
 	
 	var fr = sequencesFrames[id];
@@ -459,9 +459,16 @@ function onSequenceFrameSelected(ev) {
 		
 		var sketch = sketchbook.sketches[fr.sketchId];
 		if (sketch) {
-			var el = sketch.getElementById(fr.elementId);
-			var action = sketchbook.selectElementsAction(sketch.id, [el]);
-			doAction(action);
+			if (fr.elementId) {
+				var el = sketch.getElementById(fr.elementId);
+				var action = sketchbook.selectElementsAction(sketch.id, [el]);
+				doAction(action);
+			}
+			else {
+				// sketch
+				var action = sketchbook.selectSketchAction(sketch.id);
+				doAction(action);
+			}
 		}
 	}
 	else 
@@ -482,14 +489,14 @@ function updateSequences1() {
 			if (el.frame)
 				frames.push(el);
 		}
-		if (frames.length>0) {
-			div.append('<div id="#seq1_obj'+sketch.id+'" class="sequenceObject">Object '+sketch.getTitle()+'</div>');
-			for (var fi=0; fi<frames.length; fi++) {
-				var el = frames[fi];
-				var id = '#seq1_obj'+sketch.id+'_frame'+el.id;
-				sequencesFrames[id] = { frame: el.frame, sketchId: sketch.id, elementId: el.id };
-				div.append('<div id="'+id+'" class="sequenceFrame">Frame '+el.frame.description+'</div>');
-			}
+		var objid = '#seq1_obj'+sketch.id;
+		sequencesFrames[objid] = { sketchId: sketch.id };
+		div.append('<div id="'+objid+'" class="sequenceObject">Object '+sketch.getTitle()+'</div>');
+		for (var fi=0; fi<frames.length; fi++) {
+			var el = frames[fi];
+			var id = objid+'_frame'+el.id;
+			sequencesFrames[id] = { frame: el.frame, sketchId: sketch.id, elementId: el.id };
+			div.append('<div id="'+id+'" class="sequenceFrame">Frame '+el.frame.description+'</div>');
 		}
 	}
 	// TODO
@@ -873,8 +880,9 @@ function handleTabChange() {
 	// TODO
 }
 
+
 // scale view to show all of project
-function showAll(project) {
+function getZoomAll(project) {
 	// this doesn't seem to work at the moment with my indexProject
 	//var bounds = project.activeLayer.bounds;
 	var bounds = null;
@@ -889,9 +897,8 @@ function showAll(project) {
 		}
 	}
 	if (bounds==null) {
-		project.view.zoom = 1;
-		project.view.center = new paper.Point(0,0);
 		console.log('showAll: bounds is null');
+		return { zoom: 1, center: new paper.Point(0,0) };
 	} else {
 		var bw = bounds.width+MIN_SIZE;
 		var bh = bounds.height+MIN_SIZE;
@@ -899,10 +906,16 @@ function showAll(project) {
 		var h = $(project.view._element).height();
 		var zoom = Math.min(MAX_ZOOM, w/bw, h/bh);
 		console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
-		project.view.zoom = zoom;
-		project.view.center = bounds.center;
+		return { zoom: zoom, center: bounds.center };
 	}
 }
+//scale view to show all of project
+function showAll(project) {
+	var all = getZoomAll(project);
+	project.view.zoom = all.zoom;
+	project.view.center = all.center;
+}
+
 /** title is first line of description, if specified */
 function getObjectTitle(sketchId) {
 	return sketchbook.sketches[sketchId].getTitle();
@@ -1242,34 +1255,43 @@ function handleSelections(selections) {
 		console.log('added history selection for '+currentSelection.id);
 		// TODO highlght current selection in object projects and/or index projects??
 		// if sequences view, first frame selection, show/zoom to...
-		if (showFrame && selectionRecord.selection.sketchId && selectionRecord.selection.elements) {
-			for (var ei=0; ei<selectionRecord.selection.elements.length; ei++) {
-				var el = selectionRecord.selection.elements[ei];
-				if (el.frame) { 
-					showFrame = false; // only once
-					var sketch = sketchbook.sketches[selectionRecord.selection.sketchId];
-
-					sequencesViewProject.activate();
-					var bounds = new paper.Rectangle(el.frame.x, el.frame.y, el.frame.width, el.frame.height);
-					if (sketch!=currentSequencesSketch) {
-						clearProject(sequencesViewProject);
-						sequencesViewProject.layers[0].activate();
-						refreshBackground(sketch);
-						sequencesViewProject.layers[1].activate();
-						currentSequencesSketch = sketch;
-						currentSequencesSketch.toPaperjs(sketchbook, images);
-						showAll(sequencesViewProject);
+		if (showFrame && selectionRecord.selection.sketchId) {
+			var sketch = sketchbook.sketches[selectionRecord.selection.sketchId];
+			sequencesViewProject.activate();
+			showFrame = false; // only once
+			var animateToAll = true;
+			if (sketch!=currentSequencesSketch) {
+				clearProject(sequencesViewProject);
+				sequencesViewProject.layers[0].activate();
+				refreshBackground(sketch);
+				sequencesViewProject.layers[1].activate();
+				currentSequencesSketch = sketch;
+				currentSequencesSketch.toPaperjs(sketchbook, images);
+				showAll(sequencesViewProject);
+				animateToAll = false;
+			}			
+			// frame
+			if (selectionRecord.selection.elements) {
+				for (var ei=0; ei<selectionRecord.selection.elements.length; ei++) {
+					var el = selectionRecord.selection.elements[ei];
+					if (el.frame) { 
+						var bounds = new paper.Rectangle(el.frame.x, el.frame.y, el.frame.width, el.frame.height);
+						var w = $(sequencesViewProject.view._element).width();
+						var h = $(sequencesViewProject.view._element).height();
+						var zoom = Math.min(MAX_ZOOM, w/bounds.width, h/bounds.height);
+						//console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
+						animateTo(sequencesViewProject, zoom, bounds.center);
+						animateToAll = false;
+						//sequencesViewProject.view.zoom = zoom;
+						//sequencesViewProject.view.center = bounds.center;
+						// zoom 
+						break;
 					}
-					var w = $(sequencesViewProject.view._element).width();
-					var h = $(sequencesViewProject.view._element).height();
-					var zoom = Math.min(MAX_ZOOM, w/bounds.width, h/bounds.height);
-					//console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
-					animateTo(sequencesViewProject, zoom, bounds.center);
-					//sequencesViewProject.view.zoom = zoom;
-					//sequencesViewProject.view.center = bounds.center;
-					// zoom 
-					break;
 				}
+			}
+			if (animateToAll) {
+				var all = getZoomAll(sequencesViewProject);
+				animateTo(sequencesViewProject, all.zoom, all.center);
 			}
 		}
 	}
@@ -1575,6 +1597,7 @@ $(document).ready(function() {
 	$('.color').on('click', onColorSelected);
 	$('.alpha').on('click', onAlphaSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);
+	$(document).on('mousedown', '#sequences1Div .sequenceObject', onSequenceFrameSelected);
 	
 	registerHighlightEvents();
 	

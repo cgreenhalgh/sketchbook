@@ -234,11 +234,12 @@ div.alphaSelected {
 }
 div.sequenceObject {
 	font-size: large;
-	color: grey;
+	color: #404040;
 	/*border: 1px solid gray;*/	
 }
 div.sequenceFrame {
 	/*border: 1px solid gray;*/	
+	margin-left: 1em;
 }
 div.sequenceFrameSelected {
 	background-color: #c0c0c0;
