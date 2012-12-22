@@ -232,6 +232,19 @@ div.colorSelected {
 div.alphaSelected {
 	border: 3px solid black;
 }
+div#addSequence {
+	font-size: large;
+	color: #404040;
+	/*border: 1px solid gray;*/	
+}
+div.addSequenceHighlight {
+	/*border: 1px solid gray;*/
+	background-color:#cccccc;
+}
+div.sequenceHighlight {
+	/*border: 1px solid gray;*/
+	background-color:#cccccc;
+}
 div.sequenceObject {
 	font-size: large;
 	color: #404040;
@@ -244,4 +257,23 @@ div.sequenceFrame {
 div.sequenceFrameSelected {
 	background-color: #c0c0c0;
 	/*border: 1px solid gray;*/	
+}
+div.sequenceSequence {
+	clear:both; 
+	font-size: large;
+	color: #404040;
+	/*border: 1px solid gray;*/	
+}
+div.sequenceItem {
+	clear:both; 
+	/*border: 1px solid gray;*/	
+	margin-left: 1em;
+}
+
+div.channelToggle {
+	border: 1px solid gray;
+	float: left;
+}
+div.channelActive {
+	background-color: #808080;
 }

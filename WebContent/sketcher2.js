@@ -1,19 +1,13 @@
 // sketcher2.js
 // To do:
 // - sequences tab...
-// -- middle: div per sequence, div per frame ref
-// -- add sequence
-// -- copy frame into sequence
-// -- copy sketch into sequence
 // -- add text into sequence
-// -- copy sequence into sequence
-// -- copy sequence into new sequence
-// -- select sequence item div
+// -- copy sequence into sequence as ref (=??)
 // -- change sequence item channel
 // -- multiple views
 // -- toggle frame/toFrame
 // -- show channel in frame
-// -- delete frame/sketch/sequence ref/text from sequence
+// -- arrow keys to move through sequence
 
 // (- edit image position)
 // (- edit line)
@@ -68,6 +62,7 @@ var toolProject;
 var nextSelectionRecordId = 1;
 var selectionRecords = new Object();
 var currentSelections = new Array();
+var canDeleteSelection = false;
 
 // color(s)
 var lastSelectedColorElem = $('#defaultColor');
@@ -79,6 +74,9 @@ var nextImageId = 1;
 //dom id -> frame element 
 var sequencesFrames = new Object();
 
+//dom id -> sequence / item
+var sequencesItems = new Object();
+
 var animateToInfo;
 
 //==============================================================================
@@ -88,6 +86,7 @@ var INDEX_CELL_SIZE = 100;
 var INDEX_CELL_MARGIN = 10;
 var INDEX_LABEL_HEIGHT = 20;
 var LABEL_FONT_SIZE = 12;
+var TITLE_FONT_SIZE = 16;
 var MIN_SIZE = 10;
 var MAX_ZOOM = 10;
 var FRAME_TRANSITION_INTERVAL_MS = 50;
@@ -326,11 +325,24 @@ function onActionSelected(event) {
 					console.log('delete element '+cs.record.selection.sketchId+'/'+element.id); //+' - '+JSON.stringify(element));
 				}
 			}
+			else if (cs.record.selection.sequence) {
+				if (cs.record.selection.sequence.id)
+					action.addSequence(cs.record.selection.sequence.id);
+				else if (cs.record.selection.sequence.items) {
+					for (var ii=0; ii<cs.record.selection.sequence.items.length; ii++) {
+						var sitem = cs.record.selection.sequence.items[ii];
+						if (sitem.id)
+							action.addSequenceItem(cs.record.selection.sequenceId, sitem.id);
+					}
+				}
+			}
 		}
 		$(this).removeClass('actionSelected');
 		$('#selectAction').addClass('actionSelected');
 		updatePropertiesForCurrentSelection();
 
+		canDeleteSelection = false;
+		
 		if (action.items.length>0)
 			doAction(action);
 		else {
@@ -397,6 +409,7 @@ function showIndex() {
 	$('#index').show();
 	currentSketch = undefined;
 	showingSequences = false;
+	canDeleteSelection = false;
 	
 	// update actions & properties
 	$('.property').addClass('propertyDisabled');
@@ -451,6 +464,8 @@ function onSequenceFrameSelected(ev) {
 	
 	$('.sequenceFrame').removeClass('sequenceFrameSelected');
 	$('.sequenceObject').removeClass('sequenceFrameSelected');
+	$('.sequenceSequence').removeClass('sequenceFrameSelected');
+	$('.sequenceItem').removeClass('sequenceFrameSelected');
 	$(this).addClass('sequenceFrameSelected');
 	
 	var fr = sequencesFrames[id];
@@ -460,13 +475,12 @@ function onSequenceFrameSelected(ev) {
 		var sketch = sketchbook.sketches[fr.sketchId];
 		if (sketch) {
 			if (fr.elementId) {
-				var el = sketch.getElementById(fr.elementId);
-				var action = sketchbook.selectElementsAction(sketch.id, [el]);
+				var action = sketchbook.selectFrameAsSequenceItemAction(sketch.id, fr.elementId);
 				doAction(action);
 			}
 			else {
 				// sketch
-				var action = sketchbook.selectSketchAction(sketch.id);
+				var action = sketchbook.selectSketchAsSequenceItemAction(sketch.id);
 				doAction(action);
 			}
 		}
@@ -491,7 +505,7 @@ function updateSequences1() {
 		}
 		var objid = '#seq1_obj'+sketch.id;
 		sequencesFrames[objid] = { sketchId: sketch.id };
-		div.append('<div id="'+objid+'" class="sequenceObject">Object '+sketch.getTitle()+'</div>');
+		div.append('<div id="'+objid+'" class="sequenceObject">Sketch '+sketch.getTitle()+'</div>');
 		for (var fi=0; fi<frames.length; fi++) {
 			var el = frames[fi];
 			var id = objid+'_frame'+el.id;
@@ -500,6 +514,166 @@ function updateSequences1() {
 		}
 	}
 	// TODO
+}
+
+/** get sequenceItems corresponding to current selection - for copy */
+function getSelectedSequenceItems() {
+	var sequenceItems = [];
+	// convert selection to elements to add
+	for (var si=0; si<currentSelections.length; si++) {
+		var cs = currentSelections[si];
+		// TODO sequence -> sequence ref??
+		if (cs.record.selection.sequence && cs.record.selection.sequence.items) {
+			for (var ii=0; ii<cs.record.selection.sequence.items.length; ii++) {
+				var sitem = cs.record.selection.sequence.items[ii];
+				// copy
+				var c = JSON.parse(JSON.stringify(sitem));
+				sequenceItems.push(c);
+			}			
+		}
+	}
+	return sequenceItems;
+}
+/** GUI entry from sequences frame div mousedown */
+function onSequenceItemSelected(ev) {
+	var id = $(this).attr('id');
+	console.log('sequence item '+id+' selected');
+
+	var si = sequencesItems[id];
+	if ($('#selectAction').hasClass('actionSelected')) {
+
+		$('.sequenceFrame').removeClass('sequenceFrameSelected');
+		$('.sequenceObject').removeClass('sequenceFrameSelected');
+		$('.sequenceSequence').removeClass('sequenceFrameSelected');
+		$('.sequenceItem').removeClass('sequenceFrameSelected');
+		$(this).addClass('sequenceFrameSelected');
+
+		if (si) {
+			if (si.sequenceItem) {
+				// an item
+				var action = sketchbook.selectSequenceItemAction(si.sequenceId, si.sequenceItem);
+				doAction(action);
+			} else if (si.sequenceId) {
+				var six = sketchbook.getSequenceIndex(si.sequenceId);
+				if (six>=0) {
+					// whole sequence
+					var action = sketchbook.selectSequenceAction(sketchbook.sequences[six]);
+					doAction(action);
+				}
+				else {
+					console.log('sequence item selected sequence '+si.sequenceId+' - not found');
+				}
+			}
+		}		
+	} 
+	else if ($('#copyAction').hasClass('actionSelected')) {
+		if (si) {
+			if (si.sequenceId) {
+				var sequence = sketchbook.getSequenceById(si.sequenceId);
+				if (sequence) {
+					var sequenceItems = getSelectedSequenceItems();
+					
+					var beforeIndex = 0;
+					if (si.sequenceItem) {
+						for (; beforeIndex<sequence.items.length; beforeIndex++)
+							if (sequence.items[beforeIndex].id==si.sequenceItem.id) {
+								beforeIndex++;
+								break;
+							}
+					}
+					var action = sketchbook.addSequenceItemsAction(si.sequenceId, sequenceItems, beforeIndex);
+					doAction(action);
+				}
+			}
+			else 
+				console.log('sequence item copy sequence '+si.sequenceId+' not fonnd');
+		}
+	}
+}
+/** get text for a sequence item */
+function getSequenceItemText(sitem) {
+	var html = '';
+	var sketchId = null;
+	var elementId = null;
+	if (sitem.text)
+		html += sitem.text;
+	if (sitem.frameRef) {
+		sketchId = sitem.frameRef.sketchId;
+		elementId = sitem.frameRef.elementId;
+	}
+	else if (sitem.sketchRef) {
+		sketchId = sitem.sketchRef.sketchId;
+	}
+	else if (sitem.toFrameRef) {
+		sketchId = sitem.toFrameRef.sketchId;
+		elementId = sitem.toFrameRef.elementId;				
+	}
+	if (sketchId) {
+		var sketch = sketchbook.sketches[sketchId];
+		var element = null;
+		if (sketch && elementId)
+			element = sketch.getElementById(elementId);
+		if (elementId) {
+			if (element) {
+				if (element.frame) 
+					html += 'Frame '+element.frame.description+' in ';
+				else
+					html += 'Non-frame '+element.id+' in ';
+			}
+			else 
+				html += 'Frame '+elementId+' (unknown) in ';
+		}
+		if (sketch)
+			html += 'Sketch '+sketch.getTitle();
+		else
+			html += 'ketch '+sketchId+' (unknown)';
+	}
+	if (sitem.sequenceRef) {
+		var six = sketchbook.getSequenceIndex(sitem.sequenceRef.sequenceId);
+		if (six>=0) 
+			html += 'Sequence '+sketchbook.sequences[six].getTitle();
+		else
+			html += 'Sequence '+sitem.sequenceRef.sequenceId+' (unknown)';
+	}
+	return html;
+}
+/** update sequences 1 list */
+function updateSequences2() {
+	var div = $('#sequences2Div');
+
+	$('#sequences2Div .sequenceSequence').remove();
+	$('#sequences2Div .sequenceItem').remove();
+	
+	sequencesItems = new Object();
+	for (var si=0; si<sketchbook.sequences.length; si++) {
+		var sequence = sketchbook.sequences[si];
+
+		var objid = '#seq2_seq'+sequence.id;
+		sequencesItems[objid] = { sequenceId: sequence.id };
+		div.append('<div id="'+objid+'" class="sequenceSequence">Sequence '+sequence.getTitle()+'</div>');
+		
+		for (var ii=0; ii<sequence.items.length; ii++) {
+			var sitem = sequence.items[ii];
+			var id = objid+'_item'+sitem.id;
+			sequencesItems[id] = { sequenceId: sequence.id, sequenceItem: sitem };
+			var html = '<div id="'+id+'" class="sequenceItem">';
+			// TODO toFrame
+			//if (sitem.toFrameRef) {
+			//	html += '<div class="toFrameToggle toFrameActive"></div>';
+			//}
+			//else {
+			//	html += '<div class="toFrameToggle"></div>';
+			//}
+			// TODO multiple channels
+			html += '<div class="channelToggle channelActive">1</div>';
+			html += getSequenceItemText(sitem);
+			html += '</div>';
+			div.append(html);
+		}
+	}
+	
+	// TODO
+
 }
 
 //GUI entry point
@@ -512,7 +686,8 @@ function showSequences() {
 	$('#sequences').show();
 	currentSketch = undefined;
 	showingIndex = false;	
-	
+	canDeleteSelection = false;
+
 	// update actions & properties
 	$('.property').addClass('propertyDisabled');
 
@@ -524,6 +699,7 @@ function showSequences() {
 	updatePropertiesForCurrentSelection();
 	
 	updateSequences1();
+	updateSequences2();
 	clearProject(sequencesViewProject);
 	currentSequencesSketch = undefined;
 
@@ -633,6 +809,36 @@ function registerHighlightEvents() {
 	});
 	$(document).on('mouseout', 'div .action', function() {
 		$(this).removeClass('actionHighlight');
+	});
+	$(document).on('mouseover', 'div #addSequence', function() {
+		$(this).addClass('addSequenceHighlight');
+	});
+	$(document).on('mouseout', 'div #addSequence', function() {
+		$(this).removeClass('addSequenceHighlight');
+	});
+	$(document).on('mouseover', 'div .sequenceObject', function() {
+		$(this).addClass('sequenceHighlight');
+	});
+	$(document).on('mouseout', 'div .sequenceObject', function() {
+		$(this).removeClass('sequenceHighlight');
+	});
+	$(document).on('mouseover', 'div .sequenceFrame', function() {
+		$(this).addClass('sequenceHighlight');
+	});
+	$(document).on('mouseout', 'div .sequenceFrame', function() {
+		$(this).removeClass('sequenceHighlight');
+	});
+	$(document).on('mouseover', 'div .sequenceSequence', function() {
+		$(this).addClass('sequenceHighlight');
+	});
+	$(document).on('mouseout', 'div .sequenceSequence', function() {
+		$(this).removeClass('sequenceHighlight');
+	});
+	$(document).on('mouseover', 'div .sequenceItem', function() {
+		$(this).addClass('sequenceHighlight');
+	});
+	$(document).on('mouseout', 'div .sequenceItem', function() {
+		$(this).removeClass('sequenceHighlight');
 	});
 	$(document).on('mouseover', 'div .color', function() {
 		$(this).addClass('colorHighlight');
@@ -990,6 +1196,51 @@ function createIndexItemFromElements(sketch, elements, indexProject) {
 		return new paper.Group();
 
 }
+/** create selection item from sequence items */
+function createIndexItemFromSequenceItems(sequenceId, description, sequenceItems, indexProject) {
+	indexProject.activate();
+
+	var items = [];
+	if (sequenceId) {
+		if (!description)
+			description = 'Sequence '+sequenceId+' (unnamed)';
+		// bounds doesn't seem to work with just text
+		var box = new paper.Path.Rectangle(new paper.Point(0, -LABEL_FONT_SIZE), new paper.Point(0, 0));
+		items.push(box);
+		var title = new paper.PointText(0, 0);
+		title.content = description;
+		title.paragraphStyle.justification = 'left';
+		title.characterStyle = { fillColor: 'gray', fontSize: TITLE_FONT_SIZE };
+		items.push(title);
+	}
+	for (var ix=0; ix<sequenceItems.length; ix++) {
+		var sitem = sequenceItems[ix];
+		var text = getSequenceItemText(sitem);
+		var y = LABEL_FONT_SIZE*4*(ix+1)/3;
+		var box = new paper.Path.Rectangle(new paper.Point(0, y-LABEL_FONT_SIZE), new paper.Point(LABEL_FONT_SIZE, y));
+		box.strokeColor = '#000000';
+		box.fillColor = '#808080';
+		items.push(box);
+		var item = new paper.PointText(new paper.Point(LABEL_FONT_SIZE*4/3, y));
+		item.content = text;
+		item.paragraphStyle.justification = 'left';
+		item.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
+		items.push(item);
+	}
+	if (items.length>0) {
+		var group;
+		group = new paper.Group(items);
+		var symbolBounds = getBounds(group);	
+		var scale = (symbolBounds) ? Math.min((INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.width+INDEX_CELL_MARGIN),
+				(INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN)/(symbolBounds.height+INDEX_CELL_MARGIN)) : 1;
+		group.scale(scale);
+		group.translate(new paper.Point(INDEX_CELL_SIZE/2-group.bounds.center.x, (INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT)/2-group.bounds.center.y));
+		return group;
+	}
+	else
+		return new paper.Group();
+
+}
 /** make an index icon in current project for a symbol. 
  * @return Item (Group) representing object in index/selection
  */
@@ -1086,13 +1337,50 @@ function updateActionsForCurrentSelection() {
 	$('#moveAction').addClass('actionDisabled');		
 	// copy - any number of things?
 	// TODO copy in seqeuences
-	if (currentSelections.length>0 && !showingSequences)
+	var canCopy = false;
+	for (var ix=0; ix<currentSelections.length; ix++) {
+		var cs = currentSelections[ix];
+		if (showingSequences) {
+			if (cs.record.selection.sequence)
+				canCopy = true;
+		}
+		else if (showingIndex) {
+			if (cs.record.selection.sketch)
+				canCopy = true;
+		}
+		else if (cs.record.selection.elements)
+			canCopy = true;
+	}
+	if (canCopy)
 		$('#copyAction').removeClass('actionDisabled');
-	else
+	else 
 		$('#copyAction').addClass('actionDisabled');		
 	// delete
-	// TODO delete in seqeuences
-	if (currentSelections.length>0 && !showingSequences)
+	var canDelete = false;
+	for (var ix=0; ix<currentSelections.length; ix++) {
+		var cs = currentSelections[ix];
+		if (showingSequences) {
+			if (cs.record.selection.sequence) {
+				if (cs.record.selection.sequence.id)
+					// real sequence
+					canDelete = true;
+				else if (cs.record.selection.sequenceId && cs.record.selection.sequence.items){
+					for (var ix=0; ix<cs.record.selection.sequence.items.length; ix++) 
+						if (cs.record.selection.sequence.items[ix].id)
+							canDelete = true;
+				}
+			}
+		}
+		else if (showingIndex) {
+			if (cs.record.selection.sketch)
+				canDelete = true;
+		}
+		else {
+			if (cs.record.selection.elements)
+				canDelete = true;
+		}
+	}
+	if (canDelete && canDeleteSelection)
 		$('#deleteAction').removeClass('actionDisabled');
 	else
 		$('#deleteAction').addClass('actionDisabled');		
@@ -1131,6 +1419,7 @@ function showEditor(sketchId) {
 	
 	showingIndex = false;	
 	showingSequences = false;
+	canDeleteSelection = false;
 	
 	$('.tab').removeClass('tabselected');
 	$('#tab_'+sketchId).addClass('tabselected');
@@ -1201,6 +1490,7 @@ function clearCurrentSelection() {
 		}
 	}
 	currentSelections = new Array();
+	canDeleteSelection = true;
 }
 
 /** select - array of selections from select action */
@@ -1213,6 +1503,7 @@ function handleSelections(selections) {
 		if (selection.selectionRecordId) {
 			console.log('Selection from selection history '+selection.selectionRecordId);
 			newSelectionRecordIds.push(selection.selectionRecordId);
+			canDeleteSelection = false;
 		} else {
 			moveHistory();
 			// either sketch or elements
@@ -1221,6 +1512,8 @@ function handleSelections(selections) {
 				group = createIndexItemFromElements(selection.sketch, selection.sketch.elements, selectionProject);
 			} else if (selection.elements) {
 				group = createIndexItemFromElements(undefined, selection.elements, selectionProject);
+			} else if (selection.sequence) {
+				group = createIndexItemFromSequenceItems(selection.sequence.id, selection.sequence.description, selection.sequence.items, selectionProject);
 			}
 			var selectionRecord = { id : nextSelectionRecordId++, selection : selection };
 			group.selectionRecordId = selectionRecord.id;
@@ -1255,43 +1548,52 @@ function handleSelections(selections) {
 		console.log('added history selection for '+currentSelection.id);
 		// TODO highlght current selection in object projects and/or index projects??
 		// if sequences view, first frame selection, show/zoom to...
-		if (showFrame && selectionRecord.selection.sketchId) {
-			var sketch = sketchbook.sketches[selectionRecord.selection.sketchId];
-			sequencesViewProject.activate();
-			showFrame = false; // only once
-			var animateToAll = true;
-			if (sketch!=currentSequencesSketch) {
-				clearProject(sequencesViewProject);
-				sequencesViewProject.layers[0].activate();
-				refreshBackground(sketch);
-				sequencesViewProject.layers[1].activate();
-				currentSequencesSketch = sketch;
-				currentSequencesSketch.toPaperjs(sketchbook, images);
-				showAll(sequencesViewProject);
-				animateToAll = false;
-			}			
-			// frame
-			if (selectionRecord.selection.elements) {
-				for (var ei=0; ei<selectionRecord.selection.elements.length; ei++) {
-					var el = selectionRecord.selection.elements[ei];
-					if (el.frame) { 
-						var bounds = new paper.Rectangle(el.frame.x, el.frame.y, el.frame.width, el.frame.height);
-						var w = $(sequencesViewProject.view._element).width();
-						var h = $(sequencesViewProject.view._element).height();
-						var zoom = Math.min(MAX_ZOOM, w/bounds.width, h/bounds.height);
-						//console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
-						animateTo(sequencesViewProject, zoom, bounds.center);
-						animateToAll = false;
-						//sequencesViewProject.view.zoom = zoom;
-						//sequencesViewProject.view.center = bounds.center;
-						// zoom 
-						break;
+		if (showFrame && selectionRecord.selection.sequence && selectionRecord.selection.sequence.items) {
+			for (var ii=0; ii<selectionRecord.selection.sequence.items.length; ii++) {
+				var sitem = selectionRecord.selection.sequence.items[ii];
+				var sketchId = null;
+				if (sitem.frameRef && sitem.frameRef.sketchId)
+					sketchId = sitem.frameRef.sketchId;
+				else if (sitem.sketchRef)
+					sketchId = sitem.sketchRef.sketchId;
+				if (showFrame && sketchId) {
+					var sketch = sketchbook.sketches[sketchId];
+					if (sketch) {
+						sequencesViewProject.activate();
+						showFrame = false; // only once
+						var animateToAll = true;
+						if (sketch!=currentSequencesSketch) {
+							clearProject(sequencesViewProject);
+							sequencesViewProject.layers[0].activate();
+							refreshBackground(sketch);
+							sequencesViewProject.layers[1].activate();
+							currentSequencesSketch = sketch;
+							currentSequencesSketch.toPaperjs(sketchbook, images);
+							showAll(sequencesViewProject);
+							animateToAll = false;
+						}			
+						// frame
+						if (sitem.frameRef && sitem.frameRef.elementId) {
+							var el = sketch.getElementById(sitem.frameRef.elementId);
+							if (el && el.frame) { 
+								var bounds = new paper.Rectangle(el.frame.x, el.frame.y, el.frame.width, el.frame.height);
+								var w = $(sequencesViewProject.view._element).width();
+								var h = $(sequencesViewProject.view._element).height();
+								var zoom = Math.min(MAX_ZOOM, w/bounds.width, h/bounds.height);
+								//console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
+								animateTo(sequencesViewProject, zoom, bounds.center);
+								animateToAll = false;
+								//sequencesViewProject.view.zoom = zoom;
+								//sequencesViewProject.view.center = bounds.center;
+								// zoom 
+							}
+						}
+						if (animateToAll) {
+							var all = getZoomAll(sequencesViewProject);
+							animateTo(sequencesViewProject, all.zoom, all.center);
+						}
 					}
 				}
-			}
-			if (animateToAll) {
-				var all = getZoomAll(sequencesViewProject);
-				animateTo(sequencesViewProject, all.zoom, all.center);
 			}
 		}
 	}
@@ -1349,22 +1651,37 @@ function doAction(action) {
 		var sketchIds = [];
 		for (var ei=0; ei<action.items.length; ei++) {
 			var item = action.items[ei];
-			if (sketchIds.indexOf(item.sketchId)<0) {
-				sketchIds.push(item.sketchId);
-				if (item.elementId)
-					refreshSketchViews(item.sketchId);			
-				else {
-					// delete sketch itself
-					if (currentSketch && currentSketch.id==item.sketchId)
-						deletedCurrent = true;
-					// tabs
-					$('#tab_'+item.sketchId).remove();
+			if (item.sketchId) {
+				if (sketchIds.indexOf(item.sketchId)<0) {
+					sketchIds.push(item.sketchId);
+					if (item.elementId)
+						refreshSketchViews(item.sketchId);			
+					else {
+						// delete sketch itself
+						if (currentSketch && currentSketch.id==item.sketchId)
+							deletedCurrent = true;
+						// tabs
+						$('#tab_'+item.sketchId).remove();
+					}
 				}
 			}
 		}
 		// refresh index
 		if (deletedCurrent || showingIndex)
-			showIndex();		
+			showIndex();
+		else {
+			if (showingSequences)
+				updateSequences2();
+			updateActionsForCurrentSelection();
+		}
+	}
+	else if (action.type=='newSequence') {
+		if (showingSequences)
+			updateSequences2();
+	}
+	else if (action.type=='addSequenceItems') {
+		if (showingSequences)
+			updateSequences2();
 	}
 }
 
@@ -1396,6 +1713,27 @@ function onNewObject() {
 	$('.tabview').hide();
 
 	var action = sketchbook.newSketchAction();
+	doAction(action);
+}
+
+//GUI entry point
+function onNewSequence() {
+	var title = takeOrphanText();
+	if (title.length==0 && $('#copyAction').hasClass('actionSelected')) {
+		for (var ix=0; ix<currentSelections.length; ix++) {
+			var cs = currentSelections[ix];
+			if (cs.record.sequence && cs.record.sequence.description) {
+				title = 'Copy of '.cs.record.sequence.description;
+				break;
+			}
+		}
+	}
+	var action = sketchbook.newSequenceAction(title);
+
+	if ($('#copyAction').hasClass('actionSelected')) {
+		var sequenceItems = getSelectedSequenceItems();
+		action.addItems(sequenceItems);
+	}
 	doAction(action);
 }
 
@@ -1598,7 +1936,9 @@ $(document).ready(function() {
 	$('.alpha').on('click', onAlphaSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceObject', onSequenceFrameSelected);
-	
+	$(document).on('mousedown', '#sequences2Div .sequenceSequence', onSequenceItemSelected);
+	$(document).on('mousedown', '#sequences2Div .sequenceItem', onSequenceItemSelected);
+
 	registerHighlightEvents();
 	
 	registerMouseEvents();
