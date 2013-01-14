@@ -1348,7 +1348,7 @@ function updateActionsForCurrentSelection() {
 			if (cs.record.selection.sketch)
 				canCopy = true;
 		}
-		else if (cs.record.selection.elements)
+		else if (cs.record.selection.elements || cs.record.selection.sketch)
 			canCopy = true;
 	}
 	if (canCopy)
