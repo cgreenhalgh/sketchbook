@@ -1255,27 +1255,27 @@ function createIndexItem(sketchId, indexProject) {
 	return new paper.Group();
 }
 
-/** draw background(s) stack */
-function refreshBackground(sketch) {
-	var stopSketchIds = new Array();
-	var alpha = 1;
-	var groups = new Array();
-	while (sketch!=null && alpha>0) {
+function refreshBackgroundRecursive(sketch, stopSketchIds, alpha, groups) {
+	if (sketch!=null && alpha>0) {
 		stopSketchIds.push(sketch.id);
 		if (sketch.background && sketch.background.alpha)
 			alpha *= sketch.background.alpha;
 		if (!sketch.background || !sketch.background.sketchId || alpha<=0)
-			return groups;
+			return;
+		
 		var sketchId = sketch.background.sketchId;
 		if (stopSketchIds.indexOf(sketchId)>=0)
 			// avoid loops etc.
-			return groups;
+			return;
 		// draw
 		sketch = sketchbook.sketches[sketchId];
 		if (!sketch) {
 			console.log('could not find background sketch '+sketchId);
-			return groups;
+			return;
 		}
+		// recurse
+		refreshBackgroundRecursive(sketch, stopSketchIds, alpha, groups);
+		
 		var items = sketch.toPaperjs(sketchbook, images);
 		if (items && items.length>0) {
 			var group = new paper.Group(items);
@@ -1283,6 +1283,15 @@ function refreshBackground(sketch) {
 			groups.push(group);
 		}
 	}
+}
+
+/** draw background(s) stack */
+function refreshBackground(sketch) {
+	var stopSketchIds = new Array();
+	var alpha = 1;
+	var groups = new Array();
+	refreshBackgroundRecursive(sketch, stopSketchIds, alpha, groups);
+	return groups;
 }
 
 /** update display(s) for changed sketch - complete regenerate for now */
