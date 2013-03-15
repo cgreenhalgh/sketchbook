@@ -213,6 +213,15 @@ div.color {
 	float: left;
 	cursor: default;
 }
+td.fillColors {
+}
+div.fillColor {
+	border: 3px solid white;
+	width: 1em;
+	height: 1em;	
+	float: left;
+	cursor: default;
+}
 div.alpha {
 	border: 3px solid white;
 	width: 1em;
@@ -223,10 +232,16 @@ div.alpha {
 div.colorHighlight {
 	border: 3px solid gray;
 }
+div.fillColorHighlight {
+	border: 3px solid gray;
+}
 div.alphaHighlight {
 	border: 3px solid gray;
 }
 div.colorSelected {
+	border: 3px solid black;
+}
+div.fillColorSelected {
 	border: 3px solid black;
 }
 div.alphaSelected {

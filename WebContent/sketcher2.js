@@ -66,6 +66,7 @@ var canDeleteSelection = false;
 
 // color(s)
 var lastSelectedColorElem = $('#defaultColor');
+var lastSelectedFillColorElem = $('#defaultFillColor');
 
 //imageId -> { dataurl:string, info:{width:, height:}, withImages:[] } 
 var images = new Object();
@@ -205,14 +206,19 @@ function updatePropertiesForCurrentSketch() {
 }
 
 function updatePropertiesForCurrentSelection() {
+	var actionId = $('.actionSelected').attr('id');
+
 	// color
 	if (!propertiesShowSelection()) {
-		$('#colorProperty').removeClass('propertyDisabled');
 		// update color to last selected
 		if(lastSelectedColorElem) {
 			$('.color').removeClass('colorSelected');
 			lastSelectedColorElem.addClass('colorSelected');
 		}
+		if (actionId=='addLineAction' || actionId=='addTextAction')
+			$('#colorProperty').removeClass('propertyDisabled');
+		else
+			$('#colorProperty').addClass('propertyDisabled');
 	} else {
 		// element(s) with color(s)?
 		$('.color').removeClass('colorSelected');
@@ -271,7 +277,26 @@ function updatePropertiesForCurrentSelection() {
 		else
 			$('#colorProperty').addClass('propertyDisabled');		
 	}
+	// fillcolor
+	if (!propertiesShowSelection()) {
+		// update color to last selected
+		if(lastSelectedFillColorElem) {
+			$('.fillColor').removeClass('fillColorSelected');
+			lastSelectedFillColorElem.addClass('fillColorSelected');
+		}
+		//if (actionId=='addLineAction' || actionId=='addTextAction')
+		//$('#fillColorProperty').removeClass('propertyDisabled');
+		//else
+		$('#fillColorProperty').addClass('propertyDisabled');
+	} else {
+		// element(s) with color(s)?
+		$('.fillColor').removeClass('fillColorSelected');
+		// TODO 
+		$('#fillColorProperty').addClass('propertyDisabled');		
+	}	
 }
+	
+	
 
 function handleActionSelected(id) {
 	var disabled = $('#'+id).hasClass('actionDisabled');
@@ -848,6 +873,12 @@ function registerHighlightEvents() {
 	});
 	$(document).on('mouseout', 'div .color', function() {
 		$(this).removeClass('colorHighlight');
+	});
+	$(document).on('mouseover', 'div .fillColor', function() {
+		$(this).addClass('fillColorHighlight');
+	});
+	$(document).on('mouseout', 'div .fillColor', function() {
+		$(this).removeClass('fillColorHighlight');
 	});
 	$(document).on('mouseover', 'div .alpha', function() {
 		$(this).addClass('alphaHighlight');
@@ -2071,6 +2102,21 @@ function onColorSelected(event) {
 	}
 }
 
+//GUI entry point
+function onFillColorSelected(event) {
+	$('.fillColor').removeClass('fillColorSelected');
+	$(this).addClass('fillColorSelected');
+	var color = $(this).css('background-color');
+	console.log('Selected fillColor '+color);
+	lastSelectedFillColorElem = $(this);
+	// e.g. 'rgb(0, 0, 0)'
+	color = parseCssColor(color);
+	if (!color)
+		return;
+	// TODO immediate action?
+	// TODO set fill color of currentSelection?
+}
+
 function onAlphaSelected(event) {
 	$('.alpha').removeClass('alphaSelected');
 	$(this).addClass('alphaSelected');
@@ -2103,6 +2149,7 @@ $(document).ready(function() {
 	
 	$('.action').on('click', onActionSelected);
 	$('.color').on('click', onColorSelected);
+	$('.fillColor').on('click', onFillColorSelected);
 	$('.alpha').on('click', onAlphaSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceObject', onSequenceFrameSelected);
