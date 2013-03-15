@@ -185,6 +185,33 @@ ZoomTool.prototype.end = function(point) {
 	this.zoomView = null;
 };
 
+/** common zoom tool */
+function PanTool(project) {
+	Tool.call(this,'pan', project);
+	this.panPoint = null;
+	this.panView = null;
+};
+PanTool.prototype.pan = function(point) {
+	if (!this.panView || !this.panPoint)
+		return;
+	var dx = this.panPoint.x-point.x;
+	var dy = this.panPoint.y-point.y;
+	//console.log('- d='+dx+','+dy+' zoom\'='+zoomView.zoom+' sd='+sdx+','+sdy);
+	this.panView.center = new paper.Point(this.panView.center.x+dx, this.panView.center.y+dy);
+	//console.log('- center\'='+zoomView.center);
+};
+PanTool.prototype.begin = function(point) {
+	this.panPoint = new paper.Point(point);
+	this.panView = this.project.view;
+};
+PanTool.prototype.move = function(point) {
+	this.pan(point);
+};
+PanTool.prototype.end = function(point) {
+	this.pan(point);
+	this.panView = null;
+};
+
 console.log('defining HighlightTool');
 
 /** highlight tool */

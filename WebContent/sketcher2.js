@@ -273,14 +273,11 @@ function updatePropertiesForCurrentSelection() {
 	}
 }
 
-//GUI entry point
-function onActionSelected(event) {
-	var disabled = $(this).hasClass('actionDisabled');
+function handleActionSelected(id) {
+	var disabled = $('#'+id).hasClass('actionDisabled');
 	if (disabled)
 		return false;
-	var id = $(this).attr('id');
-	
-	// instantaneous actions / no toggle
+// instantaneous actions / no toggle
 	if (id=='setBackgroundAction') {
 		if (currentSelections.length>0 && currentSelections[0].record.selection.sketch && currentSelections[0].record.selection.sketch.id) {
 			var sketchId = currentSelections[0].record.selection.sketch.id;
@@ -304,7 +301,7 @@ function onActionSelected(event) {
 
 	
 	$('.action').removeClass('actionSelected');
-	$(this).addClass('actionSelected');
+	$('#'+id).addClass('actionSelected');
 	// TODO immediate action?
 	console.log('Selected action '+id);
 	
@@ -337,7 +334,7 @@ function onActionSelected(event) {
 				}
 			}
 		}
-		$(this).removeClass('actionSelected');
+		$('#'+id).removeClass('actionSelected');
 		$('#selectAction').addClass('actionSelected');
 		updatePropertiesForCurrentSelection();
 
@@ -367,7 +364,7 @@ function onActionSelected(event) {
 				doAction(action);
 			}
 			// revert to select
-			$(this).removeClass('actionSelected');
+			$('#'+id).removeClass('actionSelected');
 			$('#selectAction').addClass('actionSelected');
 			updatePropertiesForCurrentSelection();
 			return;
@@ -388,7 +385,7 @@ function onActionSelected(event) {
 					showEditor(sketchId);
 					// TODO element(s) within sketch? i.e. when currentSketch = sketch
 					// note: showEditor resets actions
-					$(this).removeClass('actionSelected');
+					$('#'+id).removeClass('actionSelected');
 					$('#selectAction').addClass('actionSelected');
 					updatePropertiesForCurrentSelection();
 					return;
@@ -398,6 +395,11 @@ function onActionSelected(event) {
 			}
 		}
 	}
+}
+//GUI entry point
+function onActionSelected(event) {
+	var id = $(this).attr('id');
+	handleActionSelected(id);
 }
 
 //GUI entry point
@@ -419,6 +421,7 @@ function showIndex() {
 	$('#showAllAction').removeClass('actionDisabled');
 	$('#zoomInAction').removeClass('actionDisabled');
 	$('#zoomOutAction').removeClass('actionDisabled');
+	$('#panAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
 
 	updateActionsForCurrentSelection();
@@ -989,6 +992,9 @@ function getNewTool(project, view) {
 		else if ($('#zoomOutAction').hasClass('actionSelected')) {
 			return new ZoomTool(project, false);
 		}
+		else if ($('#panAction').hasClass('actionSelected')) {
+			return new PanTool(project);
+		}
 	}
 	if (project==objectOverviewProject || project==objectDetailProject) {
 		if ($('#addLineAction').hasClass('actionSelected')) {
@@ -1027,11 +1033,161 @@ function getNewTool(project, view) {
 	return new Tool('unknown', project);
 }
 
+//keyboard handling
+
+/** current key down */
+var keyDown;
+
+//some special key codes - from http://www.quirksmode.org/js/keys.html#t00
+var KEY_BACKSPACE = 8;
+var KEY_TAB = 9;
+var KEY_SHIFT = 16;
+var KEY_CTRL = 17;
+var KEY_CAPSLOCK = 20;
+var KEY_PAGEUP = 33;
+var KEY_PAGEDOWN = 34;
+var KEY_END = 35;
+var KEY_HOME = 36;
+var KEY_LEFT = 37;
+var KEY_UP = 38;
+var KEY_RIGHT = 39;
+var KEY_DOWN = 40;
+var KEY_INSERT = 45;
+var KEY_DELETE = 46;
+var KEY_NUMLOCK = 144;
+var KEY_ENTER = 13;
+var KEY_ESCAPE = 27;
+var KEY_F1 = 112;
+//...
+var KEY_F12 = 123;
+
+/** key need special handling - stop propagate? */
+function isSpecialKey(which) {
+	switch (which) {
+	case KEY_BACKSPACE:
+	case KEY_CTRL:
+/*	case KEY_CAPSLOCK:
+	case KEY_PAGEUP:
+	case KEY_PAGEDOWN:
+	case KEY_END:
+	case KEY_HOME:
+	case KEY_LEFT:
+	case KEY_UP:
+	case KEY_RIGHT:
+	case KEY_DOWN:
+	case KEY_INSERT:
+	case KEY_DELETE:
+	case KEY_NUMLOCK:
+	case KEY_ENTER:
+	case KEY_ESCAPE:
+*/		return true;
+	default:
+		if (which>=KEY_F1 && which<=KEY_F12)
+			return true;
+		return false;
+	}
+}
+
+var keyFiresTool = false;
+
 /** register events for tool(s) */
 function registerMouseEvents() {
+	// capture document-wide key presses, including special keys
+	$(document).keydown(function(ev) {
+		if (ev.which==keyDown) {
+			//console.log('ignore duplicate keydown for '+ev.which);
+			ev.stopPropagation();
+			return false;
+		}
+		keyDown = ev.which;
+		// Note: this is not meant to be called multiple times when key is held down, but on Chrome
+		// it is being, so that will need some filtering
+		//console.log('keydown: '+ev.which+' ctrlKey='+ev.ctrlKey+' special='+isSpecialKey(ev.which));
+		console.log('keydown: '+ev.which+' at '+ev.pageX+','+ev.pageY+' on '+ev.target+' ('+$(ev.target).attr('id')+') = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		
+		if (keyFiresTool)
+			toolUp(ev);
+		
+		// change tool?
+		if (ev.target.tagName && (ev.target.tagName=='TEXTAREA' || ev.target.tagName=='INPUT')) {
+			// no
+		} else {
+			if (ev.which=='Q'.charCodeAt(0))
+				handleActionSelected('selectAction');
+			else if (ev.which=='V'.charCodeAt(0))
+				handleActionSelected('showAllAction');
+			else if (ev.which=='Z'.charCodeAt(0))
+				handleActionSelected('zoomInAction');
+			else if (ev.which=='X'.charCodeAt(0))
+				handleActionSelected('zoomOutAction');
+			else if (ev.which=='C'.charCodeAt(0))
+				handleActionSelected('panAction');
+			else if (ev.which=='W'.charCodeAt(0))
+				handleActionSelected('orderBackAction');
+			else if (ev.which=='A'.charCodeAt(0))
+				handleActionSelected('addLineAction');
+			else if (ev.which=='S'.charCodeAt(0))
+				handleActionSelected('addTextAction');
+			else if (ev.which=='F'.charCodeAt(0))
+				handleActionSelected('addFrameAction');
+			else if (ev.which=='E'.charCodeAt(0)) {
+				handleActionSelected('editAction');
+				handleActionSelected('moveAction');
+			}
+			else if (ev.which=='D'.charCodeAt(0)) {
+				handleActionSelected('copyAction');
+				handleActionSelected('placeAction');
+			}
+			else if (ev.which==KEY_DELETE)
+				handleActionSelected('deleteAction');
+			else
+				console.log('key has no action: '+ev.which);
+			// more?
+		}
+		// escape for orphan focus?
+		if (ev.which==KEY_ESCAPE) {
+			$('#orphanText').focus();
+		}
+		// stop, e.g. backspace and ctrl-... propagating to browser itself
+		if (isSpecialKey(ev.which) || ev.ctrlKey) {
+			if (ev.target.tagName && (ev.target.tagName=='TEXTAREA' || ev.target.tagName=='INPUT')) {
+				if (ev.which==KEY_BACKSPACE || ev.which=='C'.charCodeAt(0) || ev.which=='V'.charCodeAt(0)) {
+					console.log('textarea allowing special key down '+ev.which);
+					return true;
+				}
+				//else
+				//	console.log('textarea key '+ev.which+' target tagName = '+ev.target.tagName);
+
+			}
+			//else 
+			//	console.log('key target tagName = '+ev.target.tagName);
+			ev.stopPropagation();
+			return false;
+		}
+	});
+	$(document).keyup(function(ev) {
+		keyDown = undefined;
+		console.log('keyup: '+ev.which);
+
+		if (keyFiresTool)
+			toolUp(ev);
+
+		// stop, e.g. backspace and ctrl-... propagating to browser itself
+		if (isSpecialKey(ev.which) || ev.ctrlKey) {
+			// except some things in text
+			if (ev.target.tagName && (ev.target.tagName=='TEXTAREA' || ev.target.tagName=='INPUT')) {
+				if (ev.which==KEY_BACKSPACE || ev.which=='C'.charCodeAt(0) || ev.which=='V'.charCodeAt(0)) {
+					console.log('textarea allowing special key up '+ev.which);
+					return true;
+				}
+			}
+			ev.stopPropagation();
+			return false;
+		}
+	});
 	$(document).mousedown(function(ev) {
 		// which: 1=left, 2=middle, 3=right
-		//console.log('mousedown: '+ev.which+' at '+ev.pageX+','+ev.pageY+' on '+ev.target+' ('+$(ev.target).attr('id')+') = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		console.log('mousedown: '+ev.which+' at '+ev.pageX+','+ev.pageY+' on '+ev.target+' ('+$(ev.target).attr('id')+') = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
 		toolUp(ev);
 		//keyTarget = ev.target;
 		var p = getProject(ev.target);
@@ -1051,6 +1207,10 @@ function registerMouseEvents() {
 	});
 	$(document).mousemove(function(ev) {
 		//console.log('mousemove: '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
+		if (ev.target.tagName=='CANVAS') {
+			console.log('blur orphan text on mousemove');
+			$('#orphanText').blur();
+		}
 		checkHighlight(ev);
 		if (tool) {
 			toolProject.activate();
@@ -1441,6 +1601,7 @@ function showEditor(sketchId) {
 	$('#showAllAction').removeClass('actionDisabled');
 	$('#zoomInAction').removeClass('actionDisabled');
 	$('#zoomOutAction').removeClass('actionDisabled');
+	$('#panAction').removeClass('actionDisabled');
 	$('#selectAction').removeClass('actionDisabled');
 	$('#addLineAction').removeClass('actionDisabled');
 	$('#addTextAction').removeClass('actionDisabled');

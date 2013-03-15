@@ -46,7 +46,7 @@
 		<div class="indexHeader">
 			<div class="headerItem">
 				<form>
-					<span class="label">Filter:</span><input type="text" id="indexFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+					<span class="label">Filter:</span><input type="text" id="indexFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
 				</form>
 			</div>
 			
@@ -64,7 +64,7 @@
 					</div>
 					<div class="headerItem">
 						<form>
-							<span class="label">Filter:</span><input type="text" id="sequences1FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+							<span class="label">Filter:</span><input type="text" id="sequences1FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
 						</form>
 					</div>
 					
@@ -79,7 +79,7 @@
 					</div>
 					<div class="headerItem">
 						<form>
-							<span class="label">Filter:</span><input type="text" id="sequences2FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+							<span class="label">Filter:</span><input type="text" id="sequences2FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
 						</form>
 					</div>
 					
@@ -147,19 +147,22 @@
 			<!-- <canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas> -->						
 		</div>
 		<div class="actions">
-			<div class="action actionSelected" id="selectAction">Select</div>
+			<div class="action actionSelected" id="selectAction">Select[Q]</div>
 			<p class="actionLabel label">Sketch:</p>
-			<div class="action" id="showAllAction">Show all</div>
-			<div class="action" id="zoomInAction">Zoom-in</div>
-			<div class="action" id="zoomOutAction">Zoom-out</div>
-			<div class="action actionDisabled" id="addLineAction">Line</div>
-			<div class="action actionDisabled" id="addTextAction">Text</div>
-			<div class="action actionDisabled" id="addFrameAction">Frame</div>
+			<div class="action" id="showAllAction">Show all[V]</div>
+			<div class="action" id="zoomInAction">Zoom-in[Z]</div>
+			<div class="action" id="zoomOutAction">Zoom-out[X]</div>
+			<div class="action" id="panAction">Pan[C]</div>
+			<div class="action actionDisabled" id="orderBackAction">To back[W]</div>
+			<div class="action actionDisabled" id="addLineAction">Line[A]</div>
+			<div class="action actionDisabled" id="addTextAction">Text[S]</div>
+			<div class="action actionDisabled" id="addFrameAction">Frame[F]</div>
 			<p class="actionLabel label">Selection:</p>
-			<div class="action" id="editAction">Edit</div>
-			<div class="action" id="moveAction">Move</div>
-			<div class="action" id="copyAction">Copy</div>
-			<div class="action" id="deleteAction">Delete</div>
+			<div class="action" id="editAction">Edit[E]</div>
+			<div class="action" id="moveAction">Move[E]</div>
+			<div class="action" id="copyAction">Copy[D]</div>
+			<div class="action" id="placeAction">Place[D]</div>
+			<div class="action" id="deleteAction">[Delete]</div>
 		</div>
 		<div style="witdth:100%;clear:both"></div>
 		<div class="properties">
