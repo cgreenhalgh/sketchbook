@@ -1,3 +1,17 @@
 sketchbook - tinkering with a paper.js-based diagramming/sketching/authoring tool for ubicomp experiences.
 
 Chris Greenhalgh, The University of Nottingham, 2012
+
+A few implementation notes (for version 2, sketcher2.html), for the bold...
+
+Uses Paper.js http://paperjs.org/ as an API over HTML5 canvas, JQuery http://jquery.com/ for general DOM manipulation and a couple of third-party utilities to plug holes in HTML5 support for local files
+
+More or less MVC with Sketchbook (and in turn Sketch and Sequence) in sketchbook.js as the model, sketcher2.js as the view/control harness, sketchertools.js pulls together the various drawing/manipulation tools. 
+
+Strictly Sketchbook corresponds to the JSON file; there is some other internal state that is not persisted, in particular the selection and selection history which is really important for tying stuff together. 
+
+The application also uses the actual state of the page elements (e.g. CSS styles added to/removed from button and other elements) to maintain some of its working state.
+
+Sketcher2.html has the static HTML and sketcher2.css the CSS for layout.
+
+Model update uses a Command pattern (the Action class in sketchbook.js), so that undo support should be straight-forward when i get time.
