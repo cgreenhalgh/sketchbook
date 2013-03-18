@@ -140,34 +140,16 @@
 	</div>
 	<!-- common facilities -->
 	<div class="commonFacilities">
-		<!-- orphan text -->
-		<div class="orphanText">
-			<p class="label">Orphan text</p>
-			<input type="text" width="20" id="orphanText"/>
-			<!-- <canvas id="orphanTextCanvas" class="orphanTextCanvas" ></canvas> -->						
-		</div>
-		<div class="actions">
-			<div class="action actionSelected" id="selectAction">Select[Q]</div>
-			<p class="actionLabel label">Sketch:</p>
-			<div class="action" id="showAllAction">Show all[V]</div>
-			<div class="action" id="zoomInAction">Zoom-in[Z]</div>
-			<div class="action" id="zoomOutAction">Zoom-out[X]</div>
-			<div class="action" id="panAction">Pan[C]</div>
-			<div class="action actionDisabled" id="orderToBackAction">To back[W]</div>
-			<div class="action actionDisabled" id="addLineAction">Line[A]</div>
-			<div class="action actionDisabled" id="addTextAction">Text[S]</div>
-			<div class="action actionDisabled" id="addFrameAction">Frame[F]</div>
-			<p class="actionLabel label">Selection:</p>
-			<div class="action" id="editAction">Edit[E]</div>
-			<div class="action" id="moveAction">Move[E]</div>
-			<div class="action" id="copyAction">Copy[D]</div>
-			<div class="action" id="placeAction">Place[D]</div>
-			<div class="action" id="deleteAction">[Delete]</div>
-		</div>
-		<div style="witdth:100%;clear:both"></div>
+	
 		<div class="properties">
 			<table class="propertiesTable">
+				<tr class="" id="orphanTextProperty"><td>New text</td>
+					<td><input type="text" width="20" id="orphanText"/></td>
+				</tr>
 				<tr class="propertyTitle" ><td>Property</td><td>Value</td></tr>
+				<tr class="property propertyDisabled" id="textProperty"><td>Text</td>
+					<td><input type="text" width="20"/></td>
+				</tr>
 				<tr class="property propertyDisabled" id="colorProperty"><td>Color</td>
 					<td>
 						<div class="option optionDefault optionSelected" style="background-color:#000000" id="color_000000"></div>
@@ -200,19 +182,40 @@
 				<!-- frame/text content (?) -->
 			</table>
 		</div>
-		<div class="selectionHistory">
-			<!-- selection history -->
-			<div class="indexHeader">
-				<div class="headerItem">
-					<span class="label">Selection history</span>
-				</div>
-				<div class="headerItem">
-					Load image:<input type="file" id="loadImage" name="imageFiles[]" accept="image/*" class="button"/>
-				</div>
-				<div class="footer"></div>
+		<div style="width:80%;float:left">
+			<div class="actions">
+				<div class="action actionSelected" id="selectAction">Select[Q]</div>
+				<p class="actionLabel label">Sketch:</p>
+				<div class="action" id="showAllAction">Show all[V]</div>
+				<div class="action" id="zoomInAction">Zoom-in[Z]</div>
+				<div class="action" id="zoomOutAction">Zoom-out[X]</div>
+				<div class="action" id="panAction">Pan[C]</div>
+				<div class="action actionDisabled" id="orderToBackAction">To
+					back[W]</div>
+				<div class="action actionDisabled" id="addLineAction">Line[A]</div>
+				<div class="action actionDisabled" id="addTextAction">Text[S]</div>
+				<div class="action actionDisabled" id="addFrameAction">Frame[F]</div>
+				<p class="actionLabel label">Selection:</p>
+				<div class="action" id="editAction">Edit[E]</div>
+				<div class="action" id="moveAction">Move[E]</div>
+				<div class="action" id="copyAction">Copy[D]</div>
+				<div class="action" id="placeAction">Place[D]</div>
+				<div class="action" id="deleteAction">[Delete]</div>
 			</div>
-			<canvas id="selectionCanvas" class="selectionCanvas" ></canvas>	
-		</div>
+
+			<div class="selectionHistory">
+				<!-- selection history -->
+				<div class="indexHeader">
+					<div class="headerItem">
+						<span class="label">Selection history</span>
+					</div>
+					<div class="headerItem">
+						Load image:<input type="file" id="loadImage" name="imageFiles[]" accept="image/*" class="button"/>
+					</div>
+					<div class="footer"></div>
+				</div>
+				<canvas id="selectionCanvas" class="selectionCanvas" ></canvas>	
+			</div>
 		<div class="footer"></div>
 	</div>
 </div>

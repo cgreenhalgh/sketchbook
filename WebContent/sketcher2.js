@@ -166,6 +166,48 @@ PropertySelect.prototype.onSetValue = function(value) {
 	// no op
 };
 
+// Text as a Property object
+function PropertyText(name, propertyId) {
+	this.name = name;
+	this.propertyId = propertyId;
+
+	// TODO - handle change
+	$('#'+this.propertyId+' input').prop('disabled', true);
+}
+
+PropertyText.prototype.resetValue = function() {
+	$('#'+this.propertyName+' input').val('');
+	this.isOrphan = true;
+};
+	
+PropertyText.prototype.getValue = function() {
+	return $('#'+this.propertyId+' input').val('');
+};
+
+PropertyText.prototype.setValue = function(value) {
+	$('#'+this.propertyId+' input').val(value);
+};
+
+PropertyText.prototype.setEnabled = function(enabled) {
+	if (enabled)
+		$('#'+this.propertyId).removeClass('propertyDisabled');
+	else
+		$('#'+this.propertyId).addClass('propertyDisabled');
+};
+
+PropertyText.prototype.onSetValue = function(value) {
+	// TODO
+	console.log('set property '+this.name+' to '+value);
+};
+
+function takeOrphanText() {
+	var text = $('#orphanText').val();
+	$('#orphanText').val('');
+	return text;
+}
+
+
+
 //==============================================================================
 //various internal functions
 
@@ -297,8 +339,14 @@ function hexForColor(color) {
 function updatePropertiesForCurrentSelection() {
 	var actionId = $('.actionSelected').attr('id');
 
-	// color
-	if (!propertiesShowSelection()) {
+	if (showingIndex || showingSequences) {
+		for (var pname in propertyEditors) {
+			var propertyEditor = propertyEditors[pname];
+			propertyEditor.resetValue();
+			propertyEditor.setEnabled(false);
+		}
+	}
+	else if (!propertiesShowSelection()) {
 		// update color to last selected
 		for (var pname in propertyEditors) {
 			var propertyEditor = propertyEditors[pname];
@@ -307,11 +355,13 @@ function updatePropertiesForCurrentSelection() {
 		propertyEditors.color.setEnabled(actionId=='addLineAction' || actionId=='addTextAction');
 		propertyEditors.lineWidth.setEnabled(actionId=='addLineAction');
 		propertyEditors.fontSize.setEnabled(actionId=='addTextAction');
+		propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
 	} else {
 		// element(s) with color(s)?
 		var color = null;
 		var width = null;
 		var fontSize = null;
+		var text = null;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
 			if (cs.record.selection.elements) {
@@ -328,6 +378,20 @@ function updatePropertiesForCurrentSelection() {
 							color = el.text.color;						
 						if (el.text.size)
 							fontSize = el.text.size;
+						if (el.text.content)
+							text = el.text.content;
+					}
+					else if (el.frame) {
+						if (el.frame.description)
+							text = el.frame.description;
+					}
+					else if (el.sequence) {
+						if (el.sequence.description)
+							text = el.sequence.description;
+					}
+					else if (el.sequenceItem) {
+						if (el.sequenceItem.text)
+							text = el.sequenceItem.text;
 					}
 				}
 			}
@@ -350,6 +414,12 @@ function updatePropertiesForCurrentSelection() {
 		}
 		else
 			propertyEditors.fontSize.setEnabled(false);
+		if (text) {
+			propertyEditors.text.setEnabled(true);
+			propertyEditors.text.setValue(text);
+		}
+		else
+			propertyEditors.text.setEnabled(false);
 	}
 }
 	
@@ -511,7 +581,8 @@ function showIndex() {
 	currentSketch = undefined;
 	showingSequences = false;
 	canDeleteSelection = false;
-	
+	showingIndex = true;	
+
 	// update actions & properties
 	$('.property').addClass('propertyDisabled');
 
@@ -556,7 +627,6 @@ function showIndex() {
 	// scaling problem workaround
 	handleResize();
 	
-	showingIndex = true;	
 	showAll(indexProject);
 }
 
@@ -789,6 +859,7 @@ function showSequences() {
 	currentSketch = undefined;
 	showingIndex = false;	
 	canDeleteSelection = false;
+	showingSequences = true;	
 
 	// update actions & properties
 	$('.property').addClass('propertyDisabled');
@@ -808,7 +879,6 @@ function showSequences() {
 	// scaling problem workaround
 	handleResize();
 	
-	showingSequences = true;	
 }
 
 /** load image if not already then call withImage(image) */
@@ -1068,12 +1138,6 @@ function checkHighlight(ev) {
 		}
 
 	}
-}
-
-function takeOrphanText() {
-	var text = $('#orphanText').val();
-	$('#orphanText').val('');
-	return text;
 }
 
 /** get new/current tool */
@@ -2204,6 +2268,10 @@ function onSetFontSize(value) {
 	}
 }
 
+function onSetText(value) {
+	// TODO
+}
+
 function onAlphaSelected(event) {
 	$('.alpha').removeClass('alphaSelected');
 	$(this).addClass('alphaSelected');
@@ -2252,6 +2320,8 @@ $(document).ready(function() {
 	propertyEditors.lineWidth.onSetValue = onSetLineWidth;
 	propertyEditors.fontSize = new PropertySelect('fontSize', 'fontSizeProperty');
 	propertyEditors.fontSize.onSetValue = onSetFontSize;
+	propertyEditors.text = new PropertyText('text', 'textProperty');
+	propertyEditors.text.onSetValue = onSetText;
 
 	onShowIndex();
 	

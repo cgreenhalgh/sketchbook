@@ -115,18 +115,9 @@ div.commonFacilities {
 	position:relative;
 	/*height: 20%;*/
 }
-div.orphanText {
-	/*background-color:#f00;*/
-	width:20%;
-	float:left;
-	/*height: 10%;*/
-	/*position:absolute;
-	left:0%;
-	top:0%;*/
-}
 div.selectionHistory {
 	/*background-color:#ff0;*/
-	width:80%; /* could be 50% if no border */
+	width:100%; /* could be 50% if no border */
 	/*position:absolute;
 	left:50%;
 	top:0%;*/
@@ -160,7 +151,7 @@ canvas.sequencesViewCanvas {
 }
 div.actions {
 	/* next to orphan text */
-	width:80%; 
+	width:100%; 
 	float:left;
 }
 div.action {
