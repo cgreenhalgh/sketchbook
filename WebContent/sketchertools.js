@@ -380,6 +380,28 @@ SelectTool.prototype.end = function(point) {
 	return this.sketchbook.selectItemsAction(this.sketchId, items);
 };
 
+/** order to back tool */
+function OrderToBackTool(project, sketchbook, sketchId) {
+	//SelectTool.call(this, project, sketchbook, sketchId);
+	//this.name = 'orderToBack';
+	Tool.call(this, 'orderToBack', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;	
+	this.selectedItems = new Array();
+	this.highlightItems = new Array();
+}
+OrderToBackTool.prototype = new SelectTool();
+
+OrderToBackTool.prototype.end = function(point) {
+	this.checkSelect(point);
+	this.clearHighlightItems();
+	var items = this.selectedItems;
+	this.selectedItems = [];
+	// we'll use an action for this although it doesn't actually modify the sketchbook state!
+	return this.sketchbook.orderToBackItemsAction(this.sketchId, items);
+};
+
+
 function CopyToSketchTool(project, sketchbook, sketchId, elements, images) {
 	Tool.call(this, 'copyToSketch', project);
 	this.sketchbook = sketchbook;

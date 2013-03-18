@@ -484,6 +484,41 @@ Sketchbook.prototype.selectItemsAction = function(defaultSketchId, items) {
 	return action;
 };
 
+/** return action to move a list of items within a sketch to the back */
+Sketchbook.prototype.orderToBackItemsAction = function(defaultSketchId, items) {
+	var action = new Action(this, 'orderToBack');
+	action.elements = [];
+	// several elements in the same sketch are one selection
+	for (var i=0; i<items.length; i++) {
+		var item = items[i];
+		if (item.selectionRecordId) {
+			// selection from selection history!
+			// ??
+			console.log('orderToBackItemsAction ignoring selection history item '+item.selectionRecordId);
+			continue;
+		}
+		var sketchId = item.sketchId;
+		if (!sketchId)
+			sketchId = defaultSketchId;
+		sketch = this.sketches[sketchId];
+		if (!sketch) {
+			console.log('orderToBackItemsAction sketch '+sketchId+' unknown');
+			continue;
+		}
+		var elementId = getSketchElementId(item);
+		if (elementId) {
+			action.elements.push({ sketchId: sketchId, elementId: elementId });
+		}
+		else if (item.sketchId) {
+			// whole sketch?!
+			console.log('orderToBackItemsAction ignoring while sketch '+item.sketchId);
+		}
+		else 
+			console.log('orderToBackItemsAction could not find elementId in sketch '+sketchId+' on '+item);
+	}
+	return action;
+};
+
 /** return action to select a list of elements within a sketch - not really a model action */
 Sketchbook.prototype.selectElementsAction = function(sketchId, elements) {
 	var action = new Action(this, 'select');
@@ -846,6 +881,31 @@ Sketchbook.prototype.doAction = function(action) {
 			}
 		}
 	}
+	else if (action.type=='orderToBack') {
+		for (var si=0; si<action.elements.length; si++) {
+			var element = action.elements[si];
+			var sketch = this.sketches[element.sketchId];
+			if (sketch) {
+				var done = false;
+				for (var i=0; i<sketch.elements.length; i++) {
+					var el = sketch.elements[i];
+					if (el.id==element.elementId) {
+						element.undo = { atIndex: i };
+						sketch.elements.splice(i, 1);
+						sketch.elements.splice(0, 0, el);
+						done = true;
+						console.log('orderToBack sketch '+element.sketchId+' element '+element.elementId);
+						break;
+					}
+				}
+				if (!done)
+					console.log('orderToBack: could not find element '+element.elementId+' in sketch '+element.sketchId);
+			}
+			else {
+				console.log('orderToBack: cannot find sketch '+element.sketchId);
+			} 
+		}
+	}
 	else if (action.type=='setBackground') {
 		var sketch = this.sketches[action.sketchId];
 		if (sketch) {
@@ -1074,6 +1134,32 @@ Sketchbook.prototype.undoAction = function(action) {
 						sequence.items.push(item.undo.sequenceItem);
 				}
 			}
+		}
+	}
+	else if (action.type=='orderToBack') {
+		for (var si=action.elements.length-1; si>=0; si--) {
+			var element = action.elements[si];
+			if (element.undo && element.undo.atIndex) {
+				var sketch = this.sketches[element.sketchId];
+				if (sketch) {
+					var done = false;
+					for (var i=0; i<sketch.elements.length; i++) {
+						var el = sketch.elements[i];
+						if (el.id==element.elementId) {
+							sketch.elements.splice(i, 1);
+							sketch.elements.splice(element.undo.atIndex, 0, el);
+							done = true;
+							console.log('undo orderToBack sketch '+element.sketchId+' element '+element.elementId);
+							break;
+						}
+					}
+					if (!done)
+						console.log('undo orderToBack: could not find element '+element.elementId+' in sketch '+element.sketchId);
+				}
+				else {
+					console.log('undo orderToBack: cannot find sketch '+element.sketchId);
+				}
+			} 
 		}
 	}
 	else if (action.type=='setBackground') {

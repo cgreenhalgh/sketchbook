@@ -1056,16 +1056,17 @@ function checkHighlight(ev) {
 		}
 	}
 	if (!tool) {
-		if (!$('#selectAction').hasClass('actionSelected')) {
-			return;
-		}
 		var p = getProject(ev.target);
 		if (p && p.view) {
-			tool = new HighlightTool(p);
-			toolView = p.view;
-			toolProject = p;
-			tool.begin(view2project(toolView, ev.pageX, ev.pageY));
-		}	
+			if ($('#selectAction').hasClass('actionSelected') || 
+					($('#orderToBackAction').hasClass('actionSelected') && p!==selectionProject)) {
+				tool = new HighlightTool(p);
+				toolView = p.view;
+				toolProject = p;
+				tool.begin(view2project(toolView, ev.pageX, ev.pageY));
+			}	
+		}
+
 	}
 }
 
@@ -1096,7 +1097,11 @@ function getNewTool(project, view) {
 		}
 	}
 	if (project==objectOverviewProject || project==objectDetailProject) {
-		if ($('#addLineAction').hasClass('actionSelected')) {
+		if ($('#orderToBackAction').hasClass('actionSelected')) {
+			if (currentSketch && currentSketch.id)
+				return new OrderToBackTool(project, sketchbook, currentSketch.id);
+		}
+		else if ($('#addLineAction').hasClass('actionSelected')) {
 			if (currentSketch && currentSketch.id)
 				return new LineTool(project, sketchbook, currentSketch.id);
 		}
@@ -1222,7 +1227,7 @@ function registerMouseEvents() {
 			else if (ev.which=='C'.charCodeAt(0))
 				handleActionSelected('panAction');
 			else if (ev.which=='W'.charCodeAt(0))
-				handleActionSelected('orderBackAction');
+				handleActionSelected('orderToBackAction');
 			else if (ev.which=='A'.charCodeAt(0))
 				handleActionSelected('addLineAction');
 			else if (ev.which=='S'.charCodeAt(0))
@@ -1701,6 +1706,7 @@ function showEditor(sketchId) {
 	$('#zoomInAction').removeClass('actionDisabled');
 	$('#zoomOutAction').removeClass('actionDisabled');
 	$('#panAction').removeClass('actionDisabled');
+	$('#orderToBackAction').removeClass('actionDisabled');
 	$('#selectAction').removeClass('actionDisabled');
 	$('#addLineAction').removeClass('actionDisabled');
 	$('#addTextAction').removeClass('actionDisabled');
@@ -1893,7 +1899,7 @@ function doAction(action) {
 		refreshSketchViews(action.sketchId);
 		// TODO select it?
 	}
-	else if (action.type=='setColor' || action.type=='setLineWidth' || action.type=='setFontSize') {
+	else if (action.type=='setColor' || action.type=='setLineWidth' || action.type=='setFontSize' || action.type=='orderToBack') {
 		var sketchIds = [];
 		for (var ei=0; ei<action.elements.length; ei++) {
 			var element = action.elements[ei];
