@@ -31,16 +31,6 @@ function LineTool(project, sketchbook, sketchId) {
 	this.sketchId = sketchId;
 }
 
-function getColor() {
-	var color = $('.colorSelected').css('background-color');
-	if (color) {
-		console.log('color is '+color);
-		return color;
-	}
-	console.log('Could not find current color');
-	return '#000000';
-}
-
 // inherit (apparently)
 LineTool.prototype = new Tool();
 

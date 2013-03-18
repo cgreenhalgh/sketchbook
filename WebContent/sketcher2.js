@@ -66,7 +66,6 @@ var canDeleteSelection = false;
 
 // color(s)
 var lastSelectedColorElem = $('#defaultColor');
-var lastSelectedFillColorElem = $('#defaultFillColor');
 
 //imageId -> { dataurl:string, info:{width:, height:}, withImages:[] } 
 var images = new Object();
@@ -79,6 +78,9 @@ var sequencesFrames = new Object();
 var sequencesItems = new Object();
 
 var animateToInfo;
+
+//property name -> PropertySelect
+var propertyEditors = new Object();
 
 //==============================================================================
 // display constants
@@ -97,7 +99,75 @@ var FRAME_TRANSITION_DURATION_S = 0.5;
 // symbol (sketch) caches
 
 //==============================================================================
-// various internal functions
+// property editor widget(s)
+
+function PropertySelect(name, propertyId) {
+	this.name = name;
+	this.propertyId = propertyId;
+	this.lastSelectedElem = $('#'+propertyId+' .defaultOption');
+	var self = this;
+	$('#'+propertyId+' .option').on('click', function(ev) { self.onPropertyOptionSelected($(this), ev); });
+}
+
+PropertySelect.prototype.onPropertyOptionSelected = function(elem, ev) {
+	var id = elem.attr('id');
+	console.log('onPropertyOptionSelected '+this.name+' '+id);
+	if (!id)
+		return;
+	$('#'+this.propertyId+' .option').removeClass('optionSelected');
+	elem.addClass('optionSelected');
+	this.lastSelectedElem = elem;
+	var ix = id.indexOf('_');
+	if (ix>0)
+		id = id.substring(ix+1);
+	console.log('Selected '+this.name+' '+id);
+	// override...
+	this.onSetValue(id);
+};
+
+PropertySelect.prototype.resetValue = function() {
+	$('#'+this.propertyId+' .option').removeClass('optionSelected');
+	this.lastSelectedElem.addClass('optionSelected');
+};
+
+PropertySelect.prototype.getValue = function() {
+	var id = $('#'+this.propertyId+' .optionSelected').attr('id');
+	if (!id) {
+		console.log('no '+this.name+' selected');
+		return null;
+	}
+	var ix = id.indexOf('_');
+	if (ix>0)
+		id = id.substring(ix+1);
+	return id;
+};
+
+PropertySelect.prototype.setValue = function(value) {
+	$('#'+this.propertyId+' .option').removeClass('optionSelected');
+	var sel = $('#'+this.name+'_'+value);
+	if (sel.size()>0) {
+		console.log('select option '+'#'+this.name+'_'+value);
+		sel.addClass('optionSelected');
+	}
+	else {
+		console.log('could not find '+this.name+' value '+value);
+	}
+};
+
+PropertySelect.prototype.setEnabled = function(enabled) {
+	if (enabled)
+		$('#'+this.propertyId).removeClass('propertyDisabled');
+	else
+		$('#'+this.propertyId).addClass('propertyDisabled');
+};
+
+PropertySelect.prototype.onSetValue = function(value) {
+	console.log('set property '+this.name+' to '+value);
+	// no op
+};
+
+//==============================================================================
+//various internal functions
 
 function animateTo(project, zoom, center) {
 	if (animateToInfo && animateToInfo.interval) {
@@ -183,6 +253,17 @@ function parseCssColor(color) {
 		return null;
 	}
 }
+function parseHexColor(color) {
+	var hex = color.match(/^(#)?([0-9a-fA-F][0-9a-fA-F])([0-9a-fA-F][0-9a-fA-F])([0-9a-fA-F][0-9a-fA-F])$/);
+	if (hex && hex.length >= 5) {
+		console.log('color is '+hex[2]+','+hex[3]+','+hex[4]);
+		return { red : parseInt(hex[2],16)/255, green : parseInt(hex[3],16)/255, blue : parseInt(hex[4],16)/255 };
+	}
+	else {
+		console.log('could not parse color '+color);
+		return null;
+	}
+}
 function updatePropertiesForCurrentSketch() {
 	// background alpha
 	if (currentSketch) {
@@ -204,99 +285,62 @@ function updatePropertiesForCurrentSketch() {
 		});
 	}
 }
-
+function hexForColorChannel(value) {
+	var s = new Number(value*255).toString(16);
+	if (s.length<2)
+		s = '0'+s;
+	return s;
+}
+function hexForColor(color) {
+	return hexForColorChannel(color.red)+hexForColorChannel(color.green)+hexForColorChannel(color.blue);
+}
 function updatePropertiesForCurrentSelection() {
 	var actionId = $('.actionSelected').attr('id');
 
 	// color
 	if (!propertiesShowSelection()) {
 		// update color to last selected
-		if(lastSelectedColorElem) {
-			$('.color').removeClass('colorSelected');
-			lastSelectedColorElem.addClass('colorSelected');
+		for (var pname in propertyEditors) {
+			var propertyEditor = propertyEditors[pname];
+			propertyEditor.resetValue();
 		}
-		if (actionId=='addLineAction' || actionId=='addTextAction')
-			$('#colorProperty').removeClass('propertyDisabled');
-		else
-			$('#colorProperty').addClass('propertyDisabled');
+		propertyEditors.color.setEnabled(actionId=='addLineAction' || actionId=='addTextAction');
 	} else {
 		// element(s) with color(s)?
-		$('.color').removeClass('colorSelected');
-		
-		var hasColor = false;
+		var color = null;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
 			if (cs.record.selection.elements) {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
-					if ((el.line && el.line.color) || (el.text && el.text.color)) {
-						hasColor = true;						
-					}
+					if (el.line && el.line.color)
+						color = el.line.color;
+					else if (el.text && el.text.color) 
+						color = el.text.color;						
 				}
 			}
 		}
-		if (hasColor) {
-			$('.color').each(function(index, Element) {
-				var color = parseCssColor($(this).css('background-color'));
-				if (!color)
-					return;
-				for (var i=0; i<currentSelections.length; i++) {
-					var cs = currentSelections[i];
-					if (cs.record.selection.elements) {
-						for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
-							var el = cs.record.selection.elements[ei];
-							if (el.line && el.line.color) {
-								if (color.red==el.line.color.red && 
-										color.green==el.line.color.green && 
-										color.blue==el.line.color.blue) {
-									$(this).addClass('colorSelected');
-									return;
-								}
-								else {
-									//console.log('different colours '+JSON.stringify(color)+' vs '+JSON.stringify(el.line.color));
-								}
-							}
-							else if (el.text && el.text.color) {
-								if (color.red==el.text.color.red && 
-										color.green==el.text.color.green && 
-										color.blue==el.text.color.blue) {
-									$(this).addClass('colorSelected');
-									return;
-								}
-								else {
-									//console.log('different colours '+JSON.stringify(color)+' vs '+JSON.stringify(el.line.color));
-								}
-							}
-						}
-					}
-				}				
-			});
-		}		
-		if (hasColor) 
-			$('#colorProperty').removeClass('propertyDisabled');
-		else
-			$('#colorProperty').addClass('propertyDisabled');		
-	}
-	// fillcolor
-	if (!propertiesShowSelection()) {
-		// update color to last selected
-		if(lastSelectedFillColorElem) {
-			$('.fillColor').removeClass('fillColorSelected');
-			lastSelectedFillColorElem.addClass('fillColorSelected');
+		if (color) {
+			propertyEditors.color.setEnabled(true);
+			propertyEditors.color.setValue(hexForColor(color));
 		}
-		//if (actionId=='addLineAction' || actionId=='addTextAction')
-		//$('#fillColorProperty').removeClass('propertyDisabled');
-		//else
-		$('#fillColorProperty').addClass('propertyDisabled');
-	} else {
-		// element(s) with color(s)?
-		$('.fillColor').removeClass('fillColorSelected');
-		// TODO 
-		$('#fillColorProperty').addClass('propertyDisabled');		
-	}	
+		else
+			propertyEditors.color.setEnabled(false);
+	}
 }
 	
-	
+/** called by sketchertools */
+function getColor() {
+	var color = propertyEditors.color.getValue();
+	if (color) {
+		console.log('color is '+color);
+		return '#'+color;
+	}
+	console.log('Could not find current color');
+	return '#000000';
+}
+
+
 
 function handleActionSelected(id) {
 	var disabled = $('#'+id).hasClass('actionDisabled');
@@ -868,17 +912,11 @@ function registerHighlightEvents() {
 	$(document).on('mouseout', 'div .sequenceItem', function() {
 		$(this).removeClass('sequenceHighlight');
 	});
-	$(document).on('mouseover', 'div .color', function() {
-		$(this).addClass('colorHighlight');
+	$(document).on('mouseover', 'div.option', function() {
+		$(this).addClass('optionHighlight');
 	});
-	$(document).on('mouseout', 'div .color', function() {
-		$(this).removeClass('colorHighlight');
-	});
-	$(document).on('mouseover', 'div .fillColor', function() {
-		$(this).addClass('fillColorHighlight');
-	});
-	$(document).on('mouseout', 'div .fillColor', function() {
-		$(this).removeClass('fillColorHighlight');
+	$(document).on('mouseout', 'div.option', function() {
+		$(this).removeClass('optionHighlight');
 	});
 	$(document).on('mouseover', 'div .alpha', function() {
 		$(this).addClass('alphaHighlight');
@@ -2065,15 +2103,9 @@ function onObjectTextChange() {
 	}
 }
 
-// GUI entry point
-function onColorSelected(event) {
-	$('.color').removeClass('colorSelected');
-	$(this).addClass('colorSelected');
-	var color = $(this).css('background-color');
-	console.log('Selected color '+color);
-	lastSelectedColorElem = $(this);
-	// e.g. 'rgb(0, 0, 0)'
-	color = parseCssColor(color);
+// property editor entry point
+function onSetColor(value) {
+	var color = parseHexColor(value);
 	if (!color)
 		return;
 	// TODO immediate action?
@@ -2100,21 +2132,6 @@ function onColorSelected(event) {
 		else 
 			console.log('no color to set on current selection');
 	}
-}
-
-//GUI entry point
-function onFillColorSelected(event) {
-	$('.fillColor').removeClass('fillColorSelected');
-	$(this).addClass('fillColorSelected');
-	var color = $(this).css('background-color');
-	console.log('Selected fillColor '+color);
-	lastSelectedFillColorElem = $(this);
-	// e.g. 'rgb(0, 0, 0)'
-	color = parseCssColor(color);
-	if (!color)
-		return;
-	// TODO immediate action?
-	// TODO set fill color of currentSelection?
 }
 
 function onAlphaSelected(event) {
@@ -2148,8 +2165,7 @@ $(document).ready(function() {
 	$('#objectTextArea').change(onObjectTextChange);
 	
 	$('.action').on('click', onActionSelected);
-	$('.color').on('click', onColorSelected);
-	$('.fillColor').on('click', onFillColorSelected);
+	//$('#colorProperty .option').on('click', onColorSelected);
 	$('.alpha').on('click', onAlphaSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceObject', onSequenceFrameSelected);
@@ -2159,6 +2175,9 @@ $(document).ready(function() {
 	registerHighlightEvents();
 	
 	registerMouseEvents();
+	
+	propertyEditors.color = new PropertySelect('color', 'colorProperty');
+	propertyEditors.color.onSetValue = onSetColor;
 	
 	onShowIndex();
 	
