@@ -39,7 +39,7 @@ LineTool.prototype.begin = function(point) {
 	activateOverlay(this.project);
 	this.path = new paper.Path();
 	this.path.strokeColor = getColor();
-	this.path.strokeWidth = 1;
+	this.path.strokeWidth = getProperty('lineWidth', 1);
 	this.path.add(point);	
 };
 
@@ -462,13 +462,13 @@ FrameTool.prototype.end = function(point) {
 	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds);
 };
 
-function TextTool(project, sketchbook, sketchId, content, fontSize) {
+function TextTool(project, sketchbook, sketchId, content) {
 	// call super cons
 	Tool.call(this, 'text', project);
 	this.sketchbook = sketchbook;
 	this.sketchId = sketchId;
 	this.content = content;
-	this.fontSize = fontSize;
+	//this.fontSize = fontSize;
 }
 
 TextTool.prototype = new Tool();
@@ -479,7 +479,7 @@ TextTool.prototype.begin = function(point) {
 	this.text = new paper.PointText(point);
 	this.text.characterStyle.fillColor = getColor();
 	this.text.paragraphStyle.justification = 'center';
-	this.text.characterStyle.fontSize = this.fontSize; //default
+	this.text.characterStyle.fontSize = getProperty('fontSize', 12); //default
 	this.text.content = this.content;	
 };
 

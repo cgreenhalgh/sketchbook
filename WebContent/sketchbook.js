@@ -568,8 +568,38 @@ Sketchbook.prototype.setColorAction = function(color) {
 	return new SetColorAction(this, color);
 };
 
-Sketchbook.prototype.setColorAction = function(color) {
-	return new SetColorAction(this, color);
+function SetLineWidthAction(sketchbook, width) {
+	Action.call(this, sketchbook, 'setLineWidth');
+	this.width = width;
+	this.elements = [];
+}
+
+SetLineWidthAction.prototype = new Action();
+
+SetLineWidthAction.prototype.addElement =  function(sketchId, elementId) {
+	this.elements.push({ sketchId: sketchId, elementId : elementId});
+};
+
+
+Sketchbook.prototype.setLineWidthAction = function(width) {
+	return new SetLineWidthAction(this, width);
+};
+
+function SetFontSizeAction(sketchbook, size) {
+	Action.call(this, sketchbook, 'setFontSize');
+	this.size = size;
+	this.elements = [];
+}
+
+SetFontSizeAction.prototype = new Action();
+
+SetFontSizeAction.prototype.addElement =  function(sketchId, elementId) {
+	this.elements.push({ sketchId: sketchId, elementId : elementId});
+};
+
+
+Sketchbook.prototype.setFontSizeAction = function(size) {
+	return new SetFontSizeAction(this, size);
 };
 
 
@@ -703,6 +733,52 @@ Sketchbook.prototype.doAction = function(action) {
 					}
 					else {
 						console.log('setColor cannot handle non-line element '+elementId+' in sketch '+sketchId);
+					}
+				}
+			}
+		}
+	}
+	else if (action.type=='setLineWidth') {
+		for (var ei=0; ei<action.elements.length; ei++) {
+			var el = action.elements[ei];
+			var sketch = this.sketches[el.sketchId];
+			if (!sketch) {
+				console.log('setLineWidth could not find sketch '+el.sketchId);				
+			} else {
+				var element = sketch.getElementById(el.elementId);
+				if (!element) {
+					console.log('setLineWidth could not find element '+elementId+' in sketch '+sketchId);
+				}
+				else {
+					if (element.line) {
+						el.undo = { width : element.line.width};
+						element.line.width = action.width;
+					}
+					else {
+						console.log('setLineWidth cannot handle non-line element '+elementId+' in sketch '+sketchId);
+					}
+				}
+			}
+		}
+	}
+	else if (action.type=='setFontSize') {
+		for (var ei=0; ei<action.elements.length; ei++) {
+			var el = action.elements[ei];
+			var sketch = this.sketches[el.sketchId];
+			if (!sketch) {
+				console.log('setFontSize could not find sketch '+el.sketchId);				
+			} else {
+				var element = sketch.getElementById(el.elementId);
+				if (!element) {
+					console.log('setFontSize could not find element '+elementId+' in sketch '+sketchId);
+				}
+				else {
+					if (element.text) {
+						el.undo = { size : element.text.size };
+						element.text.size = action.size;
+					}
+					else {
+						console.log('setFontSize cannot handle non-line element '+elementId+' in sketch '+sketchId);
 					}
 				}
 			}
@@ -886,7 +962,57 @@ Sketchbook.prototype.undoAction = function(action) {
 							console.log('setColor undo could not find undo color for '+elementId+' in sketch '+sketchId);
 					}
 					else {
-						console.log('setColor cannot handle non-line element '+elementId+' in sketch '+sketchId);
+						console.log('setColor cannot handle non-line/text element '+elementId+' in sketch '+sketchId);
+					}
+				}
+			}
+		}
+	}
+	else if (action.type=='setLineWidth') {
+		for (var ei=0; ei<action.elements.length; ei++) {
+			var el = action.elements[ei];
+			var sketch = this.sketches[el.sketchId];
+			if (!sketch) {
+				console.log('setLineWidth could not find sketch '+el.sketchId);				
+			} else {
+				var element = sketch.getElementById(el.elementId);
+				if (!element) {
+					console.log('setLineWidth could not find element '+elementId+' in sketch '+sketchId);
+				}
+				else {
+					if (element.line) {
+						if (el.undo && el.undo.width)
+							element.line.width = el.undo.width;
+						else
+							console.log('setLineWidth undo could not find undo width for '+elementId+' in sketch '+sketchId);
+					}
+					else {
+						console.log('setLineWidth cannot handle non-line element '+elementId+' in sketch '+sketchId);
+					}
+				}
+			}
+		}
+	}
+	else if (action.type=='setFontSize') {
+		for (var ei=0; ei<action.elements.length; ei++) {
+			var el = action.elements[ei];
+			var sketch = this.sketches[el.sketchId];
+			if (!sketch) {
+				console.log('setFontSize could not find sketch '+el.sketchId);				
+			} else {
+				var element = sketch.getElementById(el.elementId);
+				if (!element) {
+					console.log('setFontSize could not find element '+elementId+' in sketch '+sketchId);
+				}
+				else {
+					if (element.text) {
+						if (el.undo && el.undo.size)
+							element.text.size = el.undo.size;
+						else
+							console.log('setFontSize undo could not find undo color for '+elementId+' in sketch '+sketchId);
+					}
+					else {
+						console.log('setFontSize cannot handle non-text element '+elementId+' in sketch '+sketchId);
 					}
 				}
 			}

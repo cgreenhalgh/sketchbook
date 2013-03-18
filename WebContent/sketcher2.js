@@ -104,7 +104,7 @@ var FRAME_TRANSITION_DURATION_S = 0.5;
 function PropertySelect(name, propertyId) {
 	this.name = name;
 	this.propertyId = propertyId;
-	this.lastSelectedElem = $('#'+propertyId+' .defaultOption');
+	this.lastSelectedElem = $('#'+propertyId+' .optionDefault');
 	var self = this;
 	$('#'+propertyId+' .option').on('click', function(ev) { self.onPropertyOptionSelected($(this), ev); });
 }
@@ -305,18 +305,30 @@ function updatePropertiesForCurrentSelection() {
 			propertyEditor.resetValue();
 		}
 		propertyEditors.color.setEnabled(actionId=='addLineAction' || actionId=='addTextAction');
+		propertyEditors.lineWidth.setEnabled(actionId=='addLineAction');
+		propertyEditors.fontSize.setEnabled(actionId=='addTextAction');
 	} else {
 		// element(s) with color(s)?
 		var color = null;
+		var width = null;
+		var fontSize = null;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
 			if (cs.record.selection.elements) {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
-					if (el.line && el.line.color)
-						color = el.line.color;
-					else if (el.text && el.text.color) 
-						color = el.text.color;						
+					if (el.line) {
+						if (el.line.color)
+							color = el.line.color;
+						if (el.line.width)
+							width = el.line.width;
+					}
+					else if (el.text) {
+						if (el.text.color) 
+							color = el.text.color;						
+						if (el.text.size)
+							fontSize = el.text.size;
+					}
 				}
 			}
 		}
@@ -326,21 +338,39 @@ function updatePropertiesForCurrentSelection() {
 		}
 		else
 			propertyEditors.color.setEnabled(false);
+		if (width) {
+			propertyEditors.lineWidth.setEnabled(true);
+			propertyEditors.lineWidth.setValue(width);
+		}
+		else
+			propertyEditors.lineWidth.setEnabled(false);
+		if (fontSize) {
+			propertyEditors.fontSize.setEnabled(true);
+			propertyEditors.fontSize.setValue(fontSize);
+		}
+		else
+			propertyEditors.fontSize.setEnabled(false);
 	}
 }
 	
 /** called by sketchertools */
-function getColor() {
-	var color = propertyEditors.color.getValue();
-	if (color) {
-		console.log('color is '+color);
-		return '#'+color;
+function getProperty(name, defaultValue) {
+	if (!propertyEditors[name]) {
+		console.log('property '+name+' unknown');
+		return defaultValue;
 	}
-	console.log('Could not find current color');
-	return '#000000';
+	var value = propertyEditors[name].getValue();
+	if (value) {
+		console.log('property '+name+' is '+value);
+		return value;
+	}
+	console.log('Could not find property '+name);
+	return defaultValue;
 }
-
-
+/** called by sketchertools */
+function getColor() {
+	return '#'+getProperty('color', '000000');
+}
 
 function handleActionSelected(id) {
 	var disabled = $('#'+id).hasClass('actionDisabled');
@@ -1076,7 +1106,7 @@ function getNewTool(project, view) {
 		}
 		else if ($('#addTextAction').hasClass('actionSelected')) {
 			if (currentSketch && currentSketch.id)
-				return new TextTool(project, sketchbook, currentSketch.id, takeOrphanText(), 12);// default
+				return new TextTool(project, sketchbook, currentSketch.id, takeOrphanText());// default
 		}
 		else if ($('#copyAction').hasClass('actionSelected')/* && !showingIndex*/) {
 			var sketchId = currentSketch ? currentSketch.id : undefined;
@@ -1863,7 +1893,7 @@ function doAction(action) {
 		refreshSketchViews(action.sketchId);
 		// TODO select it?
 	}
-	else if (action.type=='setColor') {
+	else if (action.type=='setColor' || action.type=='setLineWidth' || action.type=='setFontSize') {
 		var sketchIds = [];
 		for (var ei=0; ei<action.elements.length; ei++) {
 			var element = action.elements[ei];
@@ -2112,25 +2142,59 @@ function onSetColor(value) {
 	// set color of currentSelection?
 	if (propertiesShowSelection()) {
 		var setColorAction = sketchbook.setColorAction(color);
-		var hasColor = false;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
 			if (cs.record.selection.elements) {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
-					if ((el.line && el.line.color) || (el.text && el.text.color)) {
+					if (el.line || el.text) {
 						setColorAction.addElement(cs.record.selection.sketchId, el.id);
-						hasColor = true;
 					}
 				}
 			}
 		}
-		if (hasColor) {
-			console.log('setting color on current selection');
-			doAction(setColorAction);
+		console.log('setting color on current selection');
+		doAction(setColorAction);
+	}
+}
+function onSetLineWidth(value) {
+	if (!value)
+		return;
+	if (propertiesShowSelection()) {
+		var setLineWidthAction = sketchbook.setLineWidthAction(value);
+		for (var i=0; i<currentSelections.length; i++) {
+			var cs = currentSelections[i];
+			if (cs.record.selection.elements) {
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					var el = cs.record.selection.elements[ei];
+					if (el.line) {
+						setLineWidthAction.addElement(cs.record.selection.sketchId, el.id);
+					}
+				}
+			}
 		}
-		else 
-			console.log('no color to set on current selection');
+		console.log('setting lineWidth on current selection');
+		doAction(setLineWidthAction);
+	}
+}
+function onSetFontSize(value) {
+	if (!value)
+		return;
+	if (propertiesShowSelection()) {
+		var setFontSizeAction = sketchbook.setFontSizeAction(value);
+		for (var i=0; i<currentSelections.length; i++) {
+			var cs = currentSelections[i];
+			if (cs.record.selection.elements) {
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					var el = cs.record.selection.elements[ei];
+					if (el.text) {
+						setFontSizeAction.addElement(cs.record.selection.sketchId, el.id);
+					}
+				}
+			}
+		}
+		console.log('setting fontSize on current selection');
+		doAction(setFontSizeAction);
 	}
 }
 
@@ -2178,7 +2242,11 @@ $(document).ready(function() {
 	
 	propertyEditors.color = new PropertySelect('color', 'colorProperty');
 	propertyEditors.color.onSetValue = onSetColor;
-	
+	propertyEditors.lineWidth = new PropertySelect('lineWidth', 'lineWidthProperty');
+	propertyEditors.lineWidth.onSetValue = onSetLineWidth;
+	propertyEditors.fontSize = new PropertySelect('fontSize', 'fontSizeProperty');
+	propertyEditors.fontSize.onSetValue = onSetFontSize;
+
 	onShowIndex();
 	
     $(window).resize(handleResize);
