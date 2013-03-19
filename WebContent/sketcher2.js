@@ -1,6 +1,23 @@
 // sketcher2.js
 // To do:
+// - load/save as zip file with images separate (crashes with large/many images at present!)
+// - edit text content, frame title
+
+// - text/shape background color (including alpha?!)
+// - toggle fix aspect ratio for image & place
+// - mouse scroll button zoom
+// - zoom slider for main view
+// - toggle auto-zoom/fill for overview window
+// - feedback in properties when showing selection vs add item 
+// - toggle key-only action mode
+// - separate copy / place actions
+
+// - implement undo/redo
+// - trap navigate away/close and prompt to save
+
 // - sequences tab...
+// -- add sequence as action button
+// -- key press handling 
 // -- add text into sequence
 // -- copy sequence into sequence as ref (=??)
 // -- change sequence item channel
@@ -8,18 +25,26 @@
 // -- toggle frame/toFrame
 // -- show channel in frame
 // -- arrow keys to move through sequence
+// -- edit sequence name, sequence text (properties)
+// -- move sequence items
 
-// (- edit image position)
-// (- edit line)
-// (- edit frame title)
-// (- edit frame position)
-// (- edit sequence text)
-// - edit text content
-// (- edit text position)
-// - text styling (font, size) - new and edit
+// - tidy up selection history
+// - edit (move) image position
+// - edit (move) line
+// - edit line
+// - edit (move) frame position
+// - edit (move) text position
 // - filter in index
 // - filter in sequences 1
 // - filter in sequences 2
+// - frame line width
+// - frame text size
+// - image/sketch place default zoom size(s)??
+// - other element order actions - move to front, move back, move forward
+// - image drag n drop
+// - image download from URL
+
+// - add versioning support
 // ...
 
 // global state
