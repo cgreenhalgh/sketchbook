@@ -5,6 +5,8 @@
 <title>Sketcher2</title>
 <link rel="StyleSheet" href="sketcher2.css" type="text/css"> <!-- media=screen,print, -->
 <script type="text/javascript" src="jquery-1.7.2.min.js"></script> 
+<!-- from https://raw.github.com/desandro/imagesloaded/master/jquery.imagesloaded.min.js -->
+<script type="text/javascript" src="jquery.imagesloaded.min.js"></script>
 <script type="text/javascript" src="paper-weiser.js"></script>
 <script type="text/javascript" src="sketchbook.js"></script>
 <script type="text/javascript" src="sketchertools.js"></script>
@@ -210,7 +212,8 @@
 						<span class="label">Selection history</span>
 					</div>
 					<div class="headerItem">
-						Load image:<input type="file" id="loadImage" name="imageFiles[]" accept="image/*" class="button"/>
+						Load image:<input type="button" class="button" value="From URL" onclick="javascript:onLoadImageFromURL()"/>
+						<input type="file" id="loadImage" name="imageFiles[]" accept="image/*" class="button"/>
 					</div>
 					<div class="footer"></div>
 				</div>

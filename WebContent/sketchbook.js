@@ -21,6 +21,13 @@ Sketch.prototype.unmarshall = function(jsketch) {
 		for (var eix=0; eix<jsketch.elements.length; eix++) {
 			var jelement = jsketch.elements[eix];
 			// TODO any more checking??
+			// if image: and no image.url: take image.dataurl: as image.url: (backwards compatibility)
+			if (jelement.image) {
+				var image = jelement.image;
+				if (!image.url)
+					image.url = image.dataurl;
+				delete image.dataurl;
+			}
 			this.elements.push(jelement);
 		}
 	}
@@ -134,7 +141,7 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 		if (element.image!==undefined) {
 			var imageId = null;
 			for (var iid in images) {
-				if (images[iid].dataurl==element.image.dataurl) {
+				if (images[iid].url==element.image.url) {
 					imageId = iid;
 					break;
 				} else
@@ -143,7 +150,7 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			var item = null;
 			var bounds = new paper.Rectangle(element.image.x, element.image.y, element.image.width, element.image.height);
 			if (!imageId) {
-				console.log('Could not find image for dataurl');
+				console.log('Could not find image for url');
 				item = new paper.Path.Rectangle(bounds);
 				// default
 				item.fillColor = 'grey';

@@ -92,7 +92,7 @@ var canDeleteSelection = false;
 // color(s)
 var lastSelectedColorElem = $('#defaultColor');
 
-//imageId -> { dataurl:string, info:{width:, height:}, withImages:[] } 
+//imageId -> { url:string, info:{width:, height:}, withImages:[] } 
 var images = new Object();
 var nextImageId = 1;
 
@@ -906,11 +906,13 @@ function showSequences() {
 	
 }
 
+var ERROR_IMAGE_URL = "error_image.png";
+
 /** load image if not already then call withImage(image) */
-function withImage(dataurl, withImage) {
+function withImage(url, withImage) {
 	for (var imageId in images) {
 		var image = images[imageId];
-		if (image.dataurl==dataurl) {
+		if (image.url==url) {
 			var info = image.info;
 			if (info) {
 				if (withImage)
@@ -922,24 +924,37 @@ function withImage(dataurl, withImage) {
 	}
 	// add image
 	var imageId = 'image'+(nextImageId++);
-	var image = { dataurl: dataurl, withImages: [withImage] };
+	var image = { url: url, withImages: [withImage] };
 	images[imageId] = image;
-	$('#hiddenimages').append('<img id="'+imageId+'" class="hidden" style="display:none" src="'+dataurl+
+	$('#hiddenimages').append('<img id="'+imageId+'" class="hidden" style="display:none" src="'+url+
             '" title="'+imageId+'"/>');
 	console.log('added image '+imageId);
-	var onload = function() {
-		console.log('loaded image '+imageId+' ('+this.width+'x'+this.height+')');
-		// image
-		image.info = { width: this.width, height: this.height };
-		for (var ici=0; ici<image.withImages.length; ici++) {
-			var cb = image.withImages[ici];
-			if (cb)
-				cb(image);
+	var triedError = false;
+	var onloaded = function(images, proper, broken) {
+		if (proper.length>0) {
+			var imageel = proper[0];
+			console.log('loaded image '+imageId+' ('+imageel.width+'x'+imageel.height+')');
+			// image
+			image.info = { width: imageel.width, height: imageel.height };
+			for (var ici=0; ici<image.withImages.length; ici++) {
+				var cb = image.withImages[ici];
+				if (cb)
+					cb(image);
+			}
+			image.withImages = [];
 		}
-		image.withImages = [];
+		else if (!triedError) {
+			console.log('problem loading image '+imageId+' - using error');
+			setTimeout(function() {
+				$('#'+imageId).prop('src',ERROR_IMAGE_URL);				
+				$('#'+imageId).imagesLoaded( onloaded );
+			}, 0);
+		}
+		else
+			console.log('BAD BAD BAD problem loading error image!');
 	};
 //	console.log('image width (immediate) = '+$('#'+imageId).attr('width'));
-	$('#'+imageId).load(onload);
+	$('#'+imageId).imagesLoaded( onloaded );
 }
 
 
@@ -958,9 +973,9 @@ function restoreState(jstate) {
 		var sketch = sketchbook.sketches[si];
 		for (var ei=0; ei<sketch.elements.length; ei++) {
 			var el = sketch.elements[ei];
-			if (el.image && el.image.dataurl) {
+			if (el.image && el.image.url) {
 				num++;
-				withImage(el.image.dataurl, loaded);
+				withImage(el.image.url, loaded);
 			}
 		}
 	}
@@ -1963,6 +1978,7 @@ function handleSelections(selections) {
 	}
 	updateActionsForCurrentSelection();
 	updatePropertiesForCurrentSelection();
+	redraw(paper);
 }
 //==============================================================================
 // do/undo
@@ -2050,17 +2066,17 @@ function doAction(action) {
 }
 
 /** load image into selection */
-function loadImageAndSelect(dataurl) {
+function loadImageAndSelect(url) {
 	// select as callback/continuation (load may be delayed)
 	var select = function(image) {
 		// fake a select action for the image
-		var element = { image: { dataurl: image.dataurl, x: 0, y: 0, width: image.info.width, height: image.info.height } };
+		var element = { image: { url: image.url, x: 0, y: 0, width: image.info.width, height: image.info.height } };
 		var selection = { elements: [ element ] };
 		var action = new Action(this, 'select');
 		action.selections = [ selection ];
 		doAction(action);
 	};
-	withImage(dataurl, select);
+	withImage(url, select);
 }
 
 
@@ -2215,6 +2231,17 @@ function onLoadImage(evt) {
 		console.log('sorry, file apis not supported');
 }
 
+// GUI Entry point
+function onLoadImageFromURL() {
+	var url = takeOrphanText();
+	if (url.length==0) {
+		alert('Enter URL in New Text first');
+		return;
+	}
+	console.log('load image url '+url);
+	loadImageAndSelect(url);
+}
+
 //GUI entry point
 /** change to object text (description). Note this is kind of lazy, i.e. not each key press, 
  * but on loss of focus */
@@ -2317,6 +2344,17 @@ function onAlphaSelected(event) {
 //Only executed our code once the DOM is ready.
 $(document).ready(function() {
 
+	// trap close/exit
+	jQuery(window).bind(
+		    "beforeunload", 
+		    function() { 
+		    	if (sketchbook.changed)
+		    		return "Discard changes and leave editor?";
+		    	else
+		    		return '';
+		    }
+		);
+		
 	sketchbook = new Sketchbook();
 
 	// setup paperjs

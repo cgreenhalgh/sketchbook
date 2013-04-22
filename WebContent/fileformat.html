@@ -4,7 +4,8 @@
 
 
 
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head>
+<body>
 <h1>Sketcher File Format</h1>
 This file describes the file format for the sketcher prototype. Not all
 features may be implemented/supported in the current version. Current
@@ -134,7 +135,7 @@ frame := <span style="font-family: monospace;">{</span><br>
 
 <span style="font-family: monospace;">}</span>
 <p><span style="font-style: italic;">An image, i.e. as an element within a sketch</span> <br></p>
-image := <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp;<span style="font-family: monospace;">"dataurl": </span>dataurl<sub>string</sub><span style="font-family: monospace;">,</span><br>&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
+image := <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp;<span style="font-family: monospace;">"url":&nbsp;</span>url<sub>string</sub><span style="font-family: monospace;">, </span>// for backward compatibility, if url is not set will use value of "dataurl"<br>&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
 &nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
