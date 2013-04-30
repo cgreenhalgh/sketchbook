@@ -145,12 +145,15 @@
 	
 		<div class="properties">
 			<table class="propertiesTable">
-				<tr class="" id="orphanTextProperty"><td>New text</td>
+				<!-- <tr class="" id="orphanTextProperty"><td>New text</td>
 					<td><input type="text" width="20" id="orphanText"/></td>
-				</tr>
-				<tr class="propertyTitle" ><td>Property</td><td>Value</td></tr>
-				<tr class="property propertyDisabled" id="textProperty"><td>Text</td>
-					<td><input type="text" width="20"/></td>
+				</tr> -->
+				<tr class="propertyTitle" ><td>Properties</td><td><!-- Value -->
+					<div class="propertiesShow" id="propertiesShowSelection">Selection</div>
+					<div class="propertiesShow" id="propertiesShowNew">New Items</div>					
+				</td></tr>
+				<tr class="property" id="textProperty"><td>Text</td>
+					<td><input id="orphanText" type="text" width="20"/></td>
 				</tr>
 				<tr class="property propertyDisabled" id="lineColorProperty"><td>Line Color</td>
 					<td>

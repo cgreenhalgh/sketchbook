@@ -150,6 +150,7 @@ PropertySelect.prototype.onPropertyOptionSelected = function(elem, ev) {
 	this.onSetValue(id);
 };
 
+// called when no longer showing selection value, i.e. new value
 PropertySelect.prototype.resetValue = function() {
 	$('#'+this.propertyId+' .option').removeClass('optionSelected');
 	this.lastSelectedElem.addClass('optionSelected');
@@ -182,8 +183,10 @@ PropertySelect.prototype.setValue = function(value) {
 PropertySelect.prototype.setEnabled = function(enabled) {
 	if (enabled)
 		$('#'+this.propertyId).removeClass('propertyDisabled');
-	else
+	else {
 		$('#'+this.propertyId).addClass('propertyDisabled');
+		this.resetValue();
+	}
 };
 
 PropertySelect.prototype.onSetValue = function(value) {
@@ -195,29 +198,53 @@ PropertySelect.prototype.onSetValue = function(value) {
 function PropertyText(name, propertyId) {
 	this.name = name;
 	this.propertyId = propertyId;
-
-	// TODO - handle change
-	$('#'+this.propertyId+' input').prop('disabled', true);
+	this.orphanText = '';
+	this.isOrphan = true;
+	this.value = '';
+	var self = this;
+	// (could do on keyup but that might be too much
+	var checkfn = function(ev) {
+		var value = self.getValue();
+		console.log('text change: '+value);
+		if (value!=self.value) {
+			self.value= value;
+			self.onSetValue(value);
+		}
+	};
+	$('#'+this.propertyId+' input').on('change', checkfn);
+	$('#'+this.propertyId+' input').on('blur', checkfn);	
 }
 
+//called when no longer showing selection value, i.e. new value
 PropertyText.prototype.resetValue = function() {
-	$('#'+this.propertyName+' input').val('');
-	this.isOrphan = true;
+	console.log('text reset, isOrphan='+this.isOrphan+', orphanText='+this.orphanText);
+	if (!this.isOrphan) {
+		$('#'+this.propertyId+' input').val(this.orphanText);
+		this.isOrphan = true;
+	}
 };
 	
 PropertyText.prototype.getValue = function() {
-	return $('#'+this.propertyId+' input').val('');
+	return $('#'+this.propertyId+' input').val();
 };
 
 PropertyText.prototype.setValue = function(value) {
+	console.log('text set('+value+'), isOrphan='+this.isOrphan+', orphanText='+this.orphanText);
+	if (this.isOrphan) {
+		this.isOrphan = false;
+		this.orphanText = this.getValue();
+	}
+	this.value = value;
 	$('#'+this.propertyId+' input').val(value);
 };
 
 PropertyText.prototype.setEnabled = function(enabled) {
 	if (enabled)
 		$('#'+this.propertyId).removeClass('propertyDisabled');
-	else
+	else {
 		$('#'+this.propertyId).addClass('propertyDisabled');
+		this.resetValue();
+	}
 };
 
 PropertyText.prototype.onSetValue = function(value) {
@@ -226,9 +253,15 @@ PropertyText.prototype.onSetValue = function(value) {
 };
 
 function takeOrphanText() {
-	var text = $('#orphanText').val();
-	$('#orphanText').val('');
-	return text;
+	if (propertyEditors.text.isOrphan) {
+		var text = $('#orphanText').val();
+		$('#orphanText').val('');
+		return text;
+	} else {
+		var text = propertyEditors.text.orphanText;
+		propertyEditors.text.orphanText = '';
+		return text;
+	}
 }
 
 
@@ -301,13 +334,15 @@ function clearAll() {
 	// show index
 	onShowIndex();
 }
+var propertiesShowSelectionFlag = false;
 function propertiesShowSelection() {
-	var actionId = $('.actionSelected').attr('id');
-	console.log('current action '+actionId);
-	if ('addLineAction'==actionId || 'addFrameAction'==actionId || 'addTextAction'==actionId) {
-		return false;
-	}
-	return true;
+	return propertiesShowSelectionFlag;
+//	var actionId = $('.actionSelected').attr('id');
+//	console.log('current action '+actionId);
+//	if ('addLineAction'==actionId || 'addFrameAction'==actionId || 'addTextAction'==actionId) {
+//		return false;
+//	}
+//	return true;
 }
 function parseCssColor(color) {
 	var dec = color.match(/^rgb[(](\d\d?\d?),[ ](\d\d?\d?),[ ](\d\d?\d?)[)]$/);
@@ -373,15 +408,20 @@ function updatePropertiesForCurrentSelection() {
 	}
 	else if (!propertiesShowSelection()) {
 		// update color to last selected
+		var add = actionId.substring(0, 3)=='add';
 		for (var pname in propertyEditors) {
 			var propertyEditor = propertyEditors[pname];
 			propertyEditor.resetValue();
+			if (!add)
+				propertyEditor.setEnabled(true);
 		}
-		propertyEditors.lineColor.setEnabled(actionId=='addLineAction');
-		propertyEditors.textColor.setEnabled(actionId=='addTextAction');
-		propertyEditors.lineWidth.setEnabled(actionId=='addLineAction');
-		propertyEditors.textSize.setEnabled(actionId=='addTextAction');
-		propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
+		if (add) {
+			propertyEditors.lineColor.setEnabled(actionId=='addLineAction');
+			propertyEditors.textColor.setEnabled(actionId=='addTextAction');
+			propertyEditors.lineWidth.setEnabled(actionId=='addLineAction');
+			propertyEditors.textSize.setEnabled(actionId=='addTextAction');
+			propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
+		}
 	} else {
 		// element(s) with color(s)?
 		var lineColor = null;
@@ -427,7 +467,7 @@ function updatePropertiesForCurrentSelection() {
 			propertyEditors.lineColor.setEnabled(true);
 			propertyEditors.lineColor.setValue(hexForColor(lineColor));
 		}
-		else
+		else 
 			propertyEditors.lineColor.setEnabled(false);
 		if (textColor) {
 			propertyEditors.textColor.setEnabled(true);
@@ -510,6 +550,13 @@ function handleActionSelected(id) {
 	$('#'+id).addClass('actionSelected');
 	// TODO immediate action?
 	console.log('Selected action '+id);
+
+	if (id=='selectAction') {
+		handlePropertiesShowSelected('propertiesShowSelection');
+	} 
+	else if (id.substr(0,3)=='add') {
+		handlePropertiesShowSelected('propertiesShowNew');		
+	}
 	
 	updatePropertiesForCurrentSelection();
 	
@@ -612,6 +659,28 @@ function handleActionSelected(id) {
 function onActionSelected(event) {
 	var id = $(this).attr('id');
 	handleActionSelected(id);
+}
+function handlePropertiesShowSelected(id) {
+	if (id=='propertiesShowSelection') {
+		if (!$('#propertiesShowSelection').hasClass('propertiesShowDisabled')) {
+			$('.propertiesShow').removeClass('propertiesShowSelected');
+			$('#propertiesShowSelection').addClass('propertiesShowSelected');
+			propertiesShowSelectionFlag = true;
+			updatePropertiesForCurrentSelection();
+		}
+	} else {
+		if (!$('#propertiesShowNew').hasClass('propertiesShowDisabled')) {
+			$('.propertiesShow').removeClass('propertiesShowSelected');
+			$('#propertiesShowNew').addClass('propertiesShowSelected');
+			propertiesShowSelectionFlag = false;
+			updatePropertiesForCurrentSelection();
+		}		
+	}
+}
+//GUI entry point
+function onPropertiesShowSelected(event) {
+	var id = $(this).attr('id');
+	handlePropertiesShowSelected(id);
 }
 
 //GUI entry point
@@ -1039,6 +1108,12 @@ function registerHighlightEvents() {
 	});
 	$(document).on('mouseout', 'div .action', function() {
 		$(this).removeClass('actionHighlight');
+	});
+	$(document).on('mouseover', 'div .propertiesShow', function() {
+		$(this).addClass('propertiesShowHighlight');
+	});
+	$(document).on('mouseout', 'div .propertiesShow', function() {
+		$(this).removeClass('propertiesShowHighlight');
 	});
 	$(document).on('mouseover', 'div #addSequence', function() {
 		$(this).addClass('addSequenceHighlight');
@@ -2026,6 +2101,14 @@ function handleSelections(selections) {
 		}
 	}
 	updateActionsForCurrentSelection();
+	if (currentSelections.length==0) {
+		$('#propertiesShowSelection').addClass('propertiesShowDisabled');
+		handlePropertiesShowSelected('propertiesShowNew');
+	}
+	else {
+		$('#propertiesShowSelection').removeClass('propertiesShowDisabled');
+		handlePropertiesShowSelected('propertiesShowSelection');		
+	}
 	updatePropertiesForCurrentSelection();
 	redraw(paper);
 }
@@ -2414,6 +2497,7 @@ $(document).ready(function() {
 	$('#objectTextArea').change(onObjectTextChange);
 	
 	$('.action').on('click', onActionSelected);
+	$('.propertiesShow').on('click', onPropertiesShowSelected);
 	//$('#colorProperty .option').on('click', onColorSelected);
 	$('.alpha').on('click', onAlphaSelected);
 	$(document).on('mousedown', '#sequences1Div .sequenceFrame', onSequenceFrameSelected);

@@ -177,6 +177,25 @@ div.actionDisabled {
 	background-color:#ffffff;
 	color: gray;
 }
+div.propertiesShow {
+	border: 1px solid gray;
+	float: left;
+	background-color:#eeeeee;
+	margin: 1px;
+	cursor: default;
+}
+div.propertiesShowHighlight {
+	border: 1px solid gray;
+	background-color:#cccccc;
+}
+div.propertiesShowSelected {
+	border: 1px solid black;
+	background-color:#808080;
+}
+div.propertiesShowDisabled {
+	background-color:#ffffff;
+	color: gray;
+}
 div.properties {
 	/* under orphan text, next to selection history */
 	width: 20%;
