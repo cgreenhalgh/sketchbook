@@ -13,6 +13,9 @@ Sketch.prototype.marshall = function() {
 	return jsketch;
 };
 
+var DEFAULT_TEXT_WIDTH = 50;
+var DEFAULT_TEXT_HEIGHT = 50;
+
 Sketch.prototype.unmarshall = function(jsketch) {
 	this.id = jsketch.id;
 	if (jsketch.description!==undefined)
@@ -21,12 +24,37 @@ Sketch.prototype.unmarshall = function(jsketch) {
 		for (var eix=0; eix<jsketch.elements.length; eix++) {
 			var jelement = jsketch.elements[eix];
 			// TODO any more checking??
-			// if image: and no image.url: take image.dataurl: as image.url: (backwards compatibility)
 			if (jelement.image) {
+				// if image: and no image.url: take image.dataurl: as image.url: (backwards compatibility with 2.0)
 				var image = jelement.image;
 				if (!image.url)
 					image.url = image.dataurl;
 				delete image.dataurl;
+			}
+			else if (jelement.line) {
+				// if line and no lineColor take color; no lineWidth, take width (backwards compatibility with 2.0)
+				var line = jelement.line;
+				if (!line.lineWidth)
+					line.lineWidth = line.width;
+				delete line.width;
+				if (!line.lineColor)
+					line.lineColor = line.color;
+				delete line.color;
+			}
+			else if (jelement.text) {
+				// if text and no textColor take color; if size and no textSize take size; (backwards compatibility with 2.0)
+				var text = jelement.text;
+				if (!text.textColor)
+					text.textColor = text.color;
+				delete text.color;
+				if(!text.textSize)
+					text.textSize = text.size;
+				delete text.size;
+				// if no width/height set defaults (backwards compatibility with 2.0)
+				if (!text.width)
+					text.width = DEFAULT_TEXT_WIDTH;
+				if (!text.height)
+					text.height = DEFAULT_TEXT_HEIGHT;
 			}
 			this.elements.push(jelement);
 		}
@@ -83,10 +111,10 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			// preserve id
 			path.sketchElementId = element.id;
 			items.push(path);
-			if (element.line.width)
-				path.strokeWidth = element.line.width;
-			if (element.line.color)
-				path.strokeColor = colorToPaperjs(element.line.color);
+			if (element.line.lineWidth)
+				path.strokeWidth = element.line.lineWidth;
+			if (element.line.lineColor)
+				path.strokeColor = colorToPaperjs(element.line.lineColor);
 			if (element.line.segments) {
 				for (var si=0; si<element.line.segments.length; si++) {
 					var segment = element.line.segments[si];
@@ -164,9 +192,9 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 		if (element.text!==undefined) {
 			var text = new paper.PointText(new paper.Point(element.text.x, element.text.y));
 			text.content = element.text.content;
-			text.characterStyle.fontSize = element.text.size;
+			text.characterStyle.fontSize = element.text.textSize;
 			text.paragraphStyle.justification = 'center';
-			text.characterStyle.fillColor = colorToPaperjs(element.text.color);
+			text.characterStyle.fillColor = colorToPaperjs(element.text.textColor);
 			text.sketchElementId = element.id;
 			items.push(text);
 		}
@@ -348,8 +376,9 @@ Sketchbook.prototype.setSketchDescriptionAction = function(sketchId, description
 Sketchbook.prototype.addLineAction = function(sketchId, path) {
 	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
+	// TODO fill
 	var color = { red: path.strokeColor.red, green: path.strokeColor.green, blue: path.strokeColor.blue };
-	var line = { color: color, width: path.strokeWidth, segments: [] };
+	var line = { lineColor: color, lineWidth: path.strokeWidth, segments: [] };
 	action.elements =  [{ line : line }]; // id?
 	for (var six=0; six<path.segments.length; six++) {
 		var psegment = path.segments[six];
@@ -367,7 +396,8 @@ Sketchbook.prototype.addTextAction = function(sketchId, text) {
 	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
 	var color = { red: text.fillColor.red, green: text.fillColor.green, blue: text.fillColor.blue };
-	var textel = { color: color, size: text.characterStyle.fontSize, content: text.content, x: text.point.x, y: text.point.y };
+	// TODO width, height, etc.
+	var textel = { textColor: color, textSize: text.characterStyle.fontSize, content: text.content, x: text.point.x, y: text.point.y };
 	action.elements =  [{ text : textel }]; 
 	return action;
 };
@@ -375,6 +405,7 @@ Sketchbook.prototype.addTextAction = function(sketchId, text) {
 Sketchbook.prototype.addFrameAction = function(sketchId, description, bounds) {
 	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
+	// TODO style, etc.
 	var frame = { description: description, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
 	action.elements = [{frame : frame}];
 	return action;	
@@ -593,58 +624,81 @@ Sketchbook.prototype.selectFrameAsSequenceItemAction = function(sketchId, frameI
 	return action;
 };
 
-function SetColorAction(sketchbook, color) {
-	Action.call(this, sketchbook, 'setColor');
-	this.color = color;
+function SetPropertiesAction(sketchbook) {
+	Action.call(this, sketchbook, 'setProperties');
+	//this.color = color;
 	this.elements = [];
 }
 
-SetColorAction.prototype = new Action();
+Sketchbook.prototype.setPropertiesAction = function() {
+	return new SetPropertiesAction(this);
+};
 
-SetColorAction.prototype.addElement =  function(sketchId, elementId) {
+SetPropertiesAction.prototype = new Action();
+
+SetPropertiesAction.prototype.addElement =  function(sketchId, elementId) {
 	this.elements.push({ sketchId: sketchId, elementId : elementId});
 };
 
-
-Sketchbook.prototype.setColorAction = function(color) {
-	return new SetColorAction(this, color);
+SetPropertiesAction.prototype.setLineColor = function(color) {
+	this.lineColor = color;
 };
 
-function SetLineWidthAction(sketchbook, width) {
-	Action.call(this, sketchbook, 'setLineWidth');
-	this.width = width;
-	this.elements = [];
-}
-
-SetLineWidthAction.prototype = new Action();
-
-SetLineWidthAction.prototype.addElement =  function(sketchId, elementId) {
-	this.elements.push({ sketchId: sketchId, elementId : elementId});
+SetPropertiesAction.prototype.setTextColor = function(color) {
+	this.textColor = color;
 };
 
+SetPropertiesAction.prototype.setFillColor = function(color) {
+	this.fillColor = color;
+};
+
+Sketchbook.prototype.setLineColorAction = function(color) {
+	var action = new SetPropertiesAction(this);
+	action.setLineColor(color);
+	return action;
+};
+
+Sketchbook.prototype.setTextColorAction = function(color) {
+	var action = new SetPropertiesAction(this);
+	action.setTextColor(color);
+	return action;
+};
+
+Sketchbook.prototype.setFillColorAction = function(color) {
+	var action = new SetPropertiesAction(this);
+	action.setFillColor(color);
+	return action;
+};
+
+SetPropertiesAction.prototype.setLineWidth = function(width) {
+	this.lineWidth = width;
+};
 
 Sketchbook.prototype.setLineWidthAction = function(width) {
-	return new SetLineWidthAction(this, width);
+	var action = new SetPropertiesAction(this);
+	action.setLineWidth(width);
+	return action;
 };
 
-function SetFontSizeAction(sketchbook, size) {
-	Action.call(this, sketchbook, 'setFontSize');
-	this.size = size;
-	this.elements = [];
-}
-
-SetFontSizeAction.prototype = new Action();
-
-SetFontSizeAction.prototype.addElement =  function(sketchId, elementId) {
-	this.elements.push({ sketchId: sketchId, elementId : elementId});
+SetPropertiesAction.prototype.setTextSize = function(size) {
+	this.textSize = size;
 };
 
-
-Sketchbook.prototype.setFontSizeAction = function(size) {
-	return new SetFontSizeAction(this, size);
+SetPropertiesAction.prototype.setText = function(text) {
+	this.text = text;
 };
 
+SetPropertiesAction.prototype.setRescale = function(text) {
+	this.rescale = rescale;
+};
 
+SetPropertiesAction.prototype.setFrameStyle = function(value) {
+	this.frameStyle = value;
+};
+
+SetPropertiesAction.prototype.setShowLabel = function(value) {
+	this.showLabel = value;
+};
 
 function DeleteAction(sketchbook) {
 	Action.call(this, sketchbook, 'delete');
@@ -753,7 +807,7 @@ Sketchbook.prototype.doAction = function(action) {
 	else if (action.type=='select') {
 		// no-op
 	}
-	else if (action.type=='setColor') {
+	else if (action.type=='setProperties') {
 		for (var ei=0; ei<action.elements.length; ei++) {
 			var el = action.elements[ei];
 			var sketch = this.sketches[el.sketchId];
@@ -766,61 +820,135 @@ Sketchbook.prototype.doAction = function(action) {
 				}
 				else {
 					if (element.line) {
-						el.undo = { color : element.line.color };
-						element.line.color = action.color;
+						var elval = element.line;
+						el.undo = {};
+						el.undo.lineColor = elval.lineColor;
+						el.undo.fillColor = elval.fillColor;
+						el.undo.lineWidth = elval.lineWidth;
+						if (action.lineColor)
+							elval.lineColor = action.lineColor;
+						if (action.fillColor)
+							elval.fillColor = action.fillColor;
+						if (action.lineWidth)
+							elval.lineWidth= action.lineWidth;
 					}
 					else if (element.text) {
-						el.undo = { color : element.text.color };
-						element.text.color = action.color;
+						var elval = element.text;
+						el.undo = {};
+						el.undo.content = elval.content;
+						el.undo.textSize = elval.textSize;
+						el.undo.textColor = elval.textColor;
+						el.undo.frameStyle = elval.frameStyle;
+						el.undo.lineColor = elval.lineColor;
+						el.undo.lineWidth = elval.lineWidth;
+						el.undo.fillColor = elval.fillColor;
+						el.undo.textVAlign = elval.textVAlign;
+						el.undo.textHAlign = elval.textHAlign;
+						el.undo.textHFit = elval.textHFit;
+						if (action.text)
+							elval.content = action.text;
+						if (action.textSize)
+							elval.textSize = action.textSize;
+						if (action.textColor)
+							elval.textColor = action.textColor;
+						if (action.frameStyle)
+							elval.frameStyle = action.frameStyle;
+						if (action.lineColor)
+							elval.lineColor = action.lineColor;
+						if (action.lineWidth)
+							elval.lineWidth = action.lineWidth;
+						if (action.fillColor)
+							elval.fillColor = action.fillColor;
+						if (action.textVAlign)
+							elval.textVAlign = action.textVAlign;
+						if (action.textHAlign)
+							elval.textHAlign = action.textHAlign;
+						if (action.textHFit)
+							elval.textHFit = action.textHFit;
+					}
+					else if (element.image) {
+						var elval = element.image;
+						el.undo = {};
+						el.undo.rescale = elval.rescale;
+						if (action.rescale)
+							elval.rescale = action.rescale;
+					}
+					else if (element.icon) {
+						var elval = element.icon;
+						el.undo = {};
+						el.undo.frameStyle = elval.frameStyle;
+						el.undo.lineColor = elval.lineColor;
+						el.undo.lineWidth = elval.lineWidth;
+						el.undo.fillColor = elval.fillColor;
+						el.undo.rescale = elval.rescale;
+						el.undo.showLabel = elval.showLabel;
+						el.undo.textSize = elval.textSize;
+						el.undo.textColor = elval.textColor;
+						el.undo.textVAlign = elval.textVAlign;
+						el.undo.textHAlign = elval.textHAlign;
+						el.undo.textHFit = elval.textHFit;
+						if (action.frameStyle)
+							elval.frameStyle = action.frameStyle;
+						if (action.lineColor)
+							elval.lineColor = action.lineColor;
+						if (action.lineWidth)
+							elval.lineWidth = action.lineWidth;
+						if (action.fillColor)
+							elval.fillColor = action.fillColor;
+						if (action.rescale)
+							elval.rescale = action.rescale;
+						if (action.showLabel)
+							elval.showLabel = action.showLabel;
+						if (action.textSize)
+							elval.textSize = action.textSize;
+						if (action.textColor)
+							elval.textColor = action.textColor;
+						if (action.textVAlign)
+							elval.textVAlign = action.textVAlign;
+						if (action.textHAlign)
+							elval.textHAlign = action.textHAlign;
+						if (action.textHFit)
+							elval.textHFit = action.textHFit;
+					}
+					else if (element.frame) {
+						var elval = element.frame;
+						el.undo = {};
+						el.undo.description = elval.description;
+						el.undo.frameStyle = elval.frameStyle;
+						el.undo.lineColor = elval.lineColor;
+						el.undo.lineWidth = elval.lineWidth;
+						el.undo.fillColor = elval.fillColor;
+						el.undo.showLabel = elval.showLabel;
+						el.undo.textSize = elval.textSize;
+						el.undo.textColor = elval.textColor;
+						el.undo.textVAlign = elval.textVAlign;
+						el.undo.textHAlign = elval.textHAlign;
+						el.undo.textHFit = elval.textHFit;
+						if (action.text)
+							elval.description = action.text;
+						if (action.frameStyle)
+							elval.frameStyle = action.frameStyle;
+						if (action.lineColor)
+							elval.lineColor = action.lineColor;
+						if (action.lineWidth)
+							elval.lineWidth = action.lineWidth;
+						if (action.fillColor)
+							elval.fillColor = action.fillColor;
+						if (action.showLabel)
+							elval.showLabel = action.showLabel;
+						if (action.textSize)
+							elval.textSize = action.textSize;
+						if (action.textColor)
+							elval.textColor = action.textColor;
+						if (action.textVAlign)
+							elval.textVAlign = action.textVAlign;
+						if (action.textHAlign)
+							elval.textHAlign = action.textHAlign;
+						if (action.textHFit)
+							elval.textHFit = action.textHFit;
 					}
 					else {
-						console.log('setColor cannot handle non-line element '+elementId+' in sketch '+sketchId);
-					}
-				}
-			}
-		}
-	}
-	else if (action.type=='setLineWidth') {
-		for (var ei=0; ei<action.elements.length; ei++) {
-			var el = action.elements[ei];
-			var sketch = this.sketches[el.sketchId];
-			if (!sketch) {
-				console.log('setLineWidth could not find sketch '+el.sketchId);				
-			} else {
-				var element = sketch.getElementById(el.elementId);
-				if (!element) {
-					console.log('setLineWidth could not find element '+elementId+' in sketch '+sketchId);
-				}
-				else {
-					if (element.line) {
-						el.undo = { width : element.line.width};
-						element.line.width = action.width;
-					}
-					else {
-						console.log('setLineWidth cannot handle non-line element '+elementId+' in sketch '+sketchId);
-					}
-				}
-			}
-		}
-	}
-	else if (action.type=='setFontSize') {
-		for (var ei=0; ei<action.elements.length; ei++) {
-			var el = action.elements[ei];
-			var sketch = this.sketches[el.sketchId];
-			if (!sketch) {
-				console.log('setFontSize could not find sketch '+el.sketchId);				
-			} else {
-				var element = sketch.getElementById(el.elementId);
-				if (!element) {
-					console.log('setFontSize could not find element '+elementId+' in sketch '+sketchId);
-				}
-				else {
-					if (element.text) {
-						el.undo = { size : element.text.size };
-						element.text.size = action.size;
-					}
-					else {
-						console.log('setFontSize cannot handle non-line element '+elementId+' in sketch '+sketchId);
+						console.log('setProperties cannot handle element '+elementId+' in sketch '+sketchId);
 					}
 				}
 			}
@@ -1004,7 +1132,7 @@ Sketchbook.prototype.undoAction = function(action) {
 	else if (action.type=='select') {
 		// no-op
 	}
-	else if (action.type=='setColor') {
+	else if (action.type=='setProperties') {
 		for (var ei=0; ei<action.elements.length; ei++) {
 			var el = action.elements[ei];
 			var sketch = this.sketches[el.sketchId];
@@ -1016,70 +1144,47 @@ Sketchbook.prototype.undoAction = function(action) {
 					console.log('setColor could not find element '+elementId+' in sketch '+sketchId);
 				}
 				else {
-					if (element.line) {
-						if (el.undo && el.undo.color)
-							element.line.color = el.undo.color;
-						else
-							console.log('setColor undo could not find undo color for '+elementId+' in sketch '+sketchId);
-					}
-					else if (element.text) {
-						if (el.undo && el.undo.color)
-							element.text.color = el.undo.color;
-						else
-							console.log('setColor undo could not find undo color for '+elementId+' in sketch '+sketchId);
-					}
+					var elval = null;
+					if (element.line) 
+						elval = element.line;
+					else if (element.text)
+						elval = element.text;
+					else if (element.image)
+						elval = element.image;
+					else if (element.frame)
+						elval = element.frame;
+					else if (element.icon)
+						elval = element.icon;
 					else {
-						console.log('setColor cannot handle non-line/text element '+elementId+' in sketch '+sketchId);
+						console.log('setProperties undo cannot handle element '+elementId+' in sketch '+sketchId);
 					}
-				}
-			}
-		}
-	}
-	else if (action.type=='setLineWidth') {
-		for (var ei=0; ei<action.elements.length; ei++) {
-			var el = action.elements[ei];
-			var sketch = this.sketches[el.sketchId];
-			if (!sketch) {
-				console.log('setLineWidth could not find sketch '+el.sketchId);				
-			} else {
-				var element = sketch.getElementById(el.elementId);
-				if (!element) {
-					console.log('setLineWidth could not find element '+elementId+' in sketch '+sketchId);
-				}
-				else {
-					if (element.line) {
-						if (el.undo && el.undo.width)
-							element.line.width = el.undo.width;
-						else
-							console.log('setLineWidth undo could not find undo width for '+elementId+' in sketch '+sketchId);
-					}
-					else {
-						console.log('setLineWidth cannot handle non-line element '+elementId+' in sketch '+sketchId);
-					}
-				}
-			}
-		}
-	}
-	else if (action.type=='setFontSize') {
-		for (var ei=0; ei<action.elements.length; ei++) {
-			var el = action.elements[ei];
-			var sketch = this.sketches[el.sketchId];
-			if (!sketch) {
-				console.log('setFontSize could not find sketch '+el.sketchId);				
-			} else {
-				var element = sketch.getElementById(el.elementId);
-				if (!element) {
-					console.log('setFontSize could not find element '+elementId+' in sketch '+sketchId);
-				}
-				else {
-					if (element.text) {
-						if (el.undo && el.undo.size)
-							element.text.size = el.undo.size;
-						else
-							console.log('setFontSize undo could not find undo color for '+elementId+' in sketch '+sketchId);
-					}
-					else {
-						console.log('setFontSize cannot handle non-text element '+elementId+' in sketch '+sketchId);
+					if (elval && el.undo) {
+						if (el.undo.content)
+							elval.content = el.undo.content;
+						if (el.undo.description)
+							elval.description = el.undo.description;
+						if (el.undo.frameStyle)
+							elval.frameStyle = el.undo.frameStyle;
+						if (el.undo.lineColor)
+							elval.lineColor = el.undo.lineColor;
+						if (el.undo.lineWidth)
+							elval.lineWidth = el.undo.lineWidth;
+						if (el.undo.fillColor)
+							elval.fillColor = el.undo.fillColor;
+						if (el.undo.rescale)
+							elval.rescale = el.undo.rescale;
+						if (el.undo.showLabel)
+							elval.showLabel = el.undo.showLabel;
+						if (el.undo.textSize)
+							elval.textSize = el.undo.textSize;
+						if (el.undo.textColor)
+							elval.textColor = el.undo.textColor;
+						if (el.undo.textVAlign)
+							elval.textVAlign = el.undo.textVAlign;
+						if (el.undo.textHAlign)
+							elval.textHAlign = el.undo.textHAlign;
+						if (el.undo.textHFit)
+							elval.textHFit = el.undo.textHFit;
 					}
 				}
 			}

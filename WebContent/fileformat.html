@@ -4,8 +4,8 @@
 
 
 
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head>
-<body>
+
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
 <h1>Sketcher File Format</h1>
 This file describes the file format for the sketcher prototype. Not all
 features may be implemented/supported in the current version. Current
@@ -35,7 +35,7 @@ frames and transitions to described and annotated (commented on). <br>
 <p><span style="font-style: italic;">The complete state of the sketch and editor, as saved</span></p>
 
 state := <span style="font-family: monospace;">{</span> <br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"version": </span>version<span style="font-family: monospace;">,</span> // <span style="font-family: monospace;">"sketcher2.0"</span>?<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"version": </span>version<span style="font-family: monospace;">,</span> // <span style="font-family: monospace;">"sketcher2.1"</span>?<br>
 
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"nextId": </span>nextId<sub>int</sub><span style="font-family: monospace;">, </span> // numeric (integer) ID to be allocated to next thing created (of any kind)<br>
 
@@ -52,6 +52,9 @@ sketch := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId":</span> id<sub>int</sub><span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"alpha": </span>opacity<sub>number</sub> // default 1.0 (range 0.0-1.0)<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">}</span><br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"readonly":</span> readonly<sub>boolean</sub><span style="font-family: monospace;">,</span> // default false<br>
 <span style="font-family: monospace;">}</span><br>
 <span style="font-style: italic;"></span>
 <p><span style="font-style: italic;">A single "primitive" drawing element in a sketch.<br>
@@ -69,8 +72,10 @@ element := <span style="font-family: monospace;">{</span><br>
 </span></p>
 
 line := <span style="font-family: monospace;">{</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"color": </span>color<span style="font-family: monospace;">,</span><br>
-&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"lineColor": </span>color<span style="font-family: monospace;">,</span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"lineWidth": </span>width<sub>number</sub><span style="font-family: monospace;">, </span><br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span> // default: no fill<br>
+
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"segments": [ </span>segment*<span style="font-family: monospace;"> ]</span><br>
 <span style="font-family: monospace;">}</span><br>
 <p><span style="font-style: italic;">A point on a Path (again, based
@@ -109,16 +114,73 @@ segment := <span style="font-family: monospace;">{</span><br>
 
 <span style="font-family: monospace;">}</span><br>
 <p style="font-style: italic;">An icon, i.e. an instance of another sketch</p>
-icon := <span style="font-family: monospace;">{</span><br>
-&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId": </span>id<sub>number</sub><span style="font-family: monospace;">,</span><br>
+icon := <span style="font-family: monospace;">{</span><br>&nbsp;&nbsp; <span style="font-family: monospace;">"sketchId": </span>id<sub>number</sub><span style="font-family: monospace;">,</span><br>&nbsp;&nbsp; <span style="font-family: monospace;">"elementId": </span>id<sub>number</sub><span style="font-family: monospace;">,</span> // optional, i.e. if specifically refering to a frame (usually) in another sketch<br>
+
 &nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
 &nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
-&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><span style="font-family: monospace;"></span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><span style="font-family: monospace;">,</span><span style="font-family: monospace;"></span><br>
 
-<span style="font-family: monospace;">}</span><br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"frameStyle": </span><span style="font-family: monospace;">"" </span>| <span style="font-family: monospace;">"border"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"fill"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"border,fill", </span>// default <span style="font-family: monospace;">""</span> (none)<span style="font-family: monospace;"></span><br>
+
+<span style="font-family: monospace;"></span>&nbsp;&nbsp; <span style="font-family: monospace;">"lineColor": </span>color<span style="font-family: monospace;">,</span> // if border, default black<br>
+
+
+
+
+<span style="font-family: monospace;"></span>
+&nbsp;&nbsp; <span style="font-family: monospace;">"lineWidth": </span>width<sub>number</sub><span style="font-family: monospace;">,</span> // if border, default 1<br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span> // if fill, default black<br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"rescale": </span><span style="font-family: monospace;">"fit" </span>| <span style="font-family: monospace;">"crop"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"stretch"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // default <span style="font-family: monospace;">"fit"</span><br>
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"showLabel": </span><span style="font-family: monospace;">"sketch" </span>| <span style="font-family: monospace;">"frame"</span><span style="font-family: monospace;"> </span>|&nbsp; <span style="font-family: monospace;">"sketch,frame"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"> </span>|&nbsp; <span style="font-family: monospace;">""</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // default <span style="font-family: monospace;">""</span> (none)<br>
+
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textSize": </span>fontSize<sub>number</sub><span style="font-family: monospace;"> </span>// points<br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textColor": </span>color<span style="font-family: monospace;"></span><br>
+
+
+
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textVAlign": </span><span style="font-family: monospace;">"above" </span>| <span style="font-family: monospace;">"top"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"middle"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"bottom"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"below"</span><span style="font-family: monospace;">,</span> // of label (if any); default "middle"<span style="font-family: monospace;"></span><br>
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span>
+
+&nbsp;&nbsp;
+
+<span style="font-family: monospace;">"textHAlign": </span><span style="font-family: monospace;">"left" </span>| <span style="font-family: monospace;">"centre"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"right"</span><span style="font-family: monospace;">,</span> // default "centre"<br>
+
+
+<span style="font-family: monospace;"></span>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textHFit": </span><span style="font-family: monospace;">"wrap" </span>| <span style="font-family: monospace;">"crop"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"scale"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"none"</span><span style="font-family: monospace;">,</span> // default "none"<br>
+
+
+
+
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span><br>
 <p style="font-style: italic;">A frame, i.e. a titled region of interest within a sketch</p>
 frame := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span><br>
@@ -133,7 +195,57 @@ frame := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><br>
 
 
-<span style="font-family: monospace;">}</span>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"frameStyle": </span><span style="font-family: monospace;">"" </span>| <span style="font-family: monospace;">"border"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"fill"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"borderfill", </span>// default <span style="font-family: monospace;">""</span> (none)<span style="font-family: monospace;"></span><br>
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span>&nbsp;&nbsp; <span style="font-family: monospace;">"lineColor": </span>color<span style="font-family: monospace;">,</span> // if border; default black<br>
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"lineWidth": </span>width<sub>number</sub><span style="font-family: monospace;">,</span> // if border; default 1<br>
+
+
+<span style="font-family: monospace;"></span>&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span> // if fill; default black<br>
+
+
+
+<span style="font-family: monospace;"></span>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"showLabel": </span><span style="font-family: monospace;">"sketch" </span>| <span style="font-family: monospace;">"frame"</span><span style="font-family: monospace;"> </span>|&nbsp; <span style="font-family: monospace;">"sketch,frame"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"> </span>|&nbsp; <span style="font-family: monospace;">""</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // default <span style="font-family: monospace;">""</span> (none)<br>
+
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textSize": </span>fontSize<sub>number</sub><span style="font-family: monospace;">,</span><span style="font-family: monospace;"> </span>// points<br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textColor": </span>color<span style="font-family: monospace;">,</span> // default black<span style="font-family: monospace;"></span><br>
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textVAlign": </span><span style="font-family: monospace;">"above" </span>| <span style="font-family: monospace;">"top"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"middle"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"bottom"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"below"</span><span style="font-family: monospace;">,</span> // default "middle"<span style="font-family: monospace;"></span><br>
+
+
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textHAlign": </span><span style="font-family: monospace;">"left" </span>| <span style="font-family: monospace;">"centre"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"right"</span><span style="font-family: monospace;">,</span> // default "centre"<br>
+
+<span style="font-family: monospace;"></span>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textHFit": </span><span style="font-family: monospace;">"wrap" </span>| <span style="font-family: monospace;">"crop"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"scale"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"none"</span><span style="font-family: monospace;"></span> // default "none"<br>
+
+
+
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span>
 <p><span style="font-style: italic;">An image, i.e. as an element within a sketch</span> <br></p>
 image := <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp;<span style="font-family: monospace;">"url":&nbsp;</span>url<sub>string</sub><span style="font-family: monospace;">, </span>// for backward compatibility, if url is not set will use value of "dataurl"<br>&nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
@@ -146,16 +258,75 @@ image := <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp;<span st
 &nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><br>
 
 
-<span style="font-family: monospace;">}</span><p style="font-style: italic;">A line of text</p>text := <span style="font-family: monospace;">{</span><br>
+
+
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"rescale": </span><span style="font-family: monospace;">"fit" </span>| <span style="font-family: monospace;">"crop"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"stretch"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;">,</span> // default fit<span style="font-family: monospace;"></span><br>
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span><p style="font-style: italic;">A line of text</p>text := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp; <span style="font-family: monospace;">"content": </span>content<sub>string</sub><span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp; <span style="font-family: monospace;">"x": </span>x<sub>number</sub><span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp; <span style="font-family: monospace;">"y": </span>y<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
-&nbsp;&nbsp; <span style="font-family: monospace;">"size": </span>fontSize<sub>number</sub><span style="font-family: monospace;"> </span>// points<br>
 
-&nbsp;&nbsp; <span style="font-family: monospace;">"color": </span>color<sub></sub><span style="font-family: monospace;"></span><br>
+&nbsp;&nbsp; <span style="font-family: monospace;">"width": </span>width<sub>number</sub><span style="font-family: monospace;">,</span><br>
 
-<span style="font-family: monospace;">}</span><br>
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"height": </span>height<sub>number</sub><br>
+
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textSize": </span>fontSize<sub>number</sub><span style="font-family: monospace;"> </span>// points<br>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textColor": </span>color<span style="font-family: monospace;"></span><br>
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"frameStyle": </span><span style="font-family: monospace;">"" </span>| <span style="font-family: monospace;">"border"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"fill"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"borderfill", </span>// default <span style="font-family: monospace;">""</span> (none)<span style="font-family: monospace;"></span><br>
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span>&nbsp;&nbsp; <span style="font-family: monospace;">"lineColor": </span>color<span style="font-family: monospace;">,</span> // if border; default black<br>
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"lineWidth": </span>width<sub>number</sub><span style="font-family: monospace;">,</span> // if border; default 1<br>
+
+
+
+<span style="font-family: monospace;"></span>&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span> // if fill; default black<br>
+
+
+
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textVAlign": </span><span style="font-family: monospace;">"above" </span>| <span style="font-family: monospace;">"top"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"middle"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"bottom"</span><span style="font-family: monospace;"></span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"below"</span><span style="font-family: monospace;">,</span> // default "middle"<span style="font-family: monospace;"></span><br>
+
+
+
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span>
+
+&nbsp;&nbsp; <span style="font-family: monospace;">"textHAlign": </span><span style="font-family: monospace;">"left" </span>| <span style="font-family: monospace;">"centre"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"right"</span><span style="font-family: monospace;">,</span> // default "centre"<br>
+
+
+<span style="font-family: monospace;"></span>&nbsp;&nbsp;
+
+<span style="font-family: monospace;">"textHFit": </span><span style="font-family: monospace;">"wrap" </span>| <span style="font-family: monospace;">"crop"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"scale"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"none"</span><span style="font-family: monospace;">,</span> // default "none"<br>
+
+
+
+
+
+
+
+<span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;"></span><span style="font-family: monospace;">}</span><br>
 <p style="font-style: italic;">A sequence</p>sequence:= <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp; <span style="font-family: monospace;">"id": </span>id<sub>number</sub><span style="font-family: monospace;">,</span><br>&nbsp; &nbsp; <span style="font-family: monospace;">"description": </span>description<sub>string</sub><span style="font-family: monospace;">,</span><br>&nbsp; &nbsp; <span style="font-family: monospace;">"items": [ </span>sequenceItem* <span style="font-family: monospace;">]</span><br><span style="font-family: monospace;">}</span><br><p style="font-style: italic;">An item in a sequence</p>sequenceItem:= <span style="font-family: monospace;">{</span><br>&nbsp; &nbsp; <span style="font-family: monospace;">"id": </span>id<sub>int</sub><span style="font-family: monospace;">,</span><br>&nbsp; &nbsp; <span style="font-family: monospace;">"channel": </span>channel<sub>int</sub><span style="font-family: monospace;">,</span> // default: <span style="font-family: monospace;">0</span><br style="font-family: monospace;">// One of:<br>&nbsp; &nbsp; &nbsp; &nbsp; <span style="font-family: monospace;">"text": </span>text // may only have content<br>&nbsp; &nbsp; &nbsp; &nbsp; <span style="font-family: monospace;">"frameRef": { "sketchId": </span>id<sub>number</sub><span style="font-family: monospace;">, "elementId": </span>id<sub>number</sub><span style="font-family: monospace;"> }</span><br>&nbsp; &nbsp; &nbsp; &nbsp; <span style="font-family: monospace;">"sketchRef": { "sketchId": </span>id<sub>number<span style="font-family: monospace;"> </span></sub><span style="font-family: monospace;">}</span><br>&nbsp; &nbsp; &nbsp; &nbsp; <span style="font-family: monospace;">"sequenceRef": { "sequenceId": </span>id<sub>number<span style="font-family: monospace;"> </span></sub><span style="font-family: monospace;">}</span><br>&nbsp; &nbsp; &nbsp; &nbsp; <span style="font-family: monospace;">"toFrameRef": { "sketchId": </span>id<sub>number</sub><span style="font-family: monospace;">, "elementId": </span>id<sub>number</sub><span style="font-family: monospace;"> }</span><br>}<h3>Sketcher1 file format</h3>
 
 <span style="font-style: italic;">The complete state of the sketch and editor, as saved</span><br style="font-style: italic;">

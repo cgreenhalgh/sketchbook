@@ -195,7 +195,11 @@ table.sketchPropertiesTable {
 	/*border: 1px solid gray;*/
 	width:100%;
 }
-#colorProperty div.option {
+#lineColorProperty div.option {
+	width: 1em;
+	height: 1em;	
+}
+#textColorProperty div.option {
 	width: 1em;
 	height: 1em;	
 }

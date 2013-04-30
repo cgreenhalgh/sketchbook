@@ -377,15 +377,17 @@ function updatePropertiesForCurrentSelection() {
 			var propertyEditor = propertyEditors[pname];
 			propertyEditor.resetValue();
 		}
-		propertyEditors.color.setEnabled(actionId=='addLineAction' || actionId=='addTextAction');
+		propertyEditors.lineColor.setEnabled(actionId=='addLineAction');
+		propertyEditors.textColor.setEnabled(actionId=='addTextAction');
 		propertyEditors.lineWidth.setEnabled(actionId=='addLineAction');
-		propertyEditors.fontSize.setEnabled(actionId=='addTextAction');
+		propertyEditors.textSize.setEnabled(actionId=='addTextAction');
 		propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
 	} else {
 		// element(s) with color(s)?
-		var color = null;
-		var width = null;
-		var fontSize = null;
+		var lineColor = null;
+		var textColor = null;
+		var lineWidth = null;
+		var textSize = null;
 		var text = null;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
@@ -393,16 +395,16 @@ function updatePropertiesForCurrentSelection() {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
 					if (el.line) {
-						if (el.line.color)
-							color = el.line.color;
-						if (el.line.width)
-							width = el.line.width;
+						if (el.line.lineColor)
+							lineColor = el.line.lineColor;
+						if (el.line.lineWidth)
+							lineWidth = el.line.lineWidth;
 					}
 					else if (el.text) {
-						if (el.text.color) 
-							color = el.text.color;						
-						if (el.text.size)
-							fontSize = el.text.size;
+						if (el.text.textColor) 
+							textColor = el.text.textColor;						
+						if (el.text.textSize)
+							textSize = el.text.textSize;
 						if (el.text.content)
 							text = el.text.content;
 					}
@@ -421,24 +423,30 @@ function updatePropertiesForCurrentSelection() {
 				}
 			}
 		}
-		if (color) {
-			propertyEditors.color.setEnabled(true);
-			propertyEditors.color.setValue(hexForColor(color));
+		if (lineColor) {
+			propertyEditors.lineColor.setEnabled(true);
+			propertyEditors.lineColor.setValue(hexForColor(lineColor));
 		}
 		else
-			propertyEditors.color.setEnabled(false);
-		if (width) {
+			propertyEditors.lineColor.setEnabled(false);
+		if (textColor) {
+			propertyEditors.textColor.setEnabled(true);
+			propertyEditors.textColor.setValue(hexForColor(textColor));
+		}
+		else
+			propertyEditors.textColor.setEnabled(false);
+		if (lineWidth) {
 			propertyEditors.lineWidth.setEnabled(true);
-			propertyEditors.lineWidth.setValue(width);
+			propertyEditors.lineWidth.setValue(lineWidth);
 		}
 		else
 			propertyEditors.lineWidth.setEnabled(false);
-		if (fontSize) {
-			propertyEditors.fontSize.setEnabled(true);
-			propertyEditors.fontSize.setValue(fontSize);
+		if (textSize) {
+			propertyEditors.textSize.setEnabled(true);
+			propertyEditors.textSize.setValue(textSize);
 		}
 		else
-			propertyEditors.fontSize.setEnabled(false);
+			propertyEditors.textSize.setEnabled(false);
 		if (text) {
 			propertyEditors.text.setEnabled(true);
 			propertyEditors.text.setValue(text);
@@ -463,8 +471,12 @@ function getProperty(name, defaultValue) {
 	return defaultValue;
 }
 /** called by sketchertools */
-function getColor() {
-	return '#'+getProperty('color', '000000');
+function getLineColor() {
+	return '#'+getProperty('lineColor', '000000');
+}
+/** called by sketchertools */
+function getTextColor() {
+	return '#'+getProperty('textColor', '000000');
 }
 
 function handleActionSelected(id) {
@@ -572,8 +584,14 @@ function handleActionSelected(id) {
 			if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
 				sketchId = cs.record.selection.sketch.id;
 			}
-			else if (cs.record.selection.sketchId)
-				sketchId = cs.record.selection.sketchId;
+			else if (cs.record.selection.elements && cs.record.selection.elements.length>0 && cs.record.selection.elements[0].icon)
+				sketchId = cs.record.selection.elements[0].icon.sketchId;
+			else if (cs.record.selection.sequence && cs.record.selection.sequence.items && cs.record.selection.sequence.items.length>0) {
+				if (cs.record.selection.sequence.items[0].sketchRef)
+					sketchId = cs.record.selection.sequence.items[0].sketchRef.sketchId;
+				else if (cs.record.selection.sequence.items[0].frameRef)
+					sketchId = cs.record.selection.sequence.items[0].frameRef.sketchId;
+			}
 			if (sketchId) {
 				if (sketchbook.sketches[sketchId]) {
 					showEditor(sketchId);
@@ -1217,14 +1235,14 @@ function getNewTool(project, view) {
 			if (currentSketch && currentSketch.id)
 				return new TextTool(project, sketchbook, currentSketch.id, takeOrphanText());// default
 		}
-		else if ($('#copyAction').hasClass('actionSelected')/* && !showingIndex*/) {
+		else if ($('#copyAction').hasClass('actionSelected') || $('#placeAction').hasClass('actionSelected')/* && !showingIndex*/) {
 			var sketchId = currentSketch ? currentSketch.id : undefined;
 			var elements = [];
 			// convert selection to elements to add
 			for (var si=0; si<currentSelections.length; si++) {
 				var cs = currentSelections[si];
 				if (cs.record.selection.sketch) {
-					// copy an entire sketch = icon/link
+					// copy an entire sketch = icon/link ('place')
 					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
 					elements.push(icon);
 				} else if (cs.record.selection.elements) {
@@ -1297,6 +1315,7 @@ function isSpecialKey(which) {
 }
 
 var keyFiresTool = false;
+var mousePageX, mousePageY;
 
 /** register events for tool(s) */
 function registerMouseEvents() {
@@ -1395,6 +1414,7 @@ function registerMouseEvents() {
 	});
 	$(document).mousedown(function(ev) {
 		// which: 1=left, 2=middle, 3=right
+		mousePageX = ev.pageX; mousePageY = ev.pageY;
 		console.log('mousedown: '+ev.which+' at '+ev.pageX+','+ev.pageY+' on '+ev.target+' ('+$(ev.target).attr('id')+') = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
 		toolUp(ev);
 		//keyTarget = ev.target;
@@ -1416,9 +1436,14 @@ function registerMouseEvents() {
 	$(document).mousemove(function(ev) {
 		//console.log('mousemove: '+ev.pageX+','+ev.pageY+' on '+ev.target+' = '+(ev.pageX-pageOffsetLeft(ev.target))+','+(ev.pageY-pageOffsetTop(ev.target)));
 		if (ev.target.tagName=='CANVAS') {
-			console.log('blur orphan text on mousemove');
-			$('#orphanText').blur();
+			// Hmm, mousemove is happening several times a second even when I don't move (as of 30/4/2013)
+			// suppress unless ACTUALLY moved...
+			if (ev.pageX!==mousePageX || ev.pageY!==mousePageY) {
+				console.log('blur orphan text on mousemove');
+				$('#orphanText').blur();
+			}
 		}
+		mousePageX = ev.pageX; mousePageY = ev.pageY;
 		checkHighlight(ev);
 		if (tool) {
 			toolProject.activate();
@@ -1429,6 +1454,7 @@ function registerMouseEvents() {
 	});
 	$(document).mouseup(function(ev) {
 		//console.log('mouseup: '+ev.which+' on '+ev.target);
+		mousePageX = ev.pageX; mousePageY = ev.pageY;
 		toolUp(ev);
 		checkHighlight(ev);
 	});
@@ -1702,11 +1728,24 @@ function updateActionsForCurrentSelection() {
 		var cs = currentSelections[0];
 		var sketchId = null;
 		if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
+			// selected a (whole) sketch
 			sketchId = cs.record.selection.sketch.id;
 		}
-		else if (cs.record.selection.sketchId)
-			sketchId = cs.record.selection.sketchId;
-		if (sketchId && sketchbook.sketches[sketchId]) 
+		else if (cs.record.selection.elements && cs.record.selection.elements.length==1) {
+			var el = cs.record.selection.elements[0];
+			if (el.icon && el.icon.sketchId)
+				// selected a link to a sketch
+				sketchId = el.icon.sketchId;
+		}
+		else if (cs.record.selection.sequence && cs.record.selection.sequence.items && cs.record.selection.sequence.items.length==1) {
+			var sitem = cs.record.selection.sequence.items[0];
+			if (sitem.sketchRef && sitem.sketchRef.sketchId)
+				sketchId = sitem.sketchRef.sketchId;
+			else if (sitem.frameRef && sitem.frameRef.sketchId)
+				// TODO frame within sketch?
+				sketchId = sitem.frameRef.sketchId;
+		}
+		if (sketchId && sketchbook.sketches[sketchId] && (!currentSketch || currentSketch.id!==sketchId)) 
 			// OK to edit
 			$('#editAction').removeClass('actionDisabled');
 	}
@@ -1715,23 +1754,33 @@ function updateActionsForCurrentSelection() {
 	// copy - any number of things?
 	// TODO copy in seqeuences
 	var canCopy = false;
+	var canPlace = false;
 	for (var ix=0; ix<currentSelections.length; ix++) {
 		var cs = currentSelections[ix];
 		if (showingSequences) {
 			if (cs.record.selection.sequence)
-				canCopy = true;
+				canPlace = true;
 		}
 		else if (showingIndex) {
 			if (cs.record.selection.sketch)
 				canCopy = true;
 		}
-		else if (cs.record.selection.elements || cs.record.selection.sketch)
+		else if (cs.record.selection.sketch)
+			canPlace = true;
+		else if (cs.record.selection.elements)
 			canCopy = true;
 	}
-	if (canCopy)
+	if (canCopy) {
 		$('#copyAction').removeClass('actionDisabled');
-	else 
+		$('#placeAction').addClass('actionDisabled');
+	}
+	else {
 		$('#copyAction').addClass('actionDisabled');		
+		if (canPlace)
+			$('#placeAction').removeClass('actionDisabled');
+		else 
+			$('#placeAction').addClass('actionDisabled');		
+	}
 	// delete
 	var canDelete = false;
 	for (var ix=0; ix<currentSelections.length; ix++) {
@@ -2004,7 +2053,7 @@ function doAction(action) {
 		refreshSketchViews(action.sketchId);
 		// TODO select it?
 	}
-	else if (action.type=='setColor' || action.type=='setLineWidth' || action.type=='setFontSize' || action.type=='orderToBack') {
+	else if (action.type=='setProperties' || action.type=='orderToBack') {
 		var sketchIds = [];
 		for (var ei=0; ei<action.elements.length; ei++) {
 			var element = action.elements[ei];
@@ -2255,73 +2304,72 @@ function onObjectTextChange() {
 	}
 }
 
+function onSetProperty(action) {
+	for (var i=0; i<currentSelections.length; i++) {
+		var cs = currentSelections[i];
+		if (cs.record.selection.elements) {
+			for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+				var el = cs.record.selection.elements[ei];
+				action.addElement(cs.record.selection.sketchId, el.id);
+			}
+		}
+	}
+	console.log('setting properties on current selection');
+	doAction(action);
+}
 // property editor entry point
-function onSetColor(value) {
+function onSetLineColor(value) {
 	var color = parseHexColor(value);
 	if (!color)
 		return;
 	// TODO immediate action?
 	// set color of currentSelection?
 	if (propertiesShowSelection()) {
-		var setColorAction = sketchbook.setColorAction(color);
-		for (var i=0; i<currentSelections.length; i++) {
-			var cs = currentSelections[i];
-			if (cs.record.selection.elements) {
-				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
-					var el = cs.record.selection.elements[ei];
-					if (el.line || el.text) {
-						setColorAction.addElement(cs.record.selection.sketchId, el.id);
-					}
-				}
-			}
-		}
-		console.log('setting color on current selection');
-		doAction(setColorAction);
+		var action = sketchbook.setPropertiesAction();
+		action.setLineColor(color);
+		onSetProperty(action);
+	}
+}
+//property editor entry point
+function onSetTextColor(value) {
+	var color = parseHexColor(value);
+	if (!color)
+		return;
+	// TODO immediate action?
+	// set color of currentSelection?
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setTextColor(color);
+		onSetProperty(action);
 	}
 }
 function onSetLineWidth(value) {
 	if (!value)
 		return;
 	if (propertiesShowSelection()) {
-		var setLineWidthAction = sketchbook.setLineWidthAction(value);
-		for (var i=0; i<currentSelections.length; i++) {
-			var cs = currentSelections[i];
-			if (cs.record.selection.elements) {
-				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
-					var el = cs.record.selection.elements[ei];
-					if (el.line) {
-						setLineWidthAction.addElement(cs.record.selection.sketchId, el.id);
-					}
-				}
-			}
-		}
-		console.log('setting lineWidth on current selection');
-		doAction(setLineWidthAction);
+		var action = sketchbook.setPropertiesAction();
+		action.setLineWidth(value);
+		onSetProperty(action);
 	}
 }
-function onSetFontSize(value) {
+function onSetTextSize(value) {
 	if (!value)
 		return;
 	if (propertiesShowSelection()) {
-		var setFontSizeAction = sketchbook.setFontSizeAction(value);
-		for (var i=0; i<currentSelections.length; i++) {
-			var cs = currentSelections[i];
-			if (cs.record.selection.elements) {
-				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
-					var el = cs.record.selection.elements[ei];
-					if (el.text) {
-						setFontSizeAction.addElement(cs.record.selection.sketchId, el.id);
-					}
-				}
-			}
-		}
-		console.log('setting fontSize on current selection');
-		doAction(setFontSizeAction);
+		var action = sketchbook.setPropertiesAction();
+		action.setTextSize(value);
+		onSetProperty(action);
 	}
 }
 
 function onSetText(value) {
-	// TODO
+	if (!value)
+		return;
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setText(value);
+		onSetProperty(action);
+	}
 }
 
 function onAlphaSelected(event) {
@@ -2377,12 +2425,14 @@ $(document).ready(function() {
 	
 	registerMouseEvents();
 	
-	propertyEditors.color = new PropertySelect('color', 'colorProperty');
-	propertyEditors.color.onSetValue = onSetColor;
+	propertyEditors.lineColor = new PropertySelect('lineColor', 'lineColorProperty');
+	propertyEditors.lineColor.onSetValue = onSetLineColor;
+	propertyEditors.textColor = new PropertySelect('textColor', 'textColorProperty');
+	propertyEditors.textColor.onSetValue = onSetTextColor;
 	propertyEditors.lineWidth = new PropertySelect('lineWidth', 'lineWidthProperty');
 	propertyEditors.lineWidth.onSetValue = onSetLineWidth;
-	propertyEditors.fontSize = new PropertySelect('fontSize', 'fontSizeProperty');
-	propertyEditors.fontSize.onSetValue = onSetFontSize;
+	propertyEditors.textSize = new PropertySelect('textSize', 'textSizeProperty');
+	propertyEditors.textSize.onSetValue = onSetTextSize;
 	propertyEditors.text = new PropertyText('text', 'textProperty');
 	propertyEditors.text.onSetValue = onSetText;
 

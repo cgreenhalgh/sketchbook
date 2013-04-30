@@ -38,7 +38,7 @@ LineTool.prototype.begin = function(point) {
 	// activate overlay layer
 	activateOverlay(this.project);
 	this.path = new paper.Path();
-	this.path.strokeColor = getColor();
+	this.path.strokeColor = getLineColor();
 	this.path.strokeWidth = getProperty('lineWidth', 1);
 	this.path.add(point);	
 };
@@ -499,9 +499,9 @@ TextTool.prototype.begin = function(point) {
 	// activate overlay layer
 	activateOverlay(this.project);
 	this.text = new paper.PointText(point);
-	this.text.characterStyle.fillColor = getColor();
+	this.text.characterStyle.fillColor = getTextColor();
 	this.text.paragraphStyle.justification = 'center';
-	this.text.characterStyle.fontSize = getProperty('fontSize', 12); //default
+	this.text.characterStyle.fontSize = getProperty('textSize', 12); //default
 	this.text.content = this.content;	
 };
 
