@@ -1584,7 +1584,11 @@ function getNewTool(project, view) {
 			return new ZoomTool(project, false);
 		}
 		else if ($('#panAction').hasClass('actionSelected')) {
-			return new PanAndZoomTool(project, sketchbook, currentSketch.id);
+			if (project==indexProject)
+				return new PanTool(project);
+			else
+				// doesn't work on index
+				return new PanAndZoomTool(project, sketchbook, currentSketch ? currentSketch.id : undefined);
 		}
 	}
 	if (project==objectOverviewProject || project==objectDetailProject) {
