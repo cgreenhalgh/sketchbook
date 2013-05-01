@@ -476,6 +476,7 @@ function updatePropertiesForCurrentSelection() {
 			propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
 			propertyEditors.showLabel.setEnabled(actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.textVAlign.setEnabled(actionId=='addTextAction' || actionId=='placeAction' || actionId=='addFrameAction');
+			propertyEditors.rescale.setEnabled(actionId=='placeAction');
 		}
 	} else {
 		// element(s) with color(s)?
