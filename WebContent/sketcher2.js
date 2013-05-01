@@ -828,12 +828,18 @@ function handleActionSelected(id) {
 			var cs = currentSelections[si];
 			var sketchId = null;
 			var elementId = null;
+			var url = null;
 			if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
 				sketchId = cs.record.selection.sketch.id;
 			}
 			else if (cs.record.selection.elements && cs.record.selection.elements.length>0 && cs.record.selection.elements[0].icon) {
 				sketchId = cs.record.selection.elements[0].icon.sketchId;
 				elementId = cs.record.selection.elements[0].icon.elementId;
+			}
+			else if (cs.record.selection.elements && cs.record.selection.elements.length>0 && cs.record.selection.elements[0].text) {
+				var text = cs.record.selection.elements[0].text.content;
+				if (text.substr(0,5)=='http:' || text.substr(0,6)=='https:')
+					url = text;
 			}
 			else if (cs.record.selection.sequence && cs.record.selection.sequence.items && cs.record.selection.sequence.items.length>0) {
 				if (cs.record.selection.sequence.items[0].sketchRef)
@@ -856,7 +862,12 @@ function handleActionSelected(id) {
 				else 
 					console.log('Could not find to edit sketch '+sketchId);
 			}
-		}
+			if (url) {
+				console.log('open url '+url);
+				// default to new window
+				window.open(url);
+			}
+ 		}
 	}
 }
 //GUI entry point
@@ -2105,6 +2116,7 @@ function updateActionsForCurrentSelection() {
 		// sketch exists?			
 		var cs = currentSelections[0];
 		var sketchId = null;
+		var url = null;
 		if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
 			// selected a (whole) sketch
 			sketchId = cs.record.selection.sketch.id;
@@ -2114,6 +2126,8 @@ function updateActionsForCurrentSelection() {
 			if (el.icon && el.icon.sketchId)
 				// selected a link to a sketch
 				sketchId = el.icon.sketchId;
+			if (el.text && el.text.content && (el.text.content.substr(0,5)=='http:' || el.text.content.substr(0,6)=='https:'))
+				url = el.text.content;
 		}
 		else if (cs.record.selection.sequence && cs.record.selection.sequence.items && cs.record.selection.sequence.items.length==1) {
 			var sitem = cs.record.selection.sequence.items[0];
@@ -2123,7 +2137,7 @@ function updateActionsForCurrentSelection() {
 				// TODO frame within sketch?
 				sketchId = sitem.frameRef.sketchId;
 		}
-		if (sketchId && sketchbook.sketches[sketchId] && (!currentSketch || currentSketch.id!==sketchId)) 
+		if ((sketchId && sketchbook.sketches[sketchId] && (!currentSketch || currentSketch.id!==sketchId)) || url)
 			// OK to edit
 			$('#editAction').removeClass('actionDisabled');
 	}
