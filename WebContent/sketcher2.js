@@ -1546,9 +1546,8 @@ function checkHighlight(ev) {
 	if (!tool) {
 		var p = getProject(ev.target);
 		if (p && p.view) {
-			if ($('#selectAction').hasClass('actionSelected') || 
-					(($('#orderToBackAction').hasClass('actionSelected') || 
-					  $('#panAction').hasClass('actionSelected')) && p!==selectionProject)) {
+			if ($('#selectAction').hasClass('actionSelected') || $('#panAction').hasClass('actionSelected') ||
+					($('#orderToBackAction').hasClass('actionSelected') && p!==selectionProject)) {
 				tool = new HighlightTool(p);
 				toolView = p.view;
 				toolProject = p;
@@ -1563,7 +1562,14 @@ function checkHighlight(ev) {
 function getNewTool(project, view) {
 	if ($('#selectAction').hasClass('actionSelected')) {
 		var sketchId = currentSketch ? currentSketch.id : undefined;
-		return new SelectTool(project, sketchbook, sketchId);
+		return new SelectAreaTool(project, sketchbook, sketchId);
+	}
+	else if ($('#panAction').hasClass('actionSelected')) {
+		var sketchId = currentSketch ? currentSketch.id : undefined;
+		if (project==selectionProject)
+			return new SelectAreaTool(project, sketchbook, sketchId);
+		else
+			return new PanAndZoomTool(project, sketchbook, sketchId);
 	}
 	if (project!=selectionProject) {
 		if ($('#showAllAction').hasClass('actionSelected')) {
@@ -1574,13 +1580,6 @@ function getNewTool(project, view) {
 		}
 		else if ($('#zoomOutAction').hasClass('actionSelected')) {
 			return new ZoomTool(project, false);
-		}
-		else if ($('#panAction').hasClass('actionSelected')) {
-			if (project==indexProject)
-				return new PanTool(project);
-			else
-				// doesn't work on index
-				return new PanAndZoomTool(project, sketchbook, currentSketch ? currentSketch.id : undefined);
 		}
 	}
 	if (project==objectOverviewProject || project==objectDetailProject) {
