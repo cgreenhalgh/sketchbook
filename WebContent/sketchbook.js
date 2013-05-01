@@ -100,13 +100,23 @@ function colorToPaperjs(color) {
 }
 
 /** return paperjs Matrix transform from Rectangle to Rectangle */
-function getMatrixFromTo(from, to) {
+function getMatrixFromTo(from, to, fitFlag) {
 	// xscale
 	var a = from.width>0 ? to.width/from.width : 1;
 	// yscale
 	var b = from.height>0 ? to.height / from.height : 1;
 	var tx = to.x-a*from.x;
 	var ty = to.y-b*from.y;
+	if (fitFlag) {
+		if (a>b) {
+			// xscale is larger
+			tx = to.x+from.width*(a-b)/2-b*from.x;
+			a = b;
+		} else if (a<b) {
+			ty = to.y+from.height*(b-a)/2-a*from.y;
+			b = a;
+		}
+	}
 	var m = new paper.Matrix(a, 0, 0, b, tx, ty);
 	console.log('matrix from '+from+' to '+to+' = '+m);
 	return m;
@@ -189,7 +199,8 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds, fromsket
 			if (!bounds)
 				bounds = group.bounds;
 			var iconBounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
-			group.transform(getMatrixFromTo(bounds, iconBounds));
+			var fitFlag = !element.icon.rescale || element.icon.rescale.indexOf('stretch')<0;
+			group.transform(getMatrixFromTo(bounds, iconBounds, fitFlag));
 
 			// package that group in another group for label, border, fill!
 			var iconItems = [];
@@ -331,6 +342,9 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds, fromsket
 			}
 			var item = null;
 			var bounds = new paper.Rectangle(element.image.x, element.image.y, element.image.width, element.image.height);
+			var outline = new paper.Path.Rectangle(bounds);
+			outline.fillColor = '#c0c0c0';
+			//outline.strokeWidth = 1;
 			if (!imageId) {
 				console.log('Could not find image for url');
 				item = new paper.Path.Rectangle(bounds);
@@ -338,10 +352,25 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds, fromsket
 				item.fillColor = 'grey';
 			} else {
 				item = new paper.Raster(imageId);
+				if ((element.image.rescale && element.image.rescale=='stretch') || !item.image || !item.image.height || !element.image.height)
+					;
+				else {
+					// fit
+					var aspect = item.image.width/item.image.height;
+					if (aspect > element.image.width/element.image.height) {
+						var sheight = element.image.width/aspect;
+						bounds = new paper.Rectangle(element.image.x, element.image.y+(element.image.height-sheight)/2, element.image.width, sheight);
+					}
+					else {
+						var swidth = element.image.height*aspect;
+						bounds = new paper.Rectangle(element.image.x+(element.image.width-swidth)/2, element.image.y, swidth, element.image.height);				
+					}
+				}
 				item.bounds = bounds;
 			}
-			item.sketchElementId = element.id;
-			items.push(item);
+			var group = new paper.Group([outline, item]);
+			group.sketchElementId = element.id;
+			items.push(group);
 		}
 		if (element.text!==undefined) {
 			var text = new paper.PointText(new paper.Point(element.text.x, element.text.y));
@@ -960,8 +989,8 @@ SetPropertiesAction.prototype.setText = function(text) {
 	this.text = text;
 };
 
-SetPropertiesAction.prototype.setRescale = function(text) {
-	this.rescale = rescale;
+SetPropertiesAction.prototype.setRescale = function(value) {
+	this.rescale = value;
 };
 
 SetPropertiesAction.prototype.setFrameStyle = function(value) {

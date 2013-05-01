@@ -487,6 +487,7 @@ function updatePropertiesForCurrentSelection() {
 		var textSize = null;
 		var showLabel = null;
 		var textVAlign = null;
+		var rescale = null;
 		var text = null;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
@@ -594,6 +595,16 @@ function updatePropertiesForCurrentSelection() {
 							showLabel = el.icon.showLabel;
 						else
 							showLabel = '';
+						if (el.icon.rescale)
+							rescale = el.icon.rescale;
+						else
+							rescale = 'fit';
+					}
+					else if (el.image) {
+						if (el.image.rescale)
+							rescale = el.image.rescale;
+						else
+							rescale = 'fit';
 					}
 				}
 			}
@@ -653,6 +664,12 @@ function updatePropertiesForCurrentSelection() {
 		}
 		else
 			propertyEditors.showLabel.setEnabled(false);
+		if (rescale!==null) {
+			propertyEditors.rescale.setEnabled(true);
+			propertyEditors.rescale.setValue(rescale);
+		}
+		else
+			propertyEditors.rescale.setEnabled(false);
 	}
 }
 	
@@ -1573,6 +1590,7 @@ function getNewTool(project, view) {
 			var iconShowLabel = getProperty('showLabel', '');
 			var iconTextSize = getProperty('textSize', 12);
 			var iconTextColor = getTextColor();
+			var iconRescale = getProperty('rescale' ,'fit');
 			// convert selection to elements to add
 			for (var si=0; si<currentSelections.length; si++) {
 				var cs = currentSelections[si];
@@ -1580,7 +1598,8 @@ function getNewTool(project, view) {
 					// copy an entire sketch = icon/link ('place')
 					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE,
 						lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor,
-						showLabel : iconShowLabel, textVAlign : iconTextVAlign, textColor: iconTextColor, textSize: iconTextSize } };
+						showLabel : iconShowLabel, textVAlign : iconTextVAlign, textColor: iconTextColor, textSize: iconTextSize,
+						rescale : iconRescale } };
 					elements.push(icon);
 				} else if (cs.record.selection.elements) {
 					// copy elements into a new sketch
@@ -1590,7 +1609,8 @@ function getNewTool(project, view) {
 						if (el.frame && sketchId!==cs.record.selection.sketchId) {
 							var icon = { icon: { sketchId: cs.record.selection.sketchId, elementId: el.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE,
 								lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor,
-								showLabel : iconShowLabel, textVAlign : iconTextVAlign, textColor: iconTextColor, textSize: iconTextSize } };
+								showLabel : iconShowLabel, textVAlign : iconTextVAlign, textColor: iconTextColor, textSize: iconTextSize,
+								rescale : iconRescale } };
 							elements.push(icon);						
 						}
 						else
@@ -2521,7 +2541,8 @@ function loadImageAndSelect(url) {
 	// select as callback/continuation (load may be delayed)
 	var select = function(image) {
 		// fake a select action for the image
-		var element = { image: { url: image.url, x: 0, y: 0, width: image.info.width, height: image.info.height } };
+		var rescale = getProperty('rescale', 'fit');
+		var element = { image: { url: image.url, x: 0, y: 0, width: image.info.width, height: image.info.height, rescale: rescale } };
 		var selection = { elements: [ element ] };
 		var action = new Action(this, 'select');
 		action.selections = [ selection ];
@@ -2840,6 +2861,15 @@ function onSetLineWidth(value) {
 		onSetProperty(action);
 	}
 }
+function onSetRescale(value) {
+	if (!value)
+		return;
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setRescale(value);
+		onSetProperty(action);
+	}
+}
 function onSetTextSize(value) {
 	if (!value)
 		return;
@@ -2932,6 +2962,8 @@ $(document).ready(function() {
 	propertyEditors.showLabel.onSetValue = onSetShowLabel;
 	propertyEditors.textVAlign = new PropertySelect('textVAlign', 'textVAlignProperty');
 	propertyEditors.textVAlign.onSetValue = onSetTextVAlign;
+	propertyEditors.rescale = new PropertySelect('rescale', 'rescaleProperty');
+	propertyEditors.rescale.onSetValue = onSetRescale;
 
 	onShowIndex();
 	
