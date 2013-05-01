@@ -24,11 +24,12 @@ function activateOverlay(project) {
 	project.layers[2].activate();
 }
 
-function LineTool(project, sketchbook, sketchId) {
+function LineTool(project, sketchbook, sketchId, curveFlag) {
 	// call super cons
 	Tool.call(this, 'line', project);
 	this.sketchbook = sketchbook;
 	this.sketchId = sketchId;
+	this.curveFlag = curveFlag;
 }
 
 // inherit (apparently)
@@ -37,9 +38,18 @@ LineTool.prototype = new Tool();
 LineTool.prototype.begin = function(point) {
 	// activate overlay layer
 	activateOverlay(this.project);
-	this.path = new paper.Path();
-	this.path.strokeColor = getLineColor();
-	this.path.strokeWidth = getProperty('lineWidth', 1);
+	this.frameStyle = getProperty('frameStyle', 'border');
+	this.lineColor = getLineColor();
+	this.fillColor = getFillColor();
+	this.lineWidth = getProperty('lineWidth', 1);
+	this.path = new paper.Path();	
+	if (this.frameStyle.indexOf('border')>=0 || !this.frameStyle)
+		this.path.strokeColor = this.lineColor;
+	if(this.frameStyle.indexOf('fill')>=0) {
+		this.path.closed = true;
+		this.path.fillColor = this.fillColor;
+	}
+	this.path.strokeWidth = this.lineWidth;
 	this.path.add(point);	
 };
 
@@ -61,7 +71,9 @@ LineTool.prototype.end = function(point) {
 			// TODO 
 			console.log('lineTool: '+this.path);
 			// create 
-			var action = this.sketchbook.addLineAction(this.sketchId, this.path);
+			var action = this.curveFlag ? 
+					this.sketchbook.addCurveAction(this.sketchId, this.path, this.lineColor) :
+					this.sketchbook.addLineAction(this.sketchId, this.path, this.frameStyle, this.lineColor, this.fillColor);
 			this.path.remove();
 			return action;
 		}

@@ -113,8 +113,12 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			items.push(path);
 			if (element.line.lineWidth)
 				path.strokeWidth = element.line.lineWidth;
-			if (element.line.lineColor)
+			if (element.line.lineColor && (!element.line.frameStyle || element.line.frameStyle.indexOf('border')>=0))
 				path.strokeColor = colorToPaperjs(element.line.lineColor);
+			if (element.line.fillColor && element.line.frameStyle && element.line.frameStyle.indexOf('fill')>=0) {
+				path.fillColor = colorToPaperjs(element.line.fillColor);
+				path.closed = true;
+			}
 			if (element.line.segments) {
 				for (var si=0; si<element.line.segments.length; si++) {
 					var segment = element.line.segments[si];
@@ -443,12 +447,13 @@ Sketchbook.prototype.setSketchDescriptionAction = function(sketchId, description
 };
 
 /** return action to add a new line to a sketch, from provided paperjs Path */
-Sketchbook.prototype.addLineAction = function(sketchId, path) {
+Sketchbook.prototype.addLineAction = function(sketchId, path, frameStyle, lineColor, fillColor) {
 	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
-	// TODO fill
-	var color = { red: path.strokeColor.red, green: path.strokeColor.green, blue: path.strokeColor.blue };
-	var line = { lineColor: color, lineWidth: path.strokeWidth, segments: [] };
+	var lineColor2 = parseHexColor(lineColor);
+	var fillColor2 = parseHexColor(fillColor);
+	//{ red: path.strokeColor.red, green: path.strokeColor.green, blue: path.strokeColor.blue };
+	var line = { lineColor: lineColor2, fillColor : fillColor2, lineWidth: path.strokeWidth, frameStyle: frameStyle, segments: [] };
 	action.elements =  [{ line : line }]; // id?
 	for (var six=0; six<path.segments.length; six++) {
 		var psegment = path.segments[six];
@@ -458,6 +463,50 @@ Sketchbook.prototype.addLineAction = function(sketchId, path) {
 			handleOut: { x: psegment.handleOut.x, y: psegment.handleOut.y }
 		};
 		line.segments.push(segment);
+	}
+	return action;
+};
+/** return action to add a new line to a sketch, from provided paperjs Path */
+Sketchbook.prototype.addCurveAction = function(sketchId, path, lineColor) {
+	var action = new Action(this, 'addElements');
+	action.sketchId = sketchId;
+	var lineColor2 = parseHexColor(lineColor);
+	//{ red: path.strokeColor.red, green: path.strokeColor.green, blue: path.strokeColor.blue };
+	var line = { lineColor: lineColor2, lineWidth: path.strokeWidth, frameStyle: 'border', segments: [] };
+	action.elements =  [{ line : line }]; // id?
+	if (path.segments.length==1) {
+		// point
+		var psegment = path.segments[0];
+		var segment = { 
+			point: { x: psegment.point.x, y: psegment.point.y },
+			handleIn: { x: 0, y: 0 },
+			handleOut: { x: 0, y: 0 }
+		};
+		line.segments.push(segment);
+	} else if (path.segments.length>1) {
+		// This doesn't work well - the initial handle isn't great
+		// TODO improve
+		var psegment1 = path.segments[0];
+		var psegment2 = path.segments[path.segments.length-1];
+		var len = Math.sqrt((psegment1.point.x-psegment2.point.x)*(psegment1.point.x-psegment2.point.x)+
+				(psegment1.point.y-psegment2.point.y)*(psegment1.point.y-psegment2.point.y));
+		var hlen = Math.sqrt(psegment1.handleOut.x*psegment1.handleOut.x+psegment1.handleOut.y*psegment1.handleOut.y);
+		var scale = (hlen>0 && len>0 ? 0.33*len/hlen : 1);
+		var segment = { 
+			point: { x: psegment1.point.x, y: psegment1.point.y },
+			handleIn: { x: psegment1.handleIn.x, y: psegment1.handleIn.y },
+			handleOut: { x: scale*psegment1.handleOut.x, y: scale*psegment1.handleOut.y }
+		};
+		line.segments.push(segment);
+		hlen = Math.sqrt(psegment2.handleIn.x*psegment2.handleIn.x+psegment2.handleIn.y*psegment2.handleIn.y);
+		scale = (hlen>0 && len>0 ? 0.33*len/hlen : 1);
+		segment = { 
+			point: { x: psegment2.point.x, y: psegment2.point.y },
+			handleIn: { x: scale*psegment2.handleIn.x, y: scale*psegment2.handleIn.y},
+			handleOut: { x: psegment2.handleOut.x, y: psegment2.handleOut.y }
+		};
+		line.segments.push(segment);
+		
 	}
 	return action;
 };
@@ -895,12 +944,15 @@ Sketchbook.prototype.doAction = function(action) {
 						el.undo.lineColor = elval.lineColor;
 						el.undo.fillColor = elval.fillColor;
 						el.undo.lineWidth = elval.lineWidth;
+						el.undo.frameStyle = elval.frameStyle;
 						if (action.lineColor)
 							elval.lineColor = action.lineColor;
 						if (action.fillColor)
 							elval.fillColor = action.fillColor;
 						if (action.lineWidth)
 							elval.lineWidth= action.lineWidth;
+						if (action.frameStyle)
+							elval.frameStyle= action.frameStyle;
 					}
 					else if (element.text) {
 						var elval = element.text;

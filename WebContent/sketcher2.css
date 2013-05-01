@@ -222,6 +222,10 @@ table.sketchPropertiesTable {
 	width: 1em;
 	height: 1em;	
 }
+#fillColorProperty div.option {
+	width: 1em;
+	height: 1em;	
+}
 div.option {
 	border: 3px solid white;
 	float: left;

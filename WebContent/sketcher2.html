@@ -158,15 +158,13 @@
 				<tr class="property" id="textProperty"><td>Text</td>
 					<td><input id="orphanText" type="text" width="20"/></td>
 				</tr>
-				<tr class="property propertyDisabled" id="lineColorProperty"><td>Line Color</td>
+				<!-- font size -->
+				<tr class="property propertyDisabled" id="textSizeProperty"><td>Font Size</td>
 					<td>
-						<div class="option optionDefault optionSelected" style="background-color:#000000" id="lineColor_000000"></div>
-						<div class="option" style="background-color:#ffffff" id="lineColor_ffffff"></div>
-						<div class="option" style="background-color:#808080" id="lineColor_808080"></div>
-						<div class="option" style="background-color:#ff0000" id="lineColor_ff0000"></div>
-						<div class="option" style="background-color:#00ff00" id="lineColor_00ff00"></div>
-						<div class="option" style="background-color:#0000ff" id="lineColor_0000ff"></div>
-						<div class="option" style="background-color:#ffff00" id="lineColor_ffff00"></div>
+						<div class="option optionDefault optionSelected" id="textSize_12">12</div>
+						<div class="option" id="textSize_24">24</div>
+						<div class="option" id="textSize_48">48</div>
+						<div class="option" id="textSize_96">96</div>
 					</td>
 				</tr>
 				<tr class="property propertyDisabled" id="textColorProperty"><td>Text Color</td>
@@ -180,6 +178,25 @@
 						<div class="option" style="background-color:#ffff00" id="textColor_ffff00"></div>
 					</td>
 				</tr>
+				<tr class="property propertyDisabled" id="frameStyleProperty"><td>Style</td>
+					<td>
+						<div class="option" id="frameStyle_">None</div>
+						<div class="option optionDefault optionSelected" id="frameStyle_border">Border</div>
+						<div class="option" id="frameStyle_fill">Fill</div>
+						<div class="option" id="frameStyle_border_fill">Both</div>
+					</td>
+				</tr>
+				<tr class="property propertyDisabled" id="lineColorProperty"><td>Line Color</td>
+					<td>
+						<div class="option optionDefault optionSelected" style="background-color:#000000" id="lineColor_000000"></div>
+						<div class="option" style="background-color:#ffffff" id="lineColor_ffffff"></div>
+						<div class="option" style="background-color:#808080" id="lineColor_808080"></div>
+						<div class="option" style="background-color:#ff0000" id="lineColor_ff0000"></div>
+						<div class="option" style="background-color:#00ff00" id="lineColor_00ff00"></div>
+						<div class="option" style="background-color:#0000ff" id="lineColor_0000ff"></div>
+						<div class="option" style="background-color:#ffff00" id="lineColor_ffff00"></div>
+					</td>
+				</tr>
 				<!--  line width -->
 				<tr class="property propertyDisabled" id="lineWidthProperty"><td>Line Width</td>
 					<td>
@@ -189,16 +206,17 @@
 						<div class="option" id="lineWidth_8">8</div>
 					</td>
 				</tr>
-				<!-- font size -->
-				<tr class="property propertyDisabled" id="textSizeProperty"><td>Font Size</td>
+				<tr class="property propertyDisabled" id="fillColorProperty"><td>Fill Color</td>
 					<td>
-						<div class="option optionDefault optionSelected" id="textSize_12">12</div>
-						<div class="option" id="textSize_24">24</div>
-						<div class="option" id="textSize_48">48</div>
-						<div class="option" id="textSize_96">96</div>
+						<div class="option optionDefault optionSelected" style="background-color:#000000" id="fillColor_000000"></div>
+						<div class="option" style="background-color:#ffffff" id="fillColor_ffffff"></div>
+						<div class="option" style="background-color:#808080" id="fillColor_808080"></div>
+						<div class="option" style="background-color:#ff0000" id="fillColor_ff0000"></div>
+						<div class="option" style="background-color:#00ff00" id="fillColor_00ff00"></div>
+						<div class="option" style="background-color:#0000ff" id="fillColor_0000ff"></div>
+						<div class="option" style="background-color:#ffff00" id="fillColor_ffff00"></div>
 					</td>
 				</tr>
-				<!-- frame/text content (?) -->
 			</table>
 		</div>
 		<div style="width:80%;float:left">
@@ -213,6 +231,7 @@
 				<div class="action actionDisabled" id="orderToBackAction">To
 					back[W]</div>
 				<div class="action actionDisabled" id="addLineAction">Line[A]</div>
+				<div class="action actionDisabled" id="addCurveAction" style='display:none'>Curve</div><!-- Todo fix and make visible -->
 				<div class="action actionDisabled" id="addTextAction">Text[S]</div>
 				<div class="action actionDisabled" id="addFrameAction">Frame[F]</div>
 				<p class="actionLabel label">Selection:</p>

@@ -5,6 +5,7 @@
 
 
 
+
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sketcher File Format</title></head><body>
 <h1>Sketcher File Format</h1>
 This file describes the file format for the sketcher prototype. Not all
@@ -75,6 +76,13 @@ line := <span style="font-family: monospace;">{</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"lineColor": </span>color<span style="font-family: monospace;">,</span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"lineWidth": </span>width<sub>number</sub><span style="font-family: monospace;">, </span><br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"fillColor": </span>color<span style="font-family: monospace;">,</span> // default: no fill<br>
+
+
+
+&nbsp; &nbsp; <span style="font-family: monospace;">"frameStyle": </span><span style="font-family: monospace;">"" </span>| <span style="font-family: monospace;">"border"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"fill"</span><span style="font-family: monospace;"> </span>| <span style="font-family: monospace;">"border,fill", </span>// default <span style="font-family: monospace;">"border"</span><span style="font-family: monospace;"></span><br>
+
+
+<span style="font-family: monospace;"></span>
 
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">"segments": [ </span>segment*<span style="font-family: monospace;"> ]</span><br>
 <span style="font-family: monospace;">}</span><br>

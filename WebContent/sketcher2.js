@@ -145,6 +145,7 @@ PropertySelect.prototype.onPropertyOptionSelected = function(elem, ev) {
 	var ix = id.indexOf('_');
 	if (ix>0)
 		id = id.substring(ix+1);
+	id = String(id).replace(/_/g, ',');
 	console.log('Selected '+this.name+' '+id);
 	// override...
 	this.onSetValue(id);
@@ -169,6 +170,7 @@ PropertySelect.prototype.getValue = function() {
 };
 
 PropertySelect.prototype.setValue = function(value) {
+	value = String(value).replace(/\,/g, '_');
 	$('#'+this.propertyId+' .option').removeClass('optionSelected');
 	var sel = $('#'+this.name+'_'+value);
 	if (sel.size()>0) {
@@ -441,6 +443,10 @@ function hexForColorChannel(value) {
 function hexForColor(color) {
 	return hexForColorChannel(color.red)+hexForColorChannel(color.green)+hexForColorChannel(color.blue);
 }
+// black
+var DEFAULT_FILL_COLOR = '000000';
+//black
+var DEFAULT_LINE_COLOR = '000000';
 function updatePropertiesForCurrentSelection() {
 	var actionId = $('.actionSelected').attr('id');
 
@@ -461,15 +467,19 @@ function updatePropertiesForCurrentSelection() {
 				propertyEditor.setEnabled(true);
 		}
 		if (add) {
-			propertyEditors.lineColor.setEnabled(actionId=='addLineAction');
+			propertyEditors.lineColor.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction');
+			propertyEditors.fillColor.setEnabled(actionId=='addLineAction');
+			propertyEditors.frameStyle.setEnabled(actionId=='addLineAction');
 			propertyEditors.textColor.setEnabled(actionId=='addTextAction');
-			propertyEditors.lineWidth.setEnabled(actionId=='addLineAction');
+			propertyEditors.lineWidth.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction');
 			propertyEditors.textSize.setEnabled(actionId=='addTextAction');
 			propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
 		}
 	} else {
 		// element(s) with color(s)?
 		var lineColor = null;
+		var fillColor = null;
+		var frameStyle = null;
 		var textColor = null;
 		var lineWidth = null;
 		var textSize = null;
@@ -480,10 +490,20 @@ function updatePropertiesForCurrentSelection() {
 				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
 					var el = cs.record.selection.elements[ei];
 					if (el.line) {
-						if (el.line.lineColor)
+						if (el.line.lineColor) 
 							lineColor = el.line.lineColor;
+						else 
+							lineColor = DEFAULT_LINE_COLOR;
 						if (el.line.lineWidth)
 							lineWidth = el.line.lineWidth;
+						if (el.line.fillColor)
+							fillColor = el.line.fillColor;
+						else
+							fillColor = DEFAULT_FILL_COLOR;
+						if (el.line.frameStyle)
+							frameStyle = el.line.frameStyle;
+						else
+							frameStyle = 'border';
 					}
 					else if (el.text) {
 						if (el.text.textColor) 
@@ -514,6 +534,19 @@ function updatePropertiesForCurrentSelection() {
 		}
 		else 
 			propertyEditors.lineColor.setEnabled(false);
+		if (fillColor) {
+			propertyEditors.fillColor.setEnabled(true);
+			propertyEditors.fillColor.setValue(hexForColor(fillColor));
+		}
+		else
+			propertyEditors.fillColor.setEnabled(false);
+		if (frameStyle) {
+			propertyEditors.frameStyle.setEnabled(true);
+			propertyEditors.frameStyle.setValue(frameStyle);
+		}
+		else
+			propertyEditors.frameStyle.setEnabled(false);
+			
 		if (textColor) {
 			propertyEditors.textColor.setEnabled(true);
 			propertyEditors.textColor.setValue(hexForColor(textColor));
@@ -548,7 +581,7 @@ function getProperty(name, defaultValue) {
 		return defaultValue;
 	}
 	var value = propertyEditors[name].getValue();
-	if (value) {
+	if (value!==null && value!==undefined) {
 		console.log('property '+name+' is '+value);
 		return value;
 	}
@@ -558,6 +591,10 @@ function getProperty(name, defaultValue) {
 /** called by sketchertools */
 function getLineColor() {
 	return '#'+getProperty('lineColor', '000000');
+}
+/** called by sketchertools */
+function getFillColor() {
+	return '#'+getProperty('fillColor', '000000');
 }
 /** called by sketchertools */
 function getTextColor() {
@@ -1394,6 +1431,10 @@ function getNewTool(project, view) {
 			if (currentSketch && currentSketch.id)
 				return new LineTool(project, sketchbook, currentSketch.id);
 		}
+		else if ($('#addCurveAction').hasClass('actionSelected')) {
+			if (currentSketch && currentSketch.id)
+				return new LineTool(project, sketchbook, currentSketch.id, true);
+		}
 		else if ($('#addFrameAction').hasClass('actionSelected')) {
 			if (currentSketch && currentSketch.id)
 				return new FrameTool(project, sketchbook, currentSketch.id, takeOrphanText());
@@ -2042,6 +2083,7 @@ function showEditor(sketchId, noBreadcrumb) {
 	$('#orderToBackAction').removeClass('actionDisabled');
 	$('#selectAction').removeClass('actionDisabled');
 	$('#addLineAction').removeClass('actionDisabled');
+	$('#addCurveAction').removeClass('actionDisabled');
 	$('#addTextAction').removeClass('actionDisabled');
 	$('#addFrameAction').removeClass('actionDisabled');
 	onActionSelected.call($('#selectAction'));
@@ -2549,6 +2591,19 @@ function onSetLineColor(value) {
 	}
 }
 //property editor entry point
+function onSetFillColor(value) {
+	var color = parseHexColor(value);
+	if (!color)
+		return;
+	// TODO immediate action?
+	// set color of currentSelection?
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setFillColor(color);
+		onSetProperty(action);
+	}
+}
+//property editor entry point
 function onSetTextColor(value) {
 	var color = parseHexColor(value);
 	if (!color)
@@ -2558,6 +2613,16 @@ function onSetTextColor(value) {
 	if (propertiesShowSelection()) {
 		var action = sketchbook.setPropertiesAction();
 		action.setTextColor(color);
+		onSetProperty(action);
+	}
+}
+//property editor entry point
+function onSetFrameStyle(value) {
+	if (value===undefined || value===null)
+		return;
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setFrameStyle(value);
 		onSetProperty(action);
 	}
 }
@@ -2648,12 +2713,16 @@ $(document).ready(function() {
 	propertyEditors.lineColor.onSetValue = onSetLineColor;
 	propertyEditors.textColor = new PropertySelect('textColor', 'textColorProperty');
 	propertyEditors.textColor.onSetValue = onSetTextColor;
+	propertyEditors.fillColor = new PropertySelect('fillColor', 'fillColorProperty');
+	propertyEditors.fillColor.onSetValue = onSetFillColor;
 	propertyEditors.lineWidth = new PropertySelect('lineWidth', 'lineWidthProperty');
 	propertyEditors.lineWidth.onSetValue = onSetLineWidth;
 	propertyEditors.textSize = new PropertySelect('textSize', 'textSizeProperty');
 	propertyEditors.textSize.onSetValue = onSetTextSize;
 	propertyEditors.text = new PropertyText('text', 'textProperty');
 	propertyEditors.text.onSetValue = onSetText;
+	propertyEditors.frameStyle = new PropertySelect('frameStyle', 'frameStyleProperty');
+	propertyEditors.frameStyle.onSetValue = onSetFrameStyle;
 
 	onShowIndex();
 	
