@@ -55,6 +55,9 @@ div.objects {
 div.indexHeader {
 	width:100%;
 }
+.indexHashtag {
+	float:left;
+}
 div.headerItem {
 	float:left;
 }

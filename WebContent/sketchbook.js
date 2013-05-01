@@ -66,7 +66,7 @@ Sketch.prototype.unmarshall = function(jsketch) {
 
 function getDescriptionTitle(description, id) {
 	var title = description;
-	var ix = title.lastIndexOf('\n');
+	var ix = title.indexOf('\n');
 	if (ix>=0)
 		title = title.substr(0, ix);
 	if (title===undefined || title==null || title.length==0) {

@@ -48,13 +48,12 @@
 	</div>
 	<!--  object index -->
 	<div id="index" class="index tabview" style="display:none">
-		<div class="indexHeader">
+		<div id='indexHashtags' class="indexHeader">
 			<div class="headerItem">
-				<form>
-					<span class="label">Filter:</span><input type="text" id="indexFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
-				</form>
+				<span class="label">Filter:</span><input type="text" id="indexFilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();"/>
+				<input type='button' value='Show All' class='button' onclick='javascript:onObjectFilterClear();'/>
 			</div>
-			
+			<div id='indexHashtagsMarker'></div>
 			<div class="footer"></div>
 		</div>
 		<canvas id="indexCanvas" class="indexCanvas" ></canvas>								
@@ -68,9 +67,7 @@
 						<span class="label">Sequences(1)</span>
 					</div>
 					<div class="headerItem">
-						<form>
-							<span class="label">Filter:</span><input type="text" id="sequences1FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
-						</form>
+						<span class="label">Filter:</span><input type="text" id="sequences1FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
 					</div>
 					
 					<div class="footer"></div>
@@ -83,9 +80,7 @@
 						<span class="label">Sequences(2)</span>
 					</div>
 					<div class="headerItem">
-						<form>
-							<span class="label">Filter:</span><input type="text" id="sequences2FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
-						</form>
+						<span class="label">Filter:</span><input type="text" id="sequences2FilterText" value="" class="filterText" onchange="javascript:onObjectFilterChanges();" disabled/>
 					</div>
 					
 					<div class="footer"></div>

@@ -788,6 +788,27 @@ function showIndex(noBreadcrumb) {
 		breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_INDEX));
 	}
 	
+	// rebuild index hashtags
+	$('#indexHashtags .indexHashtag').remove();
+	var hashtags = [];
+	for (var sid in sketchbook.sketches) {	
+		var sketch = sketchbook.sketches[sid];
+		console.log('check sketch description for tags: '+sketch.description);
+		if (sketch.description) {
+			var re = /([#]\w+)/g;
+			var match;
+			while (match=re.exec(sketch.description)) {
+				console.log('found tag '+match[1]+' in '+match[0]);
+				var tag = match[1];
+				if (hashtags.indexOf(tag)<0)
+					hashtags.push(tag);
+			}
+		}
+	}
+	for (var tix=0; tix<hashtags.length; tix++) {
+		var tag = hashtags[tix];
+		$('#indexHashtagsMarker').after('<input type="button" value="'+tag+'" class="button indexHashtag" onclick="javascript:onObjectFilterTag(\''+tag+'\');"/>');
+	}
 	// update tab classes
 	$('.tab').removeClass('tabselected');
 	$('#tabIndex').addClass('tabselected');
@@ -818,7 +839,17 @@ function showIndex(noBreadcrumb) {
 	
 	clearProject(indexProject);
 	
+	var filter = $('#indexFilterText').val();
+	console.log('index filter: '+filter);
+	
 	for (var sid in sketchbook.sketches) {
+		
+		var sketch = sketchbook.sketches[sid];
+		if (filter && (!sketch.description || sketch.description.indexOf(filter)<0)) {
+			console.log('skip index item '+sid+' with filter '+filter);
+			continue;
+		}
+		
 		var group = createIndexItem(sid, indexProject);
 		group.translate(new paper.Point(x*INDEX_CELL_SIZE, y*INDEX_CELL_SIZE));
 		console.log('add index item '+sid+' at '+x+','+y+': '+group);
@@ -2508,7 +2539,20 @@ function onShowSequences() {
 
 // GUI entry point 
 function onObjectFilterChanges() {
-	// TODO
+	if (showingIndex) {
+		console.log('onObjectFilterChanges');
+		// reshow, no breadcrumb
+		showIndex(true);
+	}
+	return false;
+}
+function onObjectFilterClear() {
+	$('#indexFilterText').val('');
+	onObjectFilterChanges();
+}
+function onObjectFilterTag(tag) {
+	$('#indexFilterText').val(tag);
+	onObjectFilterChanges();
 }
 
 // GUI Entry point
