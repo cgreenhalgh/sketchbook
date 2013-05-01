@@ -2,7 +2,8 @@
 <html>
 <head>
 <!-- Load the Paper.js library -->
-<script type="text/javascript" src="paper-0.2.2.js"></script>
+<script type="text/javascript" src="paper-weiser.js"></script>
+<!-- <script type="text/javascript" src="paper-0.2.2.js"></script> -->
 <!-- Define inlined PaperScript associate it with myCanvas -->
 <script type="text/paperscript" canvas="myCanvas">
 	// for some reason, setting the size via CSS on the Canvas doesn't seem to work.
@@ -22,6 +23,12 @@
 
   	var myCircle = new Path.Circle(new Point(150,150), 30);
    	myCircle.fillColor = 'black';
+
+		for (var six=0; six<myCircle.segments.length; six++) {
+			var psegment = myCircle.segments[six];
+			console.log('Circle segment '+six+': '+psegment.point.x+','+psegment.point.y+'; '+psegment.handleIn.x+','+psegment.handleIn.y+'; '+psegment.handleOut.x+','+psegment.handleOut.y);
+		}
+
 
 /*        var drawTool = new Tool();
 var myPath;
