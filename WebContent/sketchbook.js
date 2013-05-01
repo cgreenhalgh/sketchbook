@@ -764,9 +764,10 @@ Sketchbook.prototype.addElementsAction = function(sketchId, elements, fromBounds
 
 
 /** return action to select a list of elements within a sketch - not really a model action */
-Sketchbook.prototype.selectItemsAction = function(defaultSketchId, items) {
+Sketchbook.prototype.selectItemsAction = function(defaultSketchId, items, zoomProject) {
 	var action = new Action(this, 'select');
 	action.selections = [];
+	action.zoomProject = zoomProject;
 	// several elements in the same sketch are one selection
 	var defaultSelection = undefined;
 	if (defaultSketchId) {

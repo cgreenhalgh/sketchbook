@@ -416,6 +416,84 @@ SelectTool.prototype.end = function(point) {
 	return this.sketchbook.selectItemsAction(this.sketchId, items);
 };
 
+/** common zoom tool */
+function PanAndZoomTool(project, sketchbook, sketchId) {
+	Tool.call(this,'panAndZoom', project);
+	this.sketchbook = sketchbook;
+	this.sketchId = sketchId;	
+	this.panPoint = null;
+	this.panView = null;
+	this.pannedFlag = false;
+	this.highlightItem = null;
+};
+PanAndZoomTool.prototype.pan = function(point) {
+	// from Pan
+	if (!this.panView || !this.panPoint)
+		return;
+	var dx = this.panPoint.x-point.x;
+	var dy = this.panPoint.y-point.y;
+	if (dx!=0 || dy!=0) {
+		this.pannedFlag = true;
+		//console.log('- d='+dx+','+dy+' zoom\'='+zoomView.zoom+' sd='+sdx+','+sdy);
+		this.panView.center = new paper.Point(this.panView.center.x+dx, this.panView.center.y+dy);
+		//console.log('- center\'='+zoomView.center);
+	}
+};
+PanAndZoomTool.prototype.begin = function(point) {
+	// from Pan
+	this.panPoint = new paper.Point(point);
+	this.panView = this.project.view;
+	this.pannedFlag = false;
+	this.selectItem = getItemAtPoint(this.project, point);
+	if (this.selectItem) {
+		// item id?
+		var elementId = getSketchElementId(this.selectItem);
+		if (elementId) {
+			this.highlightItem = addHighlight(this.project, this.selectItem);
+		}
+	}
+};
+PanAndZoomTool.prototype.move = function(point) {
+	// from Pan
+	this.pan(point);
+};
+PanAndZoomTool.prototype.end = function(point) {
+	// from Pan
+	this.pan(point);
+	if (this.highlightItem) {
+		this.highlightItem.remove();
+		this.highlightIte = null;
+	}
+	var selectFlag = !this.pannedFlag;
+	var items = [];
+	if (selectFlag) {
+//		var zoom = null;
+		if (this.selectItem) {
+			items.push(this.selectItem);
+//			// zoom to selectItem
+//			zoom = getZoomForBounds(this.project, this.selectItem.bounds);
+		}
+//		else {
+//			// zoom to all
+//			zoom = getZoomAll(this.project);
+//		}
+//		if (zoom) {
+//			this.panView.center = zoom.center;
+//			this.panView.zoom = zoom.zoom;
+//		}	
+	}
+
+	this.panView = null;
+	this.selectedItem = null;
+
+	// we'll use an action for this although it doesn't actually modify the sketchbook state!
+	if (selectFlag)
+		// select and zoom
+		return this.sketchbook.selectItemsAction(this.sketchId, items, this.project);
+	
+	return null;
+};
+
 /** order to back tool */
 function OrderToBackTool(project, sketchbook, sketchId) {
 	//SelectTool.call(this, project, sketchbook, sketchId);

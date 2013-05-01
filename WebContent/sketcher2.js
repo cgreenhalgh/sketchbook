@@ -272,6 +272,7 @@ function takeOrphanText() {
 var BREADCRUMB_TYPE_INDEX = "index";
 var BREADCRUMB_TYPE_SEQUENCES = "sequences";
 var BREADCRUMB_TYPE_SKETCH = "sketch";
+var BREADCRUMB_TYPE_ELEMENT = "element";
 
 function Breadcrumb(type, sketchId, elementId) {
 	this.type = type;
@@ -289,6 +290,10 @@ Breadcrumb.prototype.isSequences = function() {
 
 Breadcrumb.prototype.isSketch = function() {
 	return this.type==BREADCRUMB_TYPE_SKETCH;
+};
+
+Breadcrumb.prototype.isElement = function() {
+	return this.type==BREADCRUMB_TYPE_ELEMENT;
 };
 
 Breadcrumb.prototype.toString = function() {
@@ -729,15 +734,23 @@ function handleActionSelected(id) {
 	else if (id=='backAction') {
 		logBreadcrumbs();
 		if (breadcrumbs.length>1) {
-			breadcrumbs.pop();
+			var oldBreadcrumb = breadcrumbs.pop();
 			var breadcrumb = breadcrumbs[breadcrumbs.length-1];
 			//console.log('back to '+breadcrumb.type);
 			if (breadcrumb.isIndex())
 				showIndex(true);
 			else if (breadcrumb.isSequences())
 				showSequences(true);
-			else if (breadcrumb.isSketch()) 
-				showEditor(breadcrumb.sketchId, true);
+			else if (breadcrumb.isSketch()) {
+				if (oldBreadcrumb.isElement() && oldBreadcrumb.sketchId==breadcrumb.sketchId && currentSketch && currentSketch.id==breadcrumb.sketchId) {
+					var all = getZoomAll(objectDetailProject);
+					animateTo(objectDetailProject, all.zoom, all.center);
+				}
+				else
+					showEditor(breadcrumb.sketchId, true);
+			}
+			else if (breadcrumb.isElement()) 
+				showEditor(breadcrumb.sketchId, true, breadcrumb.elementId);
 			else 
 				console.log('unsupported breadcrumb type '+breadcrumb.type);
 		}
@@ -787,7 +800,10 @@ function handleActionSelected(id) {
 			}
 		}
 		$('#'+id).removeClass('actionSelected');
-		$('#selectAction').addClass('actionSelected');
+		if (showingIndex || showingSequences)
+			$('#selectAction').addClass('actionSelected');
+		else
+			$('#panAction').addClass('actionSelected');
 		updatePropertiesForCurrentSelection();
 
 		canDeleteSelection = false;
@@ -817,7 +833,10 @@ function handleActionSelected(id) {
 			}
 			// revert to select
 			$('#'+id).removeClass('actionSelected');
-			$('#selectAction').addClass('actionSelected');
+			if (showingIndex || showingSequences)
+				$('#selectAction').addClass('actionSelected');
+			else
+				$('#panAction').addClass('actionSelected');
 			updatePropertiesForCurrentSelection();
 			return;
 		}
@@ -854,8 +873,6 @@ function handleActionSelected(id) {
 					showEditor(sketchId, false, elementId);
 					// TODO element(s) within sketch? i.e. when currentSketch = sketch
 					// note: showEditor resets actions
-					$('#'+id).removeClass('actionSelected');
-					$('#selectAction').addClass('actionSelected');
 					updatePropertiesForCurrentSelection();
 					return;
 				}
@@ -1538,7 +1555,8 @@ function checkHighlight(ev) {
 		var p = getProject(ev.target);
 		if (p && p.view) {
 			if ($('#selectAction').hasClass('actionSelected') || 
-					($('#orderToBackAction').hasClass('actionSelected') && p!==selectionProject)) {
+					(($('#orderToBackAction').hasClass('actionSelected') || 
+					  $('#panAction').hasClass('actionSelected')) && p!==selectionProject)) {
 				tool = new HighlightTool(p);
 				toolView = p.view;
 				toolProject = p;
@@ -1566,7 +1584,7 @@ function getNewTool(project, view) {
 			return new ZoomTool(project, false);
 		}
 		else if ($('#panAction').hasClass('actionSelected')) {
-			return new PanTool(project);
+			return new PanAndZoomTool(project, sketchbook, currentSketch.id);
 		}
 	}
 	if (project==objectOverviewProject || project==objectDetailProject) {
@@ -1956,8 +1974,9 @@ function createIndexItemFromElements(sketch, elements, indexProject) {
 		var label = new paper.PointText(new paper.Point(INDEX_CELL_SIZE/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT+pt2px(LABEL_FONT_SIZE)));
 		var title = getSketchTitle(sketch);
 		label.content = title;
+		label.characterStyle.fillColor = 'black';
+		label.characterStyle.fontSize = LABEL_FONT_SIZE;
 		label.paragraphStyle.justification = 'center';
-		label.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
 		children.push(label);
 		var box = new paper.Path.Rectangle(new paper.Point(INDEX_CELL_MARGIN/2, INDEX_CELL_MARGIN/2),
 				new paper.Point(INDEX_CELL_SIZE-INDEX_CELL_MARGIN/2, INDEX_CELL_SIZE-INDEX_LABEL_HEIGHT-INDEX_CELL_MARGIN/2));
@@ -1987,8 +2006,9 @@ function createIndexItemFromSequenceItems(sequenceId, description, sequenceItems
 		items.push(box);
 		var title = new paper.PointText(0, 0);
 		title.content = description;
+		title.characterStyle.fillColor = 'gray';
+		title.characterStyle.fontSize = TITLE_FONT_SIZE;
 		title.paragraphStyle.justification = 'left';
-		title.characterStyle = { fillColor: 'gray', fontSize: TITLE_FONT_SIZE };
 		items.push(title);
 	}
 	for (var ix=0; ix<sequenceItems.length; ix++) {
@@ -2002,7 +2022,8 @@ function createIndexItemFromSequenceItems(sequenceId, description, sequenceItems
 		var item = new paper.PointText(new paper.Point(LABEL_FONT_SIZE*4/3, y));
 		item.content = text;
 		item.paragraphStyle.justification = 'left';
-		item.characterStyle = { fillColor: 'black', fontSize: LABEL_FONT_SIZE };
+		item.characterStyle.fillColor = 'black';
+		item.characterStyle.fontSize = LABEL_FONT_SIZE;
 		items.push(item);
 	}
 	if (items.length>0) {
@@ -2230,9 +2251,11 @@ function updateActionsForCurrentSelection() {
 /** show editor for object ID */
 function showEditor(sketchId, noBreadcrumb, elementId) {
 	if (!noBreadcrumb && (!currentSketch || currentSketch.id!==sketchId)) {
-		console.log('breadcrumb sketch '+sketchId);
-		// TODO elementId?
-		breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_SKETCH, sketchId));		
+		console.log('breadcrumb sketch '+sketchId+' element '+elementId);
+		if (elementId)
+			breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_ELEMENT, sketchId, elementId));		
+		else
+			breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_SKETCH, sketchId));		
 	}	
 	else 
 		console.log('no breadcrumb sketch '+sketchId+', currentSketch.id='+(currentSketch ? currentSketch.id : undefined)+', noBreadcrumb='+noBreadcrumb);
@@ -2276,7 +2299,7 @@ function showEditor(sketchId, noBreadcrumb, elementId) {
 	$('#addCurveAction').removeClass('actionDisabled');
 	$('#addTextAction').removeClass('actionDisabled');
 	$('#addFrameAction').removeClass('actionDisabled');
-	onActionSelected.call($('#selectAction'));
+	onActionSelected.call($('#panAction'));
 
 	updateActionsForCurrentSketch();
 	updateActionsForCurrentSelection();
@@ -2309,16 +2332,21 @@ function showEditor(sketchId, noBreadcrumb, elementId) {
 
 	}
 	
-	if (elementId) {		
-		var element = currentSketch.getElementById(elementId);
-		if (element && element.frame) {
-			var zoom = getZoomForBounds(objectDetailProject, new paper.Rectangle(element.frame.x, element.frame.y, element.frame.width, element.frame.height));
-			console.log('Zooming to element '+elementId);
-			settings.detailZoom = objectDetailProject.view.zoom = zoom.zoom;
-			settings.detailCenter = objectDetailProject.view.center = zoom.center;
+	if (elementId) {
+		var done = false;
+		for (var ci in objectDetailProject.activeLayer.children) {
+			var c = objectDetailProject.activeLayer.children[ci];
+			if (c.sketchElementId==elementId) {
+				var zoom = getZoomForBounds(objectDetailProject, c.bounds);
+				console.log('Zooming to element '+elementId);
+				settings.detailZoom = objectDetailProject.view.zoom = zoom.zoom;
+				settings.detailCenter = objectDetailProject.view.center = zoom.center;
+				done = true;
+				break;
+			}
 		}
-		else 
-			console.log('could not find frame '+elementId+' to zoom');
+		if (!done)
+			console.log('could not find element '+elementId+' to zoom');
 	}
 	
 	objectDetailProject.view.zoom = settings.detailZoom;
@@ -2509,8 +2537,54 @@ function doAction(action) {
 	}
 	else if (action.type=='select') {
 		//console.log('handle select '+JSON.stringify(action));
-		// TODO
 		handleSelections(action.selections);
+		// delayed zoom (animation)
+		if (action.zoomProject && currentSketch) {
+			if (action.selections.length==0 || !action.selections[0].elements || action.selections[0].elements.length==0) {
+				// all
+				var all = getZoomAll(action.zoomProject);
+				animateTo(action.zoomProject, all.zoom, all.center);
+				// breadcrumbs?
+				if (action.zoomProject==objectDetailProject && breadcrumbs.length>0) {
+					var breadcrumb = breadcrumbs[breadcrumbs.length-1];
+					if (breadcrumb.isElement()) {
+						breadcrumbs.pop();
+						if (breadcrumbs.length>0) {
+							var breadcrumb2 = breadcrumbs[breadcrumbs.length-1];
+							if (breadcrumb2.isSketch() && breadcrumb2.sketchId==breadcrumb.sketchId)
+								; // ok
+							else {
+								console.log('fixing breadcrumb from element to sketch on out');
+								breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_SKETCH, breadcrumb.sketchId));
+							}
+						}
+					}
+				}
+			}
+			else {
+				var el = action.selections[0].elements[0];
+				if (el.id) {
+					// scale view to show all of project
+					for (var ci in action.zoomProject.activeLayer.children) {
+						var c = action.zoomProject.activeLayer.children[ci];
+						if (c.sketchElementId==el.id) {
+							var zoom = getZoomForBounds(action.zoomProject, c.bounds);
+							animateTo(action.zoomProject, zoom.zoom, zoom.center);
+							// breadcrumbs
+							if (action.zoomProject==objectDetailProject) { 
+								if (breadcrumbs.length>0) {
+									var breadcrumb = breadcrumbs[breadcrumbs.length-1];
+									if (breadcrumb.isElement() && breadcrumb.sketchId==action.selections[0].sketchId) 	
+										breadcrumbs.pop();
+								}
+								breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_ELEMENT, action.selections[0].sketchId, el.id));
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	else if (action.type=='delete') {
 		var deletedCurrent = false;
