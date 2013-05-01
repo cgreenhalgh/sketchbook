@@ -1116,8 +1116,30 @@ function withImage(url, withImage) {
 
 
 // unmarshall and update interface, e.g. from onLoad
-function restoreState(jstate) {
-	sketchbook.unmarshall(jstate);
+// Merges by default
+function restoreState(jstate, mergeFlag) {
+	var sketchbook2 = sketchbook;
+	if (mergeFlag) {
+		sketchbook2 = new Sketchbook();
+		try {
+			sketchbook2.unmarshall(jstate);
+		}
+		catch (err) {
+        	alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
+			return;
+		}
+		sketchbook.merge(sketchbook2);
+	}
+	else {
+		try {
+			sketchbook.unmarshall(jstate);
+		}
+		catch (err) {
+			alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
+			sketchbook = new Sketchbook();
+			return;
+		}
+	}	
 	var num = 0;
 	var count = 0;
 	var loaded = function(image) {
@@ -1126,8 +1148,8 @@ function restoreState(jstate) {
 			showIndex();
 	};
 	// load any images...
-	for (var si in sketchbook.sketches) {
-		var sketch = sketchbook.sketches[si];
+	for (var si in sketchbook2.sketches) {
+		var sketch = sketchbook2.sketches[si];
 		for (var ei=0; ei<sketch.elements.length; ei++) {
 			var el = sketch.elements[ei];
 			if (el.image && el.image.url) {
@@ -2345,18 +2367,78 @@ function onSave() {
 }
 
 //GUI entry point
+function onClearAll() {
+	if (sketchbook.changed)
+		onSave();
+	
+	clearAll();
+}	
+
+//GUI entry point
 function onShowIndex() {
 	showIndex();
 }
 
-// GUI callback
-function onLoad(evt) {
 
+function readChosenFile(mergeFlag) {
+	if (!chosenFile)
+		return;
+	
+	var f = chosenFile;
+    console.log('read file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
+                  f.size+' bytes, last modified: '+
+                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
+    
+    var name = f.name;
+    // remove extension
+    var ix = name.lastIndexOf('.');
+    if (ix>0)
+    	name = name.substr(0,ix);
+    // remove (..) added by browser on save
+    ix = name.lastIndexOf('(');
+    if (ix>0)
+    	name = name.substr(0,ix).trim();
+    $('#filenameText').val(name);
+    
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+        // Render thumbnail.
+        console.log('file read: '+evt.target.result);
+        var jstate = null;
+        try {
+        	jstate = JSON.parse(evt.target.result);
+        	restoreState(jstate, mergeFlag);
+        }
+        catch (err) {
+        	alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
+        	console.log('error parsing JSON state: '+err.message);
+        }
+    };
+
+    // Read in the file
+    reader.readAsText(f);
+
+}
+// GUI entry
+function onLoad() {
 	if (sketchbook.changed)
 		onSave();
 	
 	clearAll();
 	
+	readChosenFile(false);
+}
+
+
+// GUI entry
+function onMerge() {
+	readChosenFile(true);	
+}
+
+// GUI callback
+var chosenFile;
+function onChooseFile(evt) {
+
 	/** save. 
 	 * NB uses propsed/html5 FileSaver API, as supported by 
 	 * https://github.com/eligrey/FileSaver.js https://github.com/eligrey/BlobBuilder.js
@@ -2368,40 +2450,10 @@ function onLoad(evt) {
 	    var files = evt.target.files; // FileList object
 		if (files.length==0) {
 			console.log('no file specified');
+			chosenFile = null;
 			return;
 		}
-		var f = files[0];
-	    console.log('read file: '+escape(f.name)+' ('+(f.type || 'n/a')+') - '+
-	                  f.size+' bytes, last modified: '+
-	                  (f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a'));
-	    
-	    var name = f.name;
-	    // remove extension
-	    var ix = name.lastIndexOf('.');
-	    if (ix>0)
-	    	name = name.substr(0,ix);
-	    // remove (..) added by browser on save
-	    ix = name.lastIndexOf('(');
-	    if (ix>0)
-	    	name = name.substr(0,ix).trim();
-	    $('#filenameText').val(name);
-	    
-	    var reader = new FileReader();
-	    reader.onload = function(evt) {
-	        // Render thumbnail.
-	        console.log('file read: '+evt.target.result);
-	        var jstate = null;
-	        try {
-	        	jstate = JSON.parse(evt.target.result);
-	        }
-	        catch (err) {
-	        	console.log('error parsing JSON state: '+err.message);
-	        }
-        	restoreState(jstate);
-	    };
-	
-	    // Read in the file
-	    reader.readAsText(f);
+		chosenFile = files[0];
 	}
 	else
 		console.log('sorry, file apis not supported');
@@ -2575,7 +2627,7 @@ $(document).ready(function() {
 	setupPaperjs();
 	
 	// register more GUI callbacks
-	$('#loadFile').on('change', onLoad);
+	$('#loadFile').on('change', onChooseFile);
 	$('#loadImage').on('change', onLoadImage);
 	$('#objectTextArea').change(onObjectTextChange);
 	

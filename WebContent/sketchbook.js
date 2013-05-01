@@ -300,8 +300,13 @@ Sketchbook.prototype.unmarshall = function(jstate) {
 		sketch.unmarshall(jsketch);
 		if (sketch.id==undefined) {
 			sketch.id = this.nextId++;
-		}			
+		}
 		this.sketches[sketch.id] = sketch;
+		for (var ei=0; ei<sketch.elements.length; ei++) {
+			var el = sketch.elements[ei];
+			if (el.id===undefined)
+				el.id = this.nextId++;
+		}
 	}
 	// unmarshall sequence(s)
 	this.sequences = new Array();
@@ -322,6 +327,71 @@ Sketchbook.prototype.unmarshall = function(jstate) {
 		}
 	}
 };
+/** merge */
+Sketchbook.prototype.merge = function(other) {
+	// first establish mapping of ids
+	var idMap = new Array();
+	var sketches = [];
+	for (var sketchId in other.sketches) {
+		var sketch = other.sketches[sketchId];
+		sketches.push(sketch);
+		idMap[sketch.id] = this.nextId++;
+		for (var ei=0; ei<sketch.elements.length; ei++) {
+			var el = sketch.elements[ei];
+			idMap[el.id] = this.nextId++;
+		}
+	}
+	for (var six in this.sequences) {
+		var sequence = this.seqeunces[six];
+		idMap[sequence.id] = this.nextId++;
+		for (var iix=0; iix<sequence.items.length; iix++)
+		{
+			var sitem = sequence.items[iix];
+			idMap[sitem.id] = this.nextId++;
+		}
+	}
+	// now remap ids and references, merging sketches and sequences
+	while (sketches.length>0) {
+		var sketch = sketches.shift();
+		sketch.id = idMap[sketch.id];
+		for (var ei=0; ei<sketch.elements.length; ei++) {
+			var el = sketch.elements[ei];
+			el.id = idMap[el.id];
+			if (el.icon) {
+				el.icon.sketchId = idMap[el.icon.sketchId];
+				if (el.icon.elementId)
+					el.icon.elementId = idMap[el.icon.elementId];
+			}
+		}
+		this.sketches[sketch.id] = sketch;
+		this.changed = true;
+	}
+	while (other.sequences.length>0) {
+		var sequence = other.sequences.shift();
+		sequence.id = idMap[sequence.id];
+		for (var iix=0; iix<sequence.items.length; iix++)
+		{
+			var sitem = sequence.items[iix];
+			sitem.id = idMap[sitem.id];
+			if (sitem.frameRef) {
+				sitem.frameRef.sketchId = idMap[sitem.frameRef.sketchId];
+				sitem.frameRef.elementId = idMap[sitem.frameRef.elementId];
+			} 
+			else if (sitem.sketchRef) {
+				sitem.frameRef.sketchId = idMap[sitem.frameRef.sketchId];				
+			}
+			else if (sitem.sequenceRef) {
+				sitem.frameRef.sequenceId = idMap[sitem.frameRef.sequenceId];								
+			}
+			else if (sitem.toFrameRef) {
+				sitem.toFrameRef.sketchId = idMap[sitem.toFrameRef.sketchId];
+				sitem.toFrameRef.elementId = idMap[sitem.toFrameRef.elementId];
+			} 
+		}
+		this.changed = true;
+	}
+};
+
 /** get element by id */
 Sketchbook.prototype.getSequenceById = function(id) {
 	for (var i=0; i<this.sequences.length; i++) {

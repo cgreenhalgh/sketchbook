@@ -18,18 +18,18 @@
 <div id="page" class="page">
 <h1>Sketcher2</h1>
 	<div class="indexHeader">
-		<a href="help2.html" target="_blank">Help</a><span>(try using Chrome)</span>
-		
 		<div class="headerItem">
-			<input type="button" value="New Sketch" class="button" onclick="javascript:onNewObject();"/>
-		</div>
-		<div class="headerItem">
-			Filename start:
+			Sketchbook:
+			<input type="file" id="loadFile" name="files[]" accept="application/json" class="button"/>
+			<input type="button" value="Load" class="button" onclick="javascript:onLoad();"/>
+			<input type="button" value="Merge" class="button" onclick="javascript:onMerge();"/>
+			Filename:
 			<input type="text" value="sketch" id="filenameText"/>
 			<input type="button" value="Save" class="button" onclick="javascript:onSave();"/>
+			<input type="button" value="Clear All" class="button" onclick="javascript:onClearAll();"/>
 		</div>
 		<div class="headerItem">
-			Load sketchbook:<input type="file" id="loadFile" name="files[]" accept="application/json" class="button"/>
+			<a href="help2.html" target="_blank">Help</a><span>(try using Chrome)</span>
 		</div>
 		<div class="footer"></div>
 	</div>
@@ -41,6 +41,9 @@
 		<div class="tab" id="tabSequences" 
 			onclick="javascript:onShowSequences();" 
 			>Sequences</div>
+		<div class="tab" id="newSketch" 
+			onclick="javascript:onNewObject();" 
+			>New Sketch</div>
 		<div class="footer"></div>
 	</div>
 	<!--  object index -->
