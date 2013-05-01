@@ -241,8 +241,15 @@ function addHighlight(project, item) {
 	project.layers[2].activate();
 	
 	// special case clipped link to frame
-	if (item instanceof paper.Group && item.clipped && item.children.length>0)
-		item = item.children[0];
+	if (item instanceof paper.Group && item.sketchFrameFlag) {
+		for (var ci=0; ci<item.children.length; ci++) {
+			var c = item.children[ci];
+			if (c.clipped && c.children.length>0) {
+				item = c.children[0];			
+				break;
+			}
+		}
+	}
 	// temporary hack to show red box at bounds as highlight
 	var topLeft = item.bounds.topLeft;
 	var bottomRight = item.bounds.bottomRight;
@@ -273,13 +280,19 @@ function getItemAtPoint(project, point) {
 	for (var ci=0; ci<children.length; ci++) {
 		var c = children[ci];
 		var bounds = c.bounds;
-		if (c instanceof paper.Group && c.clipped && c.children.length>0) {
-			// special case clipped frame
-			var topLeft = c.children[0].bounds.topLeft;
-			var bottomRight = c.children[0].bounds.bottomRight;
-			topLeft = c.matrix.transform(topLeft);
-			bottomRight = c.matrix.transform(bottomRight);
-			bounds = new paper.Rectangle(topLeft, bottomRight);
+		if (c instanceof paper.Group && c.sketchFrameFlag) {
+			for (var ci2=0; ci2<c.children.length; ci2++) {
+				var c2 = c.children[ci2];
+				if (c2.clipped && c2.children.length>0) {
+					// special case clipped frame
+					var topLeft = c2.children[0].bounds.topLeft;
+					var bottomRight = c2.children[0].bounds.bottomRight;
+					topLeft = c2.matrix.transform(topLeft);
+					bottomRight = c2.matrix.transform(bottomRight);
+					bounds = new paper.Rectangle(topLeft, bottomRight);
+					break;
+				}
+			}
 		}
 		if (point.x>=bounds.left-tolerance &&
 			point.x<=bounds.right+tolerance &&
@@ -486,6 +499,10 @@ function FrameTool(project, sketchbook, sketchId, description) {
 	this.lineColor = getLineColor();
 	this.fillColor = getFillColor();
 	this.lineWidth = getProperty('lineWidth', 1);
+	this.showLabel = getProperty('showLabel', 'frame');
+	this.textColor = getTextColor();
+	this.textSize = getProperty('textSize', 12);
+	this.textVAlign = getProperty('textVAlign', 'middle');
 }
 FrameTool.prototype = new Tool();
 
@@ -508,7 +525,7 @@ FrameTool.prototype.end = function(point) {
 		delete this.path;
 	}
 	var bounds = new paper.Rectangle(this.startPoint, point);
-	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds, this.frameStyle, this.lineColor, this.lineWidth, this.fillColor);
+	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds, this.frameStyle, this.lineColor, this.lineWidth, this.fillColor, this.showLabel, this.textColor, this.textSize, this.textVAlign);
 };
 
 function TextTool(project, sketchbook, sketchId, content) {

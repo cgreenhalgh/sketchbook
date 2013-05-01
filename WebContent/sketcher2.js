@@ -459,7 +459,7 @@ function updatePropertiesForCurrentSelection() {
 	}
 	else if (!propertiesShowSelection()) {
 		// update color to last selected
-		var add = actionId.substring(0, 3)=='add';
+		var add = actionId.substring(0, 3)=='add' || actionId.substr(0,5)=='place';
 		for (var pname in propertyEditors) {
 			var propertyEditor = propertyEditors[pname];
 			propertyEditor.resetValue();
@@ -470,10 +470,12 @@ function updatePropertiesForCurrentSelection() {
 			propertyEditors.lineColor.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction' || actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.fillColor.setEnabled(actionId=='addLineAction' || actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.frameStyle.setEnabled(actionId=='addLineAction' || actionId=='placeAction' || actionId=='addFrameAction');
-			propertyEditors.textColor.setEnabled(actionId=='addTextAction');
+			propertyEditors.textColor.setEnabled(actionId=='addTextAction' || actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.lineWidth.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction' || actionId=='placeAction' || actionId=='addFrameAction');
-			propertyEditors.textSize.setEnabled(actionId=='addTextAction');
+			propertyEditors.textSize.setEnabled(actionId=='addTextAction' || actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
+			propertyEditors.showLabel.setEnabled(actionId=='placeAction' || actionId=='addFrameAction');
+			propertyEditors.textVAlign.setEnabled(actionId=='addTextAction' || actionId=='placeAction' || actionId=='addFrameAction');
 		}
 	} else {
 		// element(s) with color(s)?
@@ -483,6 +485,8 @@ function updatePropertiesForCurrentSelection() {
 		var textColor = null;
 		var lineWidth = null;
 		var textSize = null;
+		var showLabel = null;
+		var textVAlign = null;
 		var text = null;
 		for (var i=0; i<currentSelections.length; i++) {
 			var cs = currentSelections[i];
@@ -512,6 +516,10 @@ function updatePropertiesForCurrentSelection() {
 							textSize = el.text.textSize;
 						if (el.text.content)
 							text = el.text.content;
+						if (el.text.textVAlign)
+							textVAlign = el.text.textVAlign;
+						else
+							textVAlign = 'middle';
 					}
 					else if (el.frame) {
 						if (el.frame.description)
@@ -530,6 +538,22 @@ function updatePropertiesForCurrentSelection() {
 							frameStyle = el.frame.frameStyle;
 						else
 							frameStyle = '';
+						if (el.frame.textColor) 
+							textColor = el.frame.textColor;
+						else
+							textColor = 'black';
+						if (el.frame.textSize)
+							textSize = el.frame.textSize;
+						else
+							textSize = 12;
+						if (el.frame.textVAlign)
+							textVAlign = el.frame.textVAlign;
+						else
+							textVAlign = 'middle';
+						if (el.frame.showLabel)
+							showLabel = el.frame.showLabel;
+						else
+							showLabel = 'frame';
 					}
 					else if (el.sequence) {
 						if (el.sequence.description)
@@ -554,6 +578,22 @@ function updatePropertiesForCurrentSelection() {
 							frameStyle = el.icon.frameStyle;
 						else
 							frameStyle = '';
+						if (el.icon.textColor) 
+							textColor = el.icon.textColor;
+						else
+							textColor = 'black';
+						if (el.icon.textSize)
+							textSize = el.icon.textSize;
+						else
+							textSize = 12;
+						if (el.icon.textVAlign)
+							textVAlign = el.icon.textVAlign;
+						else
+							textVAlign = 'middle';
+						if (el.icon.showLabel)
+							showLabel = el.icon.showLabel;
+						else
+							showLabel = '';
 					}
 				}
 			}
@@ -601,6 +641,18 @@ function updatePropertiesForCurrentSelection() {
 		}
 		else
 			propertyEditors.text.setEnabled(false);
+		if (textVAlign) {
+			propertyEditors.textVAlign.setEnabled(true);
+			propertyEditors.textVAlign.setValue(textVAlign);
+		}
+		else
+			propertyEditors.textVAlign.setEnabled(false);
+		if (showLabel!==null) {
+			propertyEditors.showLabel.setEnabled(true);
+			propertyEditors.showLabel.setValue(showLabel);
+		}
+		else
+			propertyEditors.showLabel.setEnabled(false);
 	}
 }
 	
@@ -683,7 +735,7 @@ function handleActionSelected(id) {
 	if (id=='selectAction') {
 		handlePropertiesShowSelected('propertiesShowSelection');
 	} 
-	else if (id.substr(0,3)=='add') {
+	else if (id.substr(0,3)=='add' || id.substr(0,5)=='place') {
 		handlePropertiesShowSelected('propertiesShowNew');		
 	}
 	
@@ -1517,13 +1569,18 @@ function getNewTool(project, view) {
 			var iconFrameStyle = getProperty('frameStyle', '');
 			var iconLineColor = getLineColor();
 			var iconFillColor = getFillColor();
+			var iconTextVAlign = getProperty('textVAlign', 'middle');
+			var iconShowLabel = getProperty('showLabel', '');
+			var iconTextSize = getProperty('textSize', 12);
+			var iconTextColor = getTextColor();
 			// convert selection to elements to add
 			for (var si=0; si<currentSelections.length; si++) {
 				var cs = currentSelections[si];
 				if (cs.record.selection.sketch) {
 					// copy an entire sketch = icon/link ('place')
 					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE,
-						lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor } };
+						lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor,
+						showLabel : iconShowLabel, textVAlign : iconTextVAlign, textColor: iconTextColor, textSize: iconTextSize } };
 					elements.push(icon);
 				} else if (cs.record.selection.elements) {
 					// copy elements into a new sketch
@@ -1532,7 +1589,8 @@ function getNewTool(project, view) {
 						var el = cs.record.selection.elements[ei];
 						if (el.frame && sketchId!==cs.record.selection.sketchId) {
 							var icon = { icon: { sketchId: cs.record.selection.sketchId, elementId: el.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE,
-								lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor } };
+								lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor,
+								showLabel : iconShowLabel, textVAlign : iconTextVAlign, textColor: iconTextColor, textSize: iconTextSize } };
 							elements.push(icon);						
 						}
 						else
@@ -2753,6 +2811,26 @@ function onSetFrameStyle(value) {
 		onSetProperty(action);
 	}
 }
+//property editor entry point
+function onSetShowLabel(value) {
+	if (value===undefined || value===null)
+		return;
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setShowLabel(value);
+		onSetProperty(action);
+	}
+}
+//property editor entry point
+function onSetTextVAlign(value) {
+	if (value===undefined || value===null)
+		return;
+	if (propertiesShowSelection()) {
+		var action = sketchbook.setPropertiesAction();
+		action.setTextVAlign(value);
+		onSetProperty(action);
+	}
+}
 function onSetLineWidth(value) {
 	if (!value)
 		return;
@@ -2850,6 +2928,10 @@ $(document).ready(function() {
 	propertyEditors.text.onSetValue = onSetText;
 	propertyEditors.frameStyle = new PropertySelect('frameStyle', 'frameStyleProperty');
 	propertyEditors.frameStyle.onSetValue = onSetFrameStyle;
+	propertyEditors.showLabel = new PropertySelect('showLabel', 'showLabelProperty');
+	propertyEditors.showLabel.onSetValue = onSetShowLabel;
+	propertyEditors.textVAlign = new PropertySelect('textVAlign', 'textVAlignProperty');
+	propertyEditors.textVAlign.onSetValue = onSetTextVAlign;
 
 	onShowIndex();
 	

@@ -112,7 +112,7 @@ function getMatrixFromTo(from, to) {
 	return m;
 }
 /** convert an array of elements to paperjs */
-function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
+function elementsToPaperjs(elements, sketchbook, images, iconSketchIds, fromsketch) {
 	if (iconSketchIds==undefined)
 		iconSketchIds = [];
 	var items = new Array();
@@ -152,6 +152,7 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			var sketch = sketchbook.sketches[element.icon.sketchId];
 			var group = null;
 			var bounds = null;
+			var frameel = null;
 			if (!sketch || iconSketchIds.indexOf(element.icon.sketchId)>=0) {
 				if (!sketch)
 					console.log('cannot find sketch '+element.icon.sketchId+' for icon');
@@ -168,7 +169,7 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 				// if linking to a frame then we need to define a clipping rectangle as first item,
 				// which will match the frame, and adjust the scaling appropriately
 				if (element.icon.elementId) {
-					var frameel = sketch.getElementById(element.icon.elementId);
+					frameel = sketch.getElementById(element.icon.elementId);
 					if (!frameel) 
 						console.log('could not find link frame element '+element.icon.elementId+' in sketch '+element.icon.sketchId);
 					else if (!frameel.frame) 
@@ -185,14 +186,22 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 					// fallback/default
 					group = new paper.Group(iconItems);
 			}
-			group.sketchElementId = element.id;
 			if (!bounds)
 				bounds = group.bounds;
-			group.transform(getMatrixFromTo(bounds, new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height)));
+			var iconBounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
+			group.transform(getMatrixFromTo(bounds, iconBounds));
+
+			// package that group in another group for label, border, fill!
+			var iconItems = [];
+			iconItems.push(group);
+			group = new paper.Group(iconItems);
+			group.sketchElementId = element.id;
+			group.sketchFrameFlag = true;
+			
 			//group.bounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
 			if (element.icon.frameStyle && element.icon.frameStyle.indexOf('border')>=0) {
 				// bounds pre/post?
-				var border = new paper.Path.Rectangle(bounds);
+				var border = new paper.Path.Rectangle(iconBounds);
 				if (element.icon.lineColor)
 					border.strokeColor = colorToPaperjs(element.icon.lineColor);
 				else 
@@ -201,12 +210,52 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			}
 			if (element.icon.frameStyle && element.icon.frameStyle.indexOf('fill')>=0) {
 				// bounds pre/post?
-				var fill = new paper.Path.Rectangle(bounds);
+				var fill = new paper.Path.Rectangle(iconBounds);
 				if (element.icon.fillColor)
 					fill.fillColor = colorToPaperjs(element.icon.fillColor);
 				else 
 					fill.fillColor = 'black';				
-				group.insertChild(group.cropped ? 1 : 0, fill);
+				group.insertChild(0, fill);
+			}			
+
+			// label
+			if (element.icon.showLabel) {
+				var textSize = 12;
+				if (element.icon.textSize)
+					textSize = element.icon.textSize;
+				// 12pts = 16pixels
+				var y = element.icon.y+element.icon.height/2+textSize*4/3*0.25;
+				if (element.icon.textVAlign) {
+					if (element.icon.textVAlign=='above')
+						y = element.icon.y-textSize*4/3*0.25;
+					else if (element.icon.textVAlign=='below')
+						y = element.icon.y+element.icon.height+textSize*4/3*0.75;
+					else if (element.icon.textVAlign=='top')
+						y = element.icon.y+textSize*4/3*0.75;
+					else if (element.icon.textVAlign=='bottom')
+						y = element.icon.y+element.icon.height-textSize*4/3*0.25;
+				}
+				var title = new paper.PointText(new paper.Point(element.icon.x+element.icon.width/2, y));
+				title.characterStyle.fontSize = textSize;
+				title.content = '';
+				if (element.icon.showLabel.indexOf('sketch')>=0) {
+					// target sketch
+					if (sketch)
+						title.content += getSketchTitle(sketch);
+				}
+				if (element.icon.showLabel.indexOf('frame')>=0) {
+					if (title.content.length>0)
+						title.content += ': ';
+					if (frameel && frameel.frame && frameel.frame.description)
+						title.content += frameel.frame.description;
+				}
+				title.paragraphStyle.justification = 'center';
+				// default
+				if (element.icon.textColor)
+					title.characterStyle.fillColor = colorToPaperjs(element.icon.textColor);
+				else
+					title.characterStyle.fillColor = 'black';
+				group.addChild(title);
 			}
 			items.push(group);
 		}
@@ -230,13 +279,43 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			//outline.strokeColor = 'grey';
 			//outline.strokeWidth = 2;
 			outline.dashArray = [4, 10];
-			var title = new paper.PointText(new paper.Point(element.frame.x+element.frame.width/2, element.frame.y+element.frame.height-16));
-			title.content = element.frame.description;
+			// default
+			var textSize = 12;
+			if (element.frame.textSize)
+				textSize = element.frame.textSize;
+			// 12pts = 16pixels
+			var y = element.frame.y+element.frame.height/2+textSize*4/3*0.25;
+			if (element.frame.textVAlign) {
+				if (element.frame.textVAlign=='above')
+					y = element.frame.y-textSize*4/3*0.25;
+				else if (element.frame.textVAlign=='below')
+					y = element.frame.y+element.frame.height+textSize*4/3*0.75;
+				else if (element.frame.textVAlign=='top')
+					y = element.frame.y+textSize*4/3*0.75;
+				else if (element.frame.textVAlign=='bottom')
+					y = element.frame.y+element.frame.height-textSize*4/3*0.25;
+			}
+			var title = new paper.PointText(new paper.Point(element.frame.x+element.frame.width/2, y));
+			title.characterStyle.fontSize = textSize;
+			title.content = '';
+			if (element.frame.showLabel===null || element.frame.showLabel===undefined)
+				// default
+				title.content = element.frame.description;
+			else {
+				if (element.frame.showLabel.indexOf('sketch')>=0 && fromsketch)
+					title.content += getSketchTitle(fromsketch);
+				if (element.frame.showLabel.indexOf('frame')>=0) {
+					if (title.content.length>0)
+						title.content += ': ';
+					title.content += element.frame.description;
+				}
+			}
 			title.paragraphStyle.justification = 'center';
 			// default
-			title.characterStyle.fillColor = 'black';
-			// default
-			title.characterStyle.fontSize = 12;
+			if (element.frame.textColor)
+				title.characterStyle.fillColor = colorToPaperjs(element.frame.textColor);
+			else
+				title.characterStyle.fillColor = 'black';
 			group = new paper.Group([outline, title]);			
 			group.sketchElementId = element.id;
 			items.push(group);
@@ -285,7 +364,7 @@ Sketch.prototype.toPaperjs = function(sketchbook, images, iconSketchIds) {
 	else
 		iconSketchIds = iconSketchIds.slice(0);
 	iconSketchIds.push(this.id);
-	return elementsToPaperjs(this.elements, sketchbook, images, iconSketchIds);
+	return elementsToPaperjs(this.elements, sketchbook, images, iconSketchIds, this);
 };
 
 /** get elementId (if any) for paperJs item */
@@ -592,13 +671,14 @@ Sketchbook.prototype.addTextAction = function(sketchId, text) {
 	return action;
 };
 
-Sketchbook.prototype.addFrameAction = function(sketchId, description, bounds, frameStyle, lineColor, lineWidth, fillColor) {
+Sketchbook.prototype.addFrameAction = function(sketchId, description, bounds, frameStyle, lineColor, lineWidth, fillColor, showLabel, textColor, textSize, textVAlign) {
 	var action = new Action(this, 'addElements');
 	action.sketchId = sketchId;
-	// TODO style, etc.
 	var lineColor2 = parseHexColor(lineColor);
 	var fillColor2 = parseHexColor(fillColor);
-	var frame = { description: description, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, frameStyle: frameStyle, lineColor: lineColor2, fillColor: fillColor2, lineWidth: lineWidth };
+	var textColor2 = parseHexColor(textColor);
+	var frame = { description: description, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, frameStyle: frameStyle, lineColor: lineColor2, fillColor: fillColor2, lineWidth: lineWidth,
+				showLabel : showLabel, textColor : textColor2, textSize: textSize, textVAlign : textVAlign};
 	action.elements = [{frame : frame}];
 	return action;	
 };
@@ -892,6 +972,18 @@ SetPropertiesAction.prototype.setShowLabel = function(value) {
 	this.showLabel = value;
 };
 
+SetPropertiesAction.prototype.setTextVAlign = function(value) {
+	this.textVAlign = value;
+};
+
+SetPropertiesAction.prototype.setTextHAlign = function(value) {
+	this.textHAlign = value;
+};
+
+SetPropertiesAction.prototype.setTextHFit = function(value) {
+	this.textHFit = value;
+};
+
 function DeleteAction(sketchbook) {
 	Action.call(this, sketchbook, 'delete');
 	this.items = [];
@@ -1092,7 +1184,7 @@ Sketchbook.prototype.doAction = function(action) {
 							elval.fillColor = action.fillColor;
 						if (action.rescale)
 							elval.rescale = action.rescale;
-						if (action.showLabel)
+						if (action.showLabel!==undefined)
 							elval.showLabel = action.showLabel;
 						if (action.textSize)
 							elval.textSize = action.textSize;
@@ -1129,7 +1221,7 @@ Sketchbook.prototype.doAction = function(action) {
 							elval.lineWidth = action.lineWidth;
 						if (action.fillColor)
 							elval.fillColor = action.fillColor;
-						if (action.showLabel)
+						if (action.showLabel!==undefined)
 							elval.showLabel = action.showLabel;
 						if (action.textSize)
 							elval.textSize = action.textSize;
@@ -1368,7 +1460,7 @@ Sketchbook.prototype.undoAction = function(action) {
 							elval.fillColor = el.undo.fillColor;
 						if (el.undo.rescale)
 							elval.rescale = el.undo.rescale;
-						if (el.undo.showLabel)
+						if (el.undo.showLabel!==undefined)
 							elval.showLabel = el.undo.showLabel;
 						if (el.undo.textSize)
 							elval.textSize = el.undo.textSize;
