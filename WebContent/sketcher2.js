@@ -467,11 +467,11 @@ function updatePropertiesForCurrentSelection() {
 				propertyEditor.setEnabled(true);
 		}
 		if (add) {
-			propertyEditors.lineColor.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction');
-			propertyEditors.fillColor.setEnabled(actionId=='addLineAction');
-			propertyEditors.frameStyle.setEnabled(actionId=='addLineAction');
+			propertyEditors.lineColor.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction' || actionId=='placeAction' || actionId=='addFrameAction');
+			propertyEditors.fillColor.setEnabled(actionId=='addLineAction' || actionId=='placeAction' || actionId=='addFrameAction');
+			propertyEditors.frameStyle.setEnabled(actionId=='addLineAction' || actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.textColor.setEnabled(actionId=='addTextAction');
-			propertyEditors.lineWidth.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction');
+			propertyEditors.lineWidth.setEnabled(actionId=='addLineAction' || actionId=='addCurveAction' || actionId=='placeAction' || actionId=='addFrameAction');
 			propertyEditors.textSize.setEnabled(actionId=='addTextAction');
 			propertyEditors.text.setEnabled(actionId=='addFrameAction' || actionId=='addTextAction');
 		}
@@ -516,6 +516,20 @@ function updatePropertiesForCurrentSelection() {
 					else if (el.frame) {
 						if (el.frame.description)
 							text = el.frame.description;
+						if (el.frame.lineColor) 
+							lineColor = el.frame.lineColor;
+						else 
+							lineColor = DEFAULT_LINE_COLOR;
+						if (el.frame.lineWidth)
+							lineWidth = el.frame.lineWidth;
+						if (el.frame.fillColor)
+							fillColor = el.frame.fillColor;
+						else
+							fillColor = DEFAULT_FILL_COLOR;
+						if (el.frame.frameStyle)
+							frameStyle = el.frame.frameStyle;
+						else
+							frameStyle = '';
 					}
 					else if (el.sequence) {
 						if (el.sequence.description)
@@ -524,6 +538,22 @@ function updatePropertiesForCurrentSelection() {
 					else if (el.sequenceItem) {
 						if (el.sequenceItem.text)
 							text = el.sequenceItem.text;
+					}
+					else if (el.icon) {
+						if (el.icon.lineColor) 
+							lineColor = el.icon.lineColor;
+						else 
+							lineColor = DEFAULT_LINE_COLOR;
+						if (el.icon.lineWidth)
+							lineWidth = el.icon.lineWidth;
+						if (el.icon.fillColor)
+							fillColor = el.icon.fillColor;
+						else
+							fillColor = DEFAULT_FILL_COLOR;
+						if (el.icon.frameStyle)
+							frameStyle = el.icon.frameStyle;
+						else
+							frameStyle = '';
 					}
 				}
 			}
@@ -540,7 +570,7 @@ function updatePropertiesForCurrentSelection() {
 		}
 		else
 			propertyEditors.fillColor.setEnabled(false);
-		if (frameStyle) {
+		if (frameStyle!==null) {
 			propertyEditors.frameStyle.setEnabled(true);
 			propertyEditors.frameStyle.setValue(frameStyle);
 		}
@@ -1254,8 +1284,8 @@ function setupPaperjs() {
 	paper.setup();
 
 	indexProject = setupCanvas('indexCanvas');
-	objectOverviewProject = setupCanvas('objectOverviewCanvas');	
 	objectDetailProject = setupCanvas('objectDetailCanvas');
+	objectOverviewProject = setupCanvas('objectOverviewCanvas');	
 	selectionProject = setupCanvas('selectionCanvas');
 	sequencesViewProject = setupCanvas('sequencesViewCanvas');
 }
@@ -1482,13 +1512,18 @@ function getNewTool(project, view) {
 		else if ($('#copyAction').hasClass('actionSelected') || $('#placeAction').hasClass('actionSelected')/* && !showingIndex*/) {
 			var sketchId = currentSketch ? currentSketch.id : undefined;
 			var elements = [];
+			// icon styling
+			var iconLineWidth = Number(getProperty('lineWidth', 1));
+			var iconFrameStyle = getProperty('frameStyle', '');
+			var iconLineColor = getLineColor();
+			var iconFillColor = getFillColor();
 			// convert selection to elements to add
 			for (var si=0; si<currentSelections.length; si++) {
 				var cs = currentSelections[si];
 				if (cs.record.selection.sketch) {
 					// copy an entire sketch = icon/link ('place')
-					// TODO styling
-					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
+					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE,
+						lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor } };
 					elements.push(icon);
 				} else if (cs.record.selection.elements) {
 					// copy elements into a new sketch
@@ -1496,8 +1531,8 @@ function getNewTool(project, view) {
 						// unless it is a frame from another sketch
 						var el = cs.record.selection.elements[ei];
 						if (el.frame && sketchId!==cs.record.selection.sketchId) {
-							// TODO styling
-							var icon = { icon: { sketchId: cs.record.selection.sketchId, elementId: el.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
+							var icon = { icon: { sketchId: cs.record.selection.sketchId, elementId: el.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE,
+								lineWidth: iconLineWidth, frameStyle: iconFrameStyle, lineColor: iconLineColor, fillColor: iconFillColor } };
 							elements.push(icon);						
 						}
 						else

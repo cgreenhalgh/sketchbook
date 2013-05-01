@@ -482,6 +482,10 @@ function FrameTool(project, sketchbook, sketchId, description) {
 	this.sketchbook = sketchbook;
 	this.sketchId = sketchId;	
 	this.description = description;
+	this.frameStyle = getProperty('frameStyle', 'border');
+	this.lineColor = getLineColor();
+	this.fillColor = getFillColor();
+	this.lineWidth = getProperty('lineWidth', 1);
 }
 FrameTool.prototype = new Tool();
 
@@ -504,7 +508,7 @@ FrameTool.prototype.end = function(point) {
 		delete this.path;
 	}
 	var bounds = new paper.Rectangle(this.startPoint, point);
-	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds);
+	return this.sketchbook.addFrameAction(this.sketchId, this.description, bounds, this.frameStyle, this.lineColor, this.lineWidth, this.fillColor);
 };
 
 function TextTool(project, sketchbook, sketchId, content) {
