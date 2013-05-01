@@ -99,6 +99,18 @@ function colorToPaperjs(color) {
 	return new paper.RgbColor(color.red, color.green, color.blue);
 }
 
+/** return paperjs Matrix transform from Rectangle to Rectangle */
+function getMatrixFromTo(from, to) {
+	// xscale
+	var a = from.width>0 ? to.width/from.width : 1;
+	// yscale
+	var b = from.height>0 ? to.height / from.height : 1;
+	var tx = to.x-a*from.x;
+	var ty = to.y-b*from.y;
+	var m = new paper.Matrix(a, 0, 0, b, tx, ty);
+	console.log('matrix from '+from+' to '+to+' = '+m);
+	return m;
+}
 /** convert an array of elements to paperjs */
 function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 	if (iconSketchIds==undefined)
@@ -134,7 +146,8 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 		if (element.icon!==undefined) {
 			// copy sketch item(s)
 			var sketch = sketchbook.sketches[element.icon.sketchId];
-			var group;
+			var group = null;
+			var bounds = null;
 			if (!sketch || iconSketchIds.indexOf(element.icon.sketchId)>=0) {
 				if (!sketch)
 					console.log('cannot find sketch '+element.icon.sketchId+' for icon');
@@ -147,10 +160,31 @@ function elementsToPaperjs(elements, sketchbook, images, iconSketchIds) {
 			}
 			else {
 				var iconItems = sketch.toPaperjs(sketchbook, images, iconSketchIds);
-				group = new paper.Group(iconItems);
+				// if linking to a frame then we need to define a clipping rectangle as first item,
+				// which will match the frame, and adjust the scaling appropriately
+				if (element.icon.elementId) {
+					var frameel = sketch.getElementById(element.icon.elementId);
+					if (!frameel) 
+						console.log('could not find link frame element '+element.icon.elementId+' in sketch '+element.icon.sketchId);
+					else if (!frameel.frame) 
+						console.log('found non-frame link element '+element.icon.elementId+' in sketch '+element.icon.sketchId);
+					else {
+						bounds = new paper.Rectangle(frameel.frame.x, frameel.frame.y, frameel.frame.width, frameel.frame.height);
+						var clip = new paper.Path.Rectangle(bounds);
+						iconItems.unshift(clip);
+						group = new paper.Group(iconItems);
+						group.clipped = true;
+					}
+				}
+				if(!group)
+					// fallback/default
+					group = new paper.Group(iconItems);
 			}
 			group.sketchElementId = element.id;
-			group.bounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
+			if (!bounds)
+				bounds = group.bounds;
+			group.transform(getMatrixFromTo(bounds, new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height)));
+			//group.bounds = new paper.Rectangle(element.icon.x, element.icon.y, element.icon.width, element.icon.height);
 			items.push(group);
 		}
 		if (element.frame!==undefined) {

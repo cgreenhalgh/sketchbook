@@ -240,6 +240,9 @@ function addHighlight(project, item) {
 	// highlight layer
 	project.layers[2].activate();
 	
+	// special case clipped link to frame
+	if (item instanceof paper.Group && item.clipped && item.children.length>0)
+		item = item.children[0];
 	// temporary hack to show red box at bounds as highlight
 	var topLeft = item.bounds.topLeft;
 	var bottomRight = item.bounds.bottomRight;
@@ -270,6 +273,14 @@ function getItemAtPoint(project, point) {
 	for (var ci=0; ci<children.length; ci++) {
 		var c = children[ci];
 		var bounds = c.bounds;
+		if (c instanceof paper.Group && c.clipped && c.children.length>0) {
+			// special case clipped frame
+			var topLeft = c.children[0].bounds.topLeft;
+			var bottomRight = c.children[0].bounds.bottomRight;
+			topLeft = c.matrix.transform(topLeft);
+			bottomRight = c.matrix.transform(bottomRight);
+			bounds = new paper.Rectangle(topLeft, bottomRight);
+		}
 		if (point.x>=bounds.left-tolerance &&
 			point.x<=bounds.right+tolerance &&
 			point.y>=bounds.top-tolerance &&

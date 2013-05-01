@@ -727,20 +727,25 @@ function handleActionSelected(id) {
 		for (var si=0; si<currentSelections.length; si++) {
 			var cs = currentSelections[si];
 			var sketchId = null;
+			var elementId = null;
 			if (cs.record.selection.sketch && cs.record.selection.sketch.id) {
 				sketchId = cs.record.selection.sketch.id;
 			}
-			else if (cs.record.selection.elements && cs.record.selection.elements.length>0 && cs.record.selection.elements[0].icon)
+			else if (cs.record.selection.elements && cs.record.selection.elements.length>0 && cs.record.selection.elements[0].icon) {
 				sketchId = cs.record.selection.elements[0].icon.sketchId;
+				elementId = cs.record.selection.elements[0].icon.elementId;
+			}
 			else if (cs.record.selection.sequence && cs.record.selection.sequence.items && cs.record.selection.sequence.items.length>0) {
 				if (cs.record.selection.sequence.items[0].sketchRef)
 					sketchId = cs.record.selection.sequence.items[0].sketchRef.sketchId;
-				else if (cs.record.selection.sequence.items[0].frameRef)
+				else if (cs.record.selection.sequence.items[0].frameRef) {
 					sketchId = cs.record.selection.sequence.items[0].frameRef.sketchId;
+					elementId = cs.record.selection.sequence.items[0].frameRef.elementId;
+				}
 			}
 			if (sketchId) {
 				if (sketchbook.sketches[sketchId]) {
-					showEditor(sketchId);
+					showEditor(sketchId, false, elementId);
 					// TODO element(s) within sketch? i.e. when currentSketch = sketch
 					// note: showEditor resets actions
 					$('#'+id).removeClass('actionSelected');
@@ -1482,12 +1487,21 @@ function getNewTool(project, view) {
 				var cs = currentSelections[si];
 				if (cs.record.selection.sketch) {
 					// copy an entire sketch = icon/link ('place')
+					// TODO styling
 					var icon = { icon: { sketchId: cs.record.selection.sketch.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
 					elements.push(icon);
 				} else if (cs.record.selection.elements) {
 					// copy elements into a new sketch
 					for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
-						elements.push(cs.record.selection.elements[ei]);
+						// unless it is a frame from another sketch
+						var el = cs.record.selection.elements[ei];
+						if (el.frame && sketchId!==cs.record.selection.sketchId) {
+							// TODO styling
+							var icon = { icon: { sketchId: cs.record.selection.sketchId, elementId: el.id, x:0, y:0, width:INDEX_CELL_SIZE, height:INDEX_CELL_SIZE } };
+							elements.push(icon);						
+						}
+						else
+							elements.push(cs.record.selection.elements[ei]);
 					}
 				}
 			}
@@ -1721,6 +1735,21 @@ function handleTabChange() {
 	// TODO
 }
 
+function getZoomForBounds(project, bounds) {
+	if (!bounds) {
+		console.log('showAll: bounds is null');
+		return { zoom: 1, center: new paper.Point(0,0) };
+	} else {
+		var bw = bounds.width+MIN_SIZE;
+		var bh = bounds.height+MIN_SIZE;
+		var w = $(project.view._element).width();
+		var h = $(project.view._element).height();
+		var zoom = Math.min(MAX_ZOOM, w/bw, h/bh);
+		console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
+		return { zoom: zoom, center: bounds.center };
+	}
+
+}
 
 // scale view to show all of project
 function getZoomAll(project) {
@@ -1737,18 +1766,7 @@ function getZoomAll(project) {
 				bounds = bounds.unite(b);
 		}
 	}
-	if (bounds==null) {
-		console.log('showAll: bounds is null');
-		return { zoom: 1, center: new paper.Point(0,0) };
-	} else {
-		var bw = bounds.width+MIN_SIZE;
-		var bh = bounds.height+MIN_SIZE;
-		var w = $(project.view._element).width();
-		var h = $(project.view._element).height();
-		var zoom = Math.min(MAX_ZOOM, w/bw, h/bh);
-		console.log('showAll: bounds='+bw+','+bh+', canvas='+w+','+h+', zoom='+zoom+', bounds.center='+bounds.center);
-		return { zoom: zoom, center: bounds.center };
-	}
+	return getZoomForBounds(project, bounds);
 }
 //scale view to show all of project
 function showAll(project) {
@@ -2013,8 +2031,20 @@ function updateActionsForCurrentSelection() {
 		}
 		else if (cs.record.selection.sketch)
 			canPlace = true;
-		else if (cs.record.selection.elements)
-			canCopy = true;
+		else if (cs.record.selection.elements) {
+			// 'place' if frame on a differnt sketch
+			if (currentSketch && currentSketch.id!==cs.record.selection.sketchId) {
+				for (var ei=0; ei<cs.record.selection.elements.length; ei++) {
+					var el = cs.record.selection.elements[ei];
+					if (el.frame)
+						canPlace = true;
+					else 
+						canCopy = true;
+				}
+			}
+			else
+				canCopy = true;
+		}		
 	}
 	if (canCopy) {
 		$('#copyAction').removeClass('actionDisabled');
@@ -2070,9 +2100,10 @@ function updateActionsForCurrentSelection() {
 }
 
 /** show editor for object ID */
-function showEditor(sketchId, noBreadcrumb) {
+function showEditor(sketchId, noBreadcrumb, elementId) {
 	if (!noBreadcrumb && (!currentSketch || currentSketch.id!==sketchId)) {
 		console.log('breadcrumb sketch '+sketchId);
+		// TODO elementId?
 		breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_SKETCH, sketchId));		
 	}	
 	else 
@@ -2138,13 +2169,30 @@ function showEditor(sketchId, noBreadcrumb) {
 	// NB set zoom/center after resize workaround
 	var settings = editorSettings[sketchId];
 	if (settings===undefined) {
+		showAll(objectOverviewProject);
+		showAll(objectDetailProject);
+
 		settings = new Object();
-		settings.overviewZoom = 1;
-		settings.detailZoom = 1;
-		settings.overviewCenter = new paper.Point(0,0);
-		settings.detailCenter = new paper.Point(0,0);
+		settings.overviewZoom = objectOverviewProject.view.zoom;
+		settings.detailZoom = objectDetailProject.view.zoom;
+		settings.overviewCenter = objectOverviewProject.view.center;
+		settings.detailCenter = objectDetailProject.view.center;
 		editorSettings[sketchId] = settings;
+
 	}
+	
+	if (elementId) {		
+		var element = currentSketch.getElementById(elementId);
+		if (element && element.frame) {
+			var zoom = getZoomForBounds(objectDetailProject, new paper.Rectangle(element.frame.x, element.frame.y, element.frame.width, element.frame.height));
+			console.log('Zooming to element '+elementId);
+			settings.detailZoom = objectDetailProject.view.zoom = zoom.zoom;
+			settings.detailCenter = objectDetailProject.view.center = zoom.center;
+		}
+		else 
+			console.log('could not find frame '+elementId+' to zoom');
+	}
+	
 	objectDetailProject.view.zoom = settings.detailZoom;
 	objectDetailProject.view.center = settings.detailCenter;
 	objectOverviewProject.view.zoom = settings.overviewZoom;
