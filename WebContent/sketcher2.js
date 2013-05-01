@@ -205,8 +205,8 @@ function PropertyText(name, propertyId) {
 	// (could do on keyup but that might be too much
 	var checkfn = function(ev) {
 		var value = self.getValue();
-		console.log('text change: '+value);
 		if (value!=self.value) {
+			console.log('text change: '+value);
 			self.value= value;
 			self.onSetValue(value);
 		}
@@ -264,7 +264,52 @@ function takeOrphanText() {
 	}
 }
 
+//==============================================================================
+// view stack / breadcrumbs
 
+var BREADCRUMB_TYPE_INDEX = "index";
+var BREADCRUMB_TYPE_SEQUENCES = "sequences";
+var BREADCRUMB_TYPE_SKETCH = "sketch";
+
+function Breadcrumb(type, sketchId, elementId) {
+	this.type = type;
+	this.sketchId = sketchId;
+	this.elementId = elementId;
+}
+
+Breadcrumb.prototype.isIndex = function() {
+	return this.type==BREADCRUMB_TYPE_INDEX;
+};
+
+Breadcrumb.prototype.isSequences = function() {
+	return this.type==BREADCRUMB_TYPE_SEQUENCES;
+};
+
+Breadcrumb.prototype.isSketch = function() {
+	return this.type==BREADCRUMB_TYPE_SKETCH;
+};
+
+Breadcrumb.prototype.toString = function() {
+	if (this.type==BREADCRUMB_TYPE_SKETCH)
+		return this.type+'('+this.sketchId+')';
+	return this.type;
+};
+
+// breadcrumb stack
+var breadcrumbs = new Array();
+
+function logBreadcrumbs() {
+	var s = '';
+	for (var b in breadcrumbs) {
+		if (s.length>0)
+			s += ',';
+		else 
+			s += '[';
+		s += b;		
+	}
+	s += ']';
+	console.log('breadcrumbs: '+breadcrumbs);
+}
 
 //==============================================================================
 //various internal functions
@@ -544,7 +589,24 @@ function handleActionSelected(id) {
 		}
 		return;
 	}
-
+	else if (id=='backAction') {
+		logBreadcrumbs();
+		if (breadcrumbs.length>1) {
+			breadcrumbs.pop();
+			var breadcrumb = breadcrumbs[breadcrumbs.length-1];
+			//console.log('back to '+breadcrumb.type);
+			if (breadcrumb.isIndex())
+				showIndex(true);
+			else if (breadcrumb.isSequences())
+				showSequences(true);
+			else if (breadcrumb.isSketch()) 
+				showEditor(breadcrumb.sketchId, true);
+			else 
+				console.log('unsupported breadcrumb type '+breadcrumb.type);
+		}
+		else console.log('no breadcrumb');
+		return;
+	}
 	
 	$('.action').removeClass('actionSelected');
 	$('#'+id).addClass('actionSelected');
@@ -684,7 +746,11 @@ function onPropertiesShowSelected(event) {
 }
 
 //GUI entry point
-function showIndex() {
+function showIndex(noBreadcrumb) {
+	if (!noBreadcrumb && !showingIndex) {
+		breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_INDEX));
+	}
+	
 	// update tab classes
 	$('.tab').removeClass('tabselected');
 	$('#tabIndex').addClass('tabselected');
@@ -961,7 +1027,11 @@ function updateSequences2() {
 }
 
 //GUI entry point
-function showSequences() {
+function showSequences(noBreadcrumb) {
+	if (!noBreadcrumb && !showingSequences) {
+		breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_SEQUENCES));
+	}
+	
 	// update tab classes
 	$('.tab').removeClass('tabselected');
 	$('#tabSequences').addClass('tabselected');
@@ -1442,6 +1512,8 @@ function registerMouseEvents() {
 			}
 			else if (ev.which==KEY_DELETE)
 				handleActionSelected('deleteAction');
+			else if (ev.which==KEY_BACKSPACE)
+				handleActionSelected('backAction');
 			else
 				console.log('key has no action: '+ev.which);
 			// more?
@@ -1766,8 +1838,8 @@ function refreshBackground(sketch) {
 /** update display(s) for changed sketch - complete regenerate for now */
 function refreshSketchViews(sketchId) {
 	if (showingIndex) {
-		// rebuilds anyway...
-		showIndex();
+		// rebuilds anyway... (no breadcrumb)
+		showIndex(false);
 		return;
 	}
 	if (currentSketch && currentSketch.id==sketchId) {
@@ -1796,6 +1868,11 @@ function updateActionsForCurrentSketch() {
 		$('#clearBackgroundAction').addClass('actionDisabled');
 }
 function updateActionsForCurrentSelection() {
+	if (breadcrumbs.length>1)
+		$('#backAction').removeClass('actionDisabled');		
+	else
+		$('#backAction').addClass('actionDisabled');		
+		
 	// edit - one thing?!
 	$('#editAction').addClass('actionDisabled');		
 	if (currentSelections.length==1) {
@@ -1899,7 +1976,13 @@ function updateActionsForCurrentSelection() {
 }
 
 /** show editor for object ID */
-function showEditor(sketchId) {
+function showEditor(sketchId, noBreadcrumb) {
+	if (!noBreadcrumb && (!currentSketch || currentSketch.id!==sketchId)) {
+		console.log('breadcrumb sketch '+sketchId);
+		breadcrumbs.push(new Breadcrumb(BREADCRUMB_TYPE_SKETCH, sketchId));		
+	}	
+	else 
+		console.log('no breadcrumb sketch '+sketchId+', currentSketch.id='+(currentSketch ? currentSketch.id : undefined)+', noBreadcrumb='+noBreadcrumb);
 	
 	handleTabChange();
 	
@@ -2180,7 +2263,7 @@ function doAction(action) {
 		}
 		// refresh index
 		if (deletedCurrent || showingIndex)
-			showIndex();
+			showIndex(true);
 		else {
 			if (showingSequences)
 				updateSequences2();
