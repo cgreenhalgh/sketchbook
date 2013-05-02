@@ -118,7 +118,7 @@ function getMatrixFromTo(from, to, fitFlag) {
 		}
 	}
 	var m = new paper.Matrix(a, 0, 0, b, tx, ty);
-	console.log('matrix from '+from+' to '+to+' = '+m);
+	//console.log('matrix from '+from+' to '+to+' = '+m);
 	return m;
 }
 /** convert an array of elements to paperjs */
@@ -456,7 +456,10 @@ function Sketchbook() {
 }
 
 // current version string
-var VERSION = "sketcher2.0";
+var VERSION = "sketcher2.1";
+var VERSION_MAJOR = 2;
+var VERSION_MINOR = 1;
+var VERSION = "sketcher"+VERSION_MAJOR+"."+VERSION_MINOR;
 
 Sketchbook.prototype.marshall = function() {
 	var jsketches = new Array();	
@@ -475,8 +478,24 @@ Sketchbook.prototype.marshall = function() {
 Sketchbook.prototype.unmarshall = function(jstate) {
 	this.nextId = jstate.nextId;
 	var jversion = jstate.version;
-	if (VERSION!=jversion)
-		throw "Wrong file version: "+jversion+", expected "+VERSION;
+	if (VERSION!=jversion) {
+		if(!jversion)
+			throw "Incompatible file format, no version";
+
+		var vpat = /^sketcher(\d+)[.](\d)$/;
+		var match = vpat.exec(jversion);
+		if (match && match.length>=3) {
+			var jmajor = Number(match[1]);
+			var jminor = Number(match[2]);
+			if (jmajor!=VERSION_MAJOR) 
+				throw "Unsupported file major version: "+jversion+", expected "+VERSION;
+			if (jminor>VERSION_MINOR)
+				throw "Unsupported file minor version: "+jversion+", expected "+VERSION;
+			console.log('Note: file is old version: '+jversion+' vs '+VERSION);
+		}
+		else
+			throw "Incompatible file format, version: "+jversion+", expected "+VERSION;
+	}
 	for (var jsix=0; jsix<jstate.sketches.length; jsix++) {
 		var jsketch = jstate.sketches[jsix];
 		var sketch = new Sketch();

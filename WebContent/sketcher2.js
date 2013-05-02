@@ -1318,7 +1318,7 @@ function restoreState(jstate, mergeFlag) {
 			sketchbook2.unmarshall(jstate);
 		}
 		catch (err) {
-        	alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
+        	alert('Sorry, there was a problem reading that file ('+(err.message ? err.message : err)+')');
 			return;
 		}
 		sketchbook.merge(sketchbook2);
@@ -1328,7 +1328,7 @@ function restoreState(jstate, mergeFlag) {
 			sketchbook.unmarshall(jstate);
 		}
 		catch (err) {
-			alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
+        	alert('Sorry, there was a problem reading that file ('+(err.message ? err.message : err)+')');
 			sketchbook = new Sketchbook();
 			return;
 		}
