@@ -2729,8 +2729,15 @@ function readChosenFile(mergeFlag) {
         	restoreState(jstate, mergeFlag);
         }
         catch (err) {
-        	alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
-        	console.log('error parsing JSON state: '+err.message);
+    		console.log('error parsing JSON state: '+(err.message ? err.message : err));
+        	try {
+        		jstate = loadPrezi(evt.target.result);
+            	restoreState(jstate, mergeFlag);
+        	}
+        	catch (err) {
+        		alert('Sorry, there was a problem reading that file - it is probably not a sketchbook');
+        		console.log('error parsing Prezi state: '+(err.message ? err.message : err));
+        	}
         }
     };
 

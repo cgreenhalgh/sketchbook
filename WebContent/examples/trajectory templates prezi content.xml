@@ -1,0 +1,1654 @@
+<zuiprezi>
+  <version>5</version>
+  <zui-table>
+    <settings>
+      <autoplay>
+        <delay>4000</delay>
+      </autoplay>
+      <bounds x="-41475.79147927495" y="-38839.42668284285" width="82951.5829585499" height="77678.8533656857"/>
+      <aspectratio>off</aspectratio>
+      <languages>
+        <language>en</language>
+      </languages>
+    </settings>
+    <object id="137" type="button" x="-3357.8803744275533" y="-11085.839374153938" r="0" s="9.072970832818093" class="bracket">
+      <type>bracket</type>
+      <size>
+        <w>2826.6126031601325</w>
+        <h>596.3545984814425</h>
+      </size>
+    </object>
+    <object id="0" type="label" x="-13835.58031350115" y="-11289.67197991475" r="0" s="10.119235391008898" class="body">
+      <textfield>
+        <x>-106.55</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: Beginning]]></text>
+        <w>213.1</w>
+        <h>63.7</h>
+        <annotations>r0-21 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="1" type="label" x="-13879.777665923708" y="-10676.603371490433" r="0" s="6.1148319451447755" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="2" type="label" x="-13889.800240107588" y="-10253.47019701211" r="0" s="6.1148319451447755" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="3" type="label" x="-13892.972811597097" y="-9944.934196902374" r="0" s="6.1148319451447755" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="4" type="button" x="-13823.556370112072" y="-10583.563125339262" r="0" s="3.9603737240509127" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="135" type="button" x="-3477.3129194157564" y="-18047.32448536399" r="0" s="10.13667441211066" class="bracket">
+      <type>bracket</type>
+      <size>
+        <w>2527.7639969458296</w>
+        <h>601.6196534650933</h>
+      </size>
+    </object>
+    <object id="9" type="label" x="-3191.580532391855" y="-19784.727088456602" r="0" s="38.55012572940054" class="body">
+      <textfield autoSize="true">
+        <x>-115.5</x>
+        <y>-16.9</y>
+        <text><![CDATA[Canonical Trajectory]]></text>
+        <annotations>r0-20 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="10" type="label" x="-3815.6204720278556" y="-17678.81534070279" r="0" s="19.416069345997187" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="11" type="label" x="6565.83181030122" y="-18797.75123681528" r="0" s="19.416069345997187" class="body">
+      <textfield autoSize="true">
+        <x>-71.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instructions]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="12" type="label" x="-12723.461509305433" y="-19077.46633158485" r="0" s="19.416069345997187" class="body">
+      <textfield autoSize="true">
+        <x>-65.95</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description]]></text>
+        <annotations>r0-11 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="141" type="button" x="-3015.107900779273" y="20446.798160757226" r="0" s="15.44136826033648" class="bracket">
+      <type>bracket</type>
+      <size>
+        <w>1694.0521135572458</w>
+        <h>631.4055087697899</h>
+      </size>
+    </object>
+    <object id="15" type="label" x="-2243.8896469990655" y="17244.69892721656" r="0" s="36.150825130352956" class="body">
+      <textfield autoSize="true">
+        <x>-107.05</x>
+        <y>-16.9</y>
+        <text><![CDATA[Historic Trajectory]]></text>
+        <annotations>r0-19 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="16" type="label" x="-2100.0299895434055" y="18528.626204579185" r="0" s="18.20764301971229" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="17" type="label" x="7939.15694302926" y="18529.469544682797" r="0" s="18.207643019712304" class="body">
+      <textfield autoSize="true">
+        <x>-71.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instructions]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="18" type="label" x="-12231.003641399606" y="18529.59002184046" r="0" s="18.20764301971229" class="body">
+      <textfield autoSize="true">
+        <x>-65.95</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description]]></text>
+        <annotations>r0-11 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="187" type="button" x="2492.411142495019" y="22598.630733828857" r="0" s="4.423555326032564" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="186" type="shape" x="-7034.903133078314" y="22104.284098858534" r="0" s="4.681529179564207" class="poly5">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="29" type="label" x="-7031.078969880091" y="21405.56535758319" r="0" s="6.589709630051283" class="body">
+      <textfield>
+        <x>-118.45</x>
+        <y>-31.85</y>
+        <text><![CDATA[Service provider's documentation]]></text>
+        <w>236.9</w>
+        <h>63.7</h>
+        <annotations>r0-32 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="30" type="label" x="-7039.462712276196" y="21696.716551847898" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="31" type="label" x="-7159.850311420259" y="22413.526526714846" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="32" type="label" x="-7162.571350618995" y="21891.601791757355" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="54" type="label" x="-10869.34748586744" y="-11126.544331673967" r="0" s="7.780511520118103" class="body">
+      <textfield>
+        <x>-110.8</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: Interface handover]]></text>
+        <w>221.6</w>
+        <h>63.7</h>
+        <annotations>r0-30 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="55" type="label" x="-10936.397267840784" y="-10655.166091505109" r="0" s="4.701592418243146" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="56" type="label" x="-10944.103458168971" y="-10329.82604244391" r="0" s="4.701592418243146" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="57" type="label" x="-10946.542795536736" y="-10092.597851729231" r="0" s="4.701592418243146" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="58" type="button" x="-10892.658278176947" y="-10583.637625176372" r="0" s="3.0450653822451503" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="64" type="label" x="-7969.189755892282" y="-11180.613308401284" r="0" s="8.029160183214934" class="body">
+      <textfield>
+        <x>-81.1</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: New Role]]></text>
+        <w>162.2</w>
+        <h>63.7</h>
+        <annotations>r0-20 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="65" type="label" x="-8004.417619009866" y="-10657.385696076632" r="0" s="4.851845350354296" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="66" type="label" x="-8012.370082853339" y="-10321.648468366988" r="0" s="4.851845350354296" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="67" type="label" x="-8014.887376274988" y="-10076.838967308184" r="0" s="4.851845350354296" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="68" type="button" x="-7958.705692920133" y="-10583.563125339262" r="0" s="3.1423792200795813" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="73" type="button" x="-4916.983553950939" y="-10583.563125339262" r="0" s="3.2182195691933613" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="69" type="label" x="-4928.3895519485495" y="-11158.539032404418" r="0" s="8.222941477176656" class="body">
+      <textfield>
+        <x>-99.5</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: Episode]]></text>
+        <w>199.05</w>
+        <h>63.7</h>
+        <annotations>r0-19 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="70" type="label" x="-4964.3589044750415" y="-10659.160437891327" r="0" s="4.968943135009202" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="71" type="label" x="-4972.503298570068" y="-10315.32029618668" r="0" s="4.968943135009202" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="72" type="label" x="-4975.081346088706" y="-10064.602393650417" r="0" s="4.968943135009202" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="74" type="label" x="-1711.1207160862516" y="-11159.952863550512" r="0" s="8.260231086682944" class="body">
+      <textfield>
+        <x>-117.95</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: 
+Physical Resources]]></text>
+        <w>235.95</w>
+        <h>63.7</h>
+        <annotations>r0-13 { align: center; }
+r13-31 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="75" type="label" x="-1841.3652091587203" y="-10659.511063167502" r="0" s="4.991476427952817" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="76" type="label" x="-1849.5465366645333" y="-10314.111666219173" r="0" s="4.991476427952817" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="77" type="label" x="-1852.136275180305" y="-10062.256801598507" r="0" s="4.991476427952817" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="78" type="button" x="-1793.2481729698022" y="-10583.563125339262" r="0" s="3.2328136352430543" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="79" type="label" x="6871.053428895521" y="-11198.266157528307" r="0" s="7.908715851200379" class="body">
+      <textfield>
+        <x>-117.95</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: 
+Ending]]></text>
+        <w>235.95</w>
+        <h>63.7</h>
+        <annotations>r0-13 { align: center; }
+r13-19 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="80" type="label" x="6746.351507595237" y="-10719.120724699786" r="0" s="4.779063482895355" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="81" type="label" x="6738.518337572496" y="-10388.419845151227" r="0" s="4.779063482895355" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="82" type="label" x="6736.038805724631" y="-10147.282697882005" r="0" s="4.779063482895355" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="83" type="button" x="6792.932554353182" y="-10646.36648802707" r="0" s="3.095240819865554" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="84" type="label" x="4045.356726193313" y="-11153.003883743339" r="0" s="8.160292400098196" class="body">
+      <textfield>
+        <x>-117.95</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: 
+Seams]]></text>
+        <w>235.95</w>
+        <h>63.7</h>
+        <annotations>r0-13 { align: center; }
+r13-18 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="85" type="label" x="3916.6880320828845" y="-10658.616816662281" r="0" s="4.931085672162392" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="86" type="label" x="3908.6056886269016" y="-10317.396329688247" r="0" s="4.931085672162392" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="87" type="label" x="3906.04728277762" y="-10068.58860068837" r="0" s="4.931085672162392" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="88" type="button" x="3965.2912366592427" y="-10583.563125339262" r="0" s="3.193700546845281" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="89" type="label" x="1177.2557443002397" y="-11163.56215561085" r="0" s="8.301672852307341" class="body">
+      <textfield>
+        <x>-117.95</x>
+        <y>-31.85</y>
+        <text><![CDATA[Transition: 
+Real Virtual]]></text>
+        <w>235.95</w>
+        <h>63.7</h>
+        <annotations>r0-13 { align: center; }
+r13-25 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="90" type="label" x="1046.357811669103" y="-10660.609627430695" r="0" s="5.016518777746199" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="91" type="label" x="1038.1354382587137" y="-10313.477353919352" r="0" s="5.016518777746199" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="92" type="label" x="1035.5327069664067" y="-10060.358927763733" r="0" s="5.016518777746199" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="93" type="button" x="1094.1420140902437" y="-10583.563125339262" r="0" s="3.2484305775599704" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="140" type="button" x="-3135.655211461147" y="8034.826215961651" r="0" s="12.18565808496433" class="bracket">
+      <type>bracket</type>
+      <size>
+        <w>2139.124273855194</w>
+        <h>951.4903146748472</h>
+      </size>
+    </object>
+    <object id="99" type="label" x="-2292.9407672815682" y="4239.043843959252" r="0" s="36.15082513035296" class="body">
+      <textfield autoSize="true">
+        <x>-124.05</x>
+        <y>-16.9</y>
+        <text><![CDATA[Participant Trajectory]]></text>
+        <annotations>r0-22 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="100" type="label" x="-2293.2349336814327" y="5276.642277877153" r="0" s="18.20764301971229" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="101" type="label" x="6724.509595728664" y="7310.7293913320655" r="0" s="18.207643019712304" class="body">
+      <textfield autoSize="true">
+        <x>-71.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instructions]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="102" type="label" x="-12925.658831941293" y="6272.395541414495" r="0" s="18.20764301971229" class="body">
+      <textfield autoSize="true">
+        <x>-65.95</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description]]></text>
+        <annotations>r0-11 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="139" type="button" x="-3302.278584112633" y="-2853.426394987051" r="0" s="13.009475120380502" class="bracket">
+      <type>bracket</type>
+      <size>
+        <w>1973.9463007756317</w>
+        <h>596.6126634891034</h>
+      </size>
+    </object>
+    <object id="131" type="shape" x="-3520.9378194791943" y="-2619.8039548184474" r="3.6899131184195557" s="28.053040301153892" class="line3">
+      <geom type="arrow">
+        <sp>-413.9043303116212 62.78399870538144</sp>
+        <ep>413.9043303116212 62.78399870538144</ep>
+        <b>-125.5679974107629</b>
+        <t>7</t>
+      </geom>
+    </object>
+    <object id="132" type="shape" x="-3141.684372487215" y="-3095.6276286328457" r="3.6899131184195557" s="28.053040301153892" class="line3">
+      <geom type="arrow">
+        <sp>-413.9043303116212 -63.15266401080036</sp>
+        <ep>413.9043303116212 -63.15266401080036</ep>
+        <b>126.30532802160072</b>
+        <t>7</t>
+      </geom>
+    </object>
+    <object id="133" type="shape" x="-3280.884971876481" y="-17666.4674375353" r="2.901451459656895" s="32.04690601782125" class="line3">
+      <geom type="arrow">
+        <sp>-359.2165393291448 38.631721548364</sp>
+        <ep>359.2165393291448 38.631721548364</ep>
+        <b>-77.263443096728</b>
+        <t>7</t>
+      </geom>
+    </object>
+    <object id="136" type="label" x="-3320.494833824124" y="-13203.051898134314" r="0" s="38.03086438800632" class="body">
+      <textfield autoSize="true">
+        <x>-64.05</x>
+        <y>-16.9</y>
+        <text><![CDATA[Transitions]]></text>
+        <annotations>r0-11 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="138" type="label" x="-3137.786667689026" y="-5641.784902649828" r="0" s="36.15082513035296" class="body">
+      <textfield autoSize="true">
+        <x>-100.7</x>
+        <y>-16.9</y>
+        <text><![CDATA[Social Encounters]]></text>
+        <annotations>r0-17 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="142" type="label" x="-3759.5650591963285" y="-3463.377171025864" r="0" s="7.228025279292069" class="body">
+      <textfield>
+        <x>-106.55</x>
+        <y>-16.9</y>
+        <text><![CDATA[Isolation]]></text>
+        <w>213.1</w>
+        <h>33.85</h>
+        <annotations>r0-9 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="143" type="label" x="-3791.134596641007" y="-2917.412044225935" r="0" s="4.367737103674839" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="144" type="label" x="-3798.293578200923" y="-2615.174062455703" r="0" s="4.367737103674839" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="145" type="label" x="-3800.559700693426" y="-2394.7912052344695" r="0" s="4.367737103674839" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="146" type="button" x="-3750.9765282041217" y="-2850.9547255465272" r="0" s="2.8288383743220806" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="147" type="label" x="-11278.090531703005" y="-2311.1273827612235" r="0" s="7.228025279292069" class="body">
+      <textfield>
+        <x>-106.55</x>
+        <y>-16.9</y>
+        <text><![CDATA[Encounter]]></text>
+        <w>213.1</w>
+        <h>33.85</h>
+        <annotations>r0-9 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="148" type="label" x="-11309.660069147678" y="-1765.1622559613033" r="0" s="4.36773710367484" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="149" type="label" x="-11316.819050707603" y="-1462.9242741910696" r="0" s="4.36773710367484" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="150" type="label" x="-11319.085173200097" y="-1242.541416969831" r="0" s="4.36773710367484" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="151" type="button" x="-11269.502000710794" y="-1698.7049372818974" r="0" s="2.8288383743220806" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="152" type="label" x="2451.684932317744" y="-951.8579905927882" r="0" s="7.228025279292069" class="body">
+      <textfield>
+        <x>-106.55</x>
+        <y>-16.9</y>
+        <text><![CDATA[Pacing]]></text>
+        <w>213.1</w>
+        <h>33.85</h>
+        <annotations>r0-6 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="153" type="label" x="2420.115394873065" y="-405.8928637928596" r="0" s="4.367737103674838" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="154" type="label" x="2412.95641331315" y="-103.65488202263151" r="0" s="4.367737103674838" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="155" type="label" x="2410.6902908206453" y="116.72797519860423" r="0" s="4.367737103674838" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="156" type="button" x="2460.2734633099512" y="-339.43554511345354" r="0" s="2.8288383743220806" class="circle">
+      <type>circle</type>
+      <size>
+        <w>800</w>
+        <h>800</h>
+      </size>
+    </object>
+    <object id="170" type="shape" x="-2875.169614211049" y="7598.424130398393" r="2.901451459656895" s="32.04690601782125" class="line3">
+      <geom type="arrow">
+        <sp>-359.2165393291448 38.631721548364</sp>
+        <ep>359.2165393291448 38.631721548364</ep>
+        <b>-77.263443096728</b>
+        <t>7</t>
+      </geom>
+    </object>
+    <object id="171" type="shape" x="-12251.501233173765" y="8348.44429250159" r="-19.78301918363035" s="17.461476135516108" class="line1">
+      <geom type="line">
+        <sp>-173.4042942044606 14.021464338864895</sp>
+        <ep>173.4042942044606 14.021464338864895</ep>
+        <b>-28.04292867772979</b>
+        <t>8</t>
+      </geom>
+    </object>
+    <object id="172" type="shape" x="-4050.4404815150842" y="8891.92731372679" r="1.7919076301662455" s="21.62400231991718" class="line1">
+      <geom type="line">
+        <sp>-245.4800636867675 -54.22225389106012</sp>
+        <ep>245.48006368676744 -54.22225389106012</ep>
+        <b>108.44450778212024</b>
+        <t>8</t>
+      </geom>
+    </object>
+    <object id="174" type="label" x="25138.44372797301" y="-35482.31867118504" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-290.25</x>
+        <y>-76.6</y>
+        <text><![CDATA[Process:
+
+We need to define a process for how to sketch trajectories (using these templates) so as to refine the design of a user experience.]]></text>
+        <w>580.5</w>
+        <h>153.25</h>
+        <annotations>r0-9 { align: left; }
+r10-141 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="175" type="label" x="-31879.829557534646" y="2713.2027278682" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-219</x>
+        <y>-524.35</y>
+        <text><![CDATA[Notes:
+
+The lines represent the three different kinds of trajectory that need to be authored and how they converge, diverge and interleave in different ways to reflect the dynamics of an experience.
+
+An experience designer needs ro create their own versions of these trajectory lines as a series of sketches, They might keep them abstract or give them specific shapes that match the particular shape of the experience (e.g., where there is a well defined map and path to be followed)
+
+The circles represent key moments along these trajectories These need to be copied, filled in with details and placed at the relavant points along the lines.
+
+Each template should come with placeholders for key metadata (e.g., name, type), instructions on how to apply it, a link to online tutorial material, and space to add design notes and relevant media.
+
+Colour might be used to distinguish between canonical, participant and historic trajectories and their annoations]]></text>
+        <w>438.05</w>
+        <h>1048.75</h>
+        <annotations>r0-7 { align: left; }
+r8-199 { align: left; }
+r200-484 { align: left; }
+r485-643 { align: left; }
+r644-844 { align: left; }
+r845-958 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="176" type="label" x="24511.207421864456" y="-26964.36285514275" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-276</x>
+        <y>-61.7</y>
+        <text><![CDATA[Step 1: assemble existing media that are relevant to the design and load into the sketch tool. These could include maps, photos of key locations and objects, screen designs for interfaces.]]></text>
+        <w>552</w>
+        <h>123.4</h>
+        <annotations>r0-188 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="177" type="label" x="24511.207421864456" y="-17715.9918682398" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-276</x>
+        <y>-31.85</y>
+        <text><![CDATA[Step 2: Identify the core canonical trajectories in the experience and sketch their structures]]></text>
+        <w>552</w>
+        <h>63.7</h>
+        <annotations>r0-94 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="179" type="label" x="24506.721384266526" y="-11084.451632921006" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-275.3</x>
+        <y>-61.7</y>
+        <text><![CDATA[Step 3: Consider how each of the key transitions in the framework applies to the design. Fill in the relevant transition sketches (circles) and use these to annotate the canonical trajectories]]></text>
+        <w>550.65</w>
+        <h>123.4</h>
+        <annotations>r0-192 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="180" type="label" x="23382.049695989088" y="-3180.347551793483" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-249.6</x>
+        <y>-76.6</y>
+        <text><![CDATA[Step 4: Explore all possible combinations of canonical trajectories (including with themselves). For each, create an encounter sketch annoated with potential 'encounters', 'isolations' and 'pacing' sketches]]></text>
+        <w>499.2</w>
+        <h>153.25</h>
+        <annotations>r0-206 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="181" type="label" x="22736.869239488857" y="7035.904432259747" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-234.85</x>
+        <y>-61.7</y>
+        <text><![CDATA[Step 5: Sketch out possible participant trajectories in relation to your canonical ones, labeling them with divergence and convergence subsketches.]]></text>
+        <w>469.75</w>
+        <h>123.4</h>
+        <annotations>r0-147 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="182" type="label" x="23032.58001295146" y="22548.40182105219" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-241.6</x>
+        <y>-181.1</y>
+        <text><![CDATA[Step 6: Sketch out the historic trajectories for your experience that represent the different ways in which it can be documented and subsequently recounted. Annotate them with compleyted sub-sketches (circles) that show when and how participants document their experience. how the service provider gives them further documentation, how this is edited (selected, composed, annotated) in various ways and then how it is used for reflection or recounting the experience to others.]]></text>
+        <w>483.25</w>
+        <h>362.2</h>
+        <annotations>r0-477 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="183" type="label" x="22933.96072739728" y="35184.172443981246" r="0" s="43.812176334849006" class="body">
+      <textfield>
+        <x>-236.4</x>
+        <y>-46.75</y>
+        <text><![CDATA[Step 7: publish, share or present your trajectory sketches and/or connect them back to other design materials]]></text>
+        <w>472.8</w>
+        <h>93.55</h>
+        <annotations>r0-109 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="184" type="shape" x="-2965.355570611116" y="20105.34533324964" r="0.8906476774508028" s="32.04690601782124" class="line5">
+      <geom type="arrow">
+        <sp>-354.1538209078355 27.932880880341205</sp>
+        <ep>354.1538209078355 27.932880880341205</ep>
+        <b>-55.8657617606824</b>
+        <t>7</t>
+      </geom>
+    </object>
+    <object id="185" type="shape" x="4706.729888211468" y="8631.412351019611" r="16.85047379674911" s="21.624002319917192" class="line1">
+      <geom type="arrow">
+        <sp>-161.41343737308978 10.38647254471755</sp>
+        <ep>161.41343737308978 10.38647254471755</ep>
+        <b>-20.772945089435098</b>
+        <t>7</t>
+      </geom>
+    </object>
+    <object id="188" type="label" x="-7350.763030094963" y="22189.004022019184" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="189" type="label" x="30156.959195910305" y="38748.2672662445" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="190" type="label" x="-7039.315629076264" y="22626.9442498157" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="191" type="button" x="4388.681297613957" y="22104.210557258575" r="0" s="4.423555326032563" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="192" type="shape" x="4393.093793611907" y="22048.171858084632" r="0" s="4.681529179564207" class="poly5">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="193" type="label" x="4406.846967059838" y="21377.27483950159" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-84.1</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recounting]]></text>
+        <w>168.25</w>
+        <h>33.85</h>
+        <annotations>r0-10 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="194" type="label" x="4388.534214414024" y="21640.60431107399" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="195" type="label" x="4268.146615269964" y="22357.41428594091" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="196" type="label" x="4265.425576071226" y="21835.489550983435" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="197" type="label" x="4077.2338965952576" y="22132.89178124526" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="198" type="label" x="4388.681297613957" y="22570.83200904177" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="199" type="button" x="734.2521121119108" y="22104.28409885855" r="0" s="4.423555326032564" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="200" type="shape" x="738.6646081098584" y="22048.245399684598" r="0" s="4.681529179564207" class="poly5">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="201" type="label" x="752.4177815577888" y="21377.348381101547" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-84.1</x>
+        <y>-16.9</y>
+        <text><![CDATA[Reflecting]]></text>
+        <w>168.25</w>
+        <h>33.85</h>
+        <annotations>r0-10 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="202" type="label" x="734.1050289119732" y="21640.677852673965" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="203" type="label" x="613.7174297679113" y="22357.487827540892" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="204" type="label" x="610.9963905691814" y="21835.563092583412" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="205" type="label" x="422.80471109320865" y="22132.965322845233" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="206" type="label" x="734.2521121119108" y="22570.90555064175" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="207" type="button" x="-3014.2367797464317" y="22104.28409885855" r="0" s="4.423555326032564" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="208" type="shape" x="-3009.8242837484786" y="22048.2453996846" r="0" s="4.681529179564207" class="poly5">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="209" type="label" x="-3014.3531755659874" y="21311.512268921462" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-84.1</x>
+        <y>-16.9</y>
+        <text><![CDATA[Editing]]></text>
+        <w>168.25</w>
+        <h>33.85</h>
+        <annotations>r0-7 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="210" type="label" x="-3014.3838629463626" y="21640.677852673965" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="211" type="label" x="-3134.7714620904258" y="22357.48782754091" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="212" type="label" x="-3137.492501289161" y="21835.563092583412" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="213" type="label" x="-3325.6841807651344" y="22132.965322845233" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="214" type="label" x="-3014.2367797464317" y="22570.90555064175" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="215" type="button" x="-10718.454792166827" y="22104.284098858534" r="0" s="4.423555326032564" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="216" type="shape" x="-10714.042296168875" y="22048.245399684572" r="0" s="4.681529179564207" class="poly5">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="217" type="label" x="-10700.28912272095" y="21377.348381101547" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-84.1</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recounting]]></text>
+        <w>168.25</w>
+        <h>33.85</h>
+        <annotations>r0-10 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="218" type="label" x="-10718.601875366763" y="21640.677852673936" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="219" type="label" x="-10838.98947451082" y="22357.487827540896" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="220" type="label" x="-10841.710513709559" y="21835.56309258339" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="221" type="label" x="-11029.902193185531" y="22132.965322845208" r="0" s="5.3860807443639125" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="222" type="label" x="-10718.454792166827" y="22570.90555064174" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="223" type="button" x="-11376.206448255294" y="8660.376632800828" r="0" s="4.423555326032563" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="224" type="shape" x="-9729.393814226376" y="9601.844396667537" r="0" s="4.681529179564207" class="poly1">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="225" type="label" x="-9715.640640778445" y="8930.947378084507" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-84.1</x>
+        <y>-16.9</y>
+        <text><![CDATA[Divergence]]></text>
+        <w>168.25</w>
+        <h>33.85</h>
+        <annotations>r0-10 { color: #318bff; }
+r0-10 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="226" type="label" x="-9733.953393424255" y="9194.276849656891" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="227" type="label" x="-9854.340992568314" y="9911.08682452384" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="228" type="label" x="-9857.062031767053" y="9389.162089566342" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="229" type="label" x="-10045.253711243018" y="9686.564319828165" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="230" type="label" x="-9733.80631022432" y="10124.504547624676" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="231" type="button" x="3415.8730132659516" y="13249.581296572693" r="0" s="4.423555326032563" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="232" type="shape" x="2046.7490467020868" y="9770.107577389357" r="0" s="4.681529179564207" class="poly1">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="233" type="label" x="2060.5022201500196" y="9099.210558806331" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-86.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Reconvergence]]></text>
+        <w>173.85</w>
+        <h>33.85</h>
+        <annotations>r0-13 { color: #318bff; }
+r0-13 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="234" type="label" x="2042.189467504208" y="9362.540030378721" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="235" type="label" x="1921.8018683601501" y="10079.350005245678" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="236" type="label" x="1919.0808291614098" y="9557.42527028816" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="237" type="label" x="1730.8891496854421" y="9854.82750054999" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="238" type="label" x="2042.3365507041412" y="10292.767728346507" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="239" type="button" x="40010.70995529296" y="31615.28617930956" r="0" s="4.423555326032564" class="invisible">
+      <type>invisible</type>
+      <size>
+        <w>663.3802816901409</w>
+        <h>600</h>
+      </size>
+    </object>
+    <object id="240" type="shape" x="40015.12245129091" y="31559.2474801356" r="0" s="4.681529179564207" class="poly5">
+      <geom type="circle">
+        <r>260.6251896708702</r>
+      </geom>
+    </object>
+    <object id="241" type="label" x="40028.87562473883" y="30888.350461552556" r="0" s="8.913248863768791" class="body">
+      <textfield>
+        <x>-84.1</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recounting]]></text>
+        <w>168.25</w>
+        <h>33.85</h>
+        <annotations>r0-10 { align: center; }</annotations>
+      </textfield>
+    </object>
+    <object id="242" type="label" x="40010.56287209303" y="31151.67993312495" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-90.65</x>
+        <y>-16.9</y>
+        <text><![CDATA[Trajectorize URL]]></text>
+        <annotations>r0-16 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="243" type="label" x="39890.17527294895" y="31868.4899079919" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-68.3</x>
+        <y>-16.9</y>
+        <text><![CDATA[Description:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="244" type="label" x="39887.45423375023" y="31346.565173034425" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-67.8</x>
+        <y>-16.9</y>
+        <text><![CDATA[Instruction:]]></text>
+        <annotations>r0-12 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="245" type="label" x="39699.26255427426" y="31643.96740329624" r="0" s="5.38608074436391" class="body">
+      <textfield autoSize="true">
+        <x>-32.85</x>
+        <y>-16.9</y>
+        <text><![CDATA[Name:]]></text>
+        <annotations>r0-5 { align: left; }</annotations>
+      </textfield>
+    </object>
+    <object id="246" type="label" x="40010.70995529296" y="32081.907631092756" r="0" s="5.197908341333356" class="body">
+      <textfield autoSize="true">
+        <x>-93.9</x>
+        <y>-16.9</y>
+        <text><![CDATA[Recommendation]]></text>
+        <annotations>r0-14 { align: left; }</annotations>
+      </textfield>
+    </object>
+  </zui-table>
+  <path>
+    <s>
+      <eagle o="4"/>
+    </s>
+    <s>
+      <eagle o="135"/>
+    </s>
+    <s>
+      <eagle o="137"/>
+    </s>
+    <s>
+      <eagle o="139"/>
+    </s>
+    <s>
+      <eagle o="140"/>
+    </s>
+    <s>
+      <eagle o="141"/>
+    </s>
+    <s>
+      <eagle o="187"/>
+    </s>
+  </path>
+  <style type="text/css"><![CDATA[
+@font-face
+{
+	src: url('LoveYaLikeASister.swf');
+	fontFamily: body;
+}
+
+@font-face
+{
+	src: url('jd.swf');
+	fontFamily: strong;
+}
+
+@font-face
+{
+	src: url('Crial-Black.swf');
+	fontFamily: head;
+}
+
+ZLabel
+{
+	padding: 1.2;
+}
+
+ZLabel.head
+{
+	fontFamily: head;
+	color: #003666;
+}
+
+.line5
+{
+	gradStartColor: #270066;
+	gradEndColor: #270066;
+	borderColor: #270066;
+	color: #270066;
+}
+
+.poly5
+{
+	gradStartColor: #fff;
+	gradEndColor: #fff;
+	borderColor: #270066;
+	borderThickness: 9;
+}
+
+ZLabel.strong
+{
+	fontFamily: strong;
+	color: #d03e3e;
+}
+
+.line1
+{
+	gradStartColor: #009ce5;
+	gradEndColor: #009ce5;
+	borderColor: #009ce5;
+	color: #009ce5;
+}
+
+.poly1
+{
+	gradStartColor: #fff;
+	borderColor: #009ce5;
+	gradEndALpha: 1;
+	gradEndColor: #fff;
+	borderThickness: 9;
+	gradStartAlpha: 1;
+}
+
+ZLabel.body
+{
+	fontFamily: body;
+	color: #270066;
+}
+
+Background
+{
+	gradStart: #fff;
+	gradEnd: #fff;
+}
+
+Grid
+{
+	color: #b8b8b8;
+}
+
+ZFrame.circle
+{
+	gradStartColor: #c34444;
+	gradEndColor: #7f0000;
+	borderColor: #e56666;
+	borderThickness: 0;
+}
+
+.line4
+{
+	gradStartColor: #f00;
+	gradEndColor: #f00;
+	borderColor: #f00;
+	color: #f00;
+}
+
+.poly4
+{
+	gradStartColor: #d03e3e;
+	gradEndColor: #d03e3e;
+	borderColor: #d03e3e;
+	borderThickness: 0;
+}
+
+ZFrame.bracket
+{
+	gradStartColor: #44e0ff;
+	gradEndColor: #009ce5;
+	borderColor: #6ff;
+	borderThickness: 0;
+}
+
+.line2
+{
+	gradStartColor: #ffe000;
+	gradEndColor: #ffe000;
+	borderColor: #ffe000;
+	color: #ffe000;
+}
+
+.poly2
+{
+	gradStartColor: #009ce5;
+	gradEndColor: #009ce5;
+	borderColor: #009ce5;
+	borderThickness: 0;
+}
+
+ZFrame.roundrect
+{
+	gradStartColor: #ffff7e;
+	gradEndColor: #ffff7e;
+	borderColor: #6ff;
+	borderThickness: 0;
+	radius: 5;
+}
+
+ZCurveLine
+{
+	color: #333;
+}
+
+ZArrow
+{
+	lockTintAlpha: 0;
+	borderColor: #7f7f7f;
+	thickness: 7;
+	gradStartColor: #333;
+	gradEndColor: #333;
+	borderThickness: 0;
+}
+
+.line3
+{
+	gradStartColor: #7f0000;
+	gradEndColor: #7f0000;
+	borderColor: #7f0000;
+	color: #7f0000;
+}
+
+.poly3
+{
+	gradStartColor: #fff;
+	gradEndColor: #fff;
+	borderColor: #7f0000;
+	borderThickness: 9;
+}
+
+ZMarker
+{
+	color: #e4fe92;
+}
+
+ZPath
+{
+	thickness: 5;
+	textColor: #fff;
+	alpha: 0.8;
+	color: #5aa7cb;
+}
+
+ZPath Ball.base
+{
+	fillColor: #5aa7cb;
+	radius: 15;
+	alpha: 0.8;
+}
+
+ZPath Ball.mid
+{
+	fillColor: #5aa7cb;
+	radius: 7;
+	alpha: 0.8;
+}
+
+ZVideo
+{
+	padding: 1.2;
+}
+
+ZSmartGroup.circle
+{
+	skinClass: hu.kibu.zui.model.skins.CircleFrameSkin;
+}
+
+CircleFrameSkin
+{
+	highlightBorderColor: #fff;
+	borderAlpha: 1;
+	gradStartAlpha: 1;
+	gradEndColor: #fff;
+	gradEndAlpha: 0.7;
+	highlightFillColor: #fff;
+	gradStartColor: #fff;
+	borderColor: #fff;
+	highlightFillAlpha: 0.2;
+	editOpenAlpha: 0.6;
+	thickness: 25;
+	highlightBorderAlpha: 0.6;
+	borderThickness: 0;
+}
+
+ZSmartGroup.bracket
+{
+	skinClass: hu.kibu.zui.model.skins.BracketFrameSkin;
+}
+
+BracketFrameSkin
+{
+	highlightBorderColor: #888;
+	borderAlpha: 0.5;
+	gradStartAlpha: 1;
+	gradEndColor: #000;
+	gradEndAlpha: 1;
+	highlightFillColor: #fff;
+	gradStartColor: #444;
+	borderColor: #888;
+	highlightFillAlpha: 0.2;
+	editOpenAlpha: 0.8;
+	thickness: 25;
+	highlightBorderAlpha: 0.5;
+	borderThickness: 0;
+}
+
+ZSmartGroup.roundrect
+{
+	skinClass: hu.kibu.zui.model.skins.RoundRectFrameSkin;
+}
+
+RoundRectFrameSkin
+{
+	highlightBorderColor: #333;
+	borderThickness: 0;
+	gradStartAlpha: 1;
+	gradEndColor: #fff;
+	gradEndAlpha: 0.7;
+	highlightFillColor: #333;
+	gradStartColor: #fff;
+	borderColor: #fff;
+	highlightFillAlpha: 0.2;
+	editOpenAlpha: 0.6;
+	highlightBorderAlpha: 0.7;
+	borderAlpha: 0.7;
+	radius: 0;
+}
+
+ZSmartGroup.hidden
+{
+	skinClass: hu.kibu.zui.model.skins.HiddenFrameSkin;
+}
+
+HiddenFrameSkin
+{
+	highlightBorderAlpha: 0.6;
+	highlightBorderColor: #000;
+	highlightFillAlpha: 0.4;
+	gradStartAlpha: 0.6;
+	gradStartColor: #fff;
+	gradEndColor: #fff;
+	borderThickness: -1;
+	gradEndAlpha: 0.01;
+	radius: 40;
+	highlightFillColor: #fff;
+}
+
+ZYoutube
+{
+	lockTintColor: #fff;
+}
+
+ZLoadedImage
+{
+	lockTintColor: #fff;
+}
+
+ZCircle
+{
+	borderColor: #000;
+	borderThickness: 0;
+	gradStartAlpha: 1;
+	alpha: 0.8;
+	thickness: 100;
+	lockTintALpha: 0;
+	borderAlpha: 1;
+	gradEndAlpha: 1;
+	radius: 0;
+	color: #fff;
+}
+
+ZPoly
+{
+	borderColor: #000;
+	borderThickness: 0;
+	gradStartAlpha: 1;
+	alpha: 1;
+	thickness: 100;
+	lockTintALpha: 0;
+	borderAlpha: 1;
+	gradEndAlpha: 1;
+	radius: 0;
+	color: #fff;
+}
+
+]]></style>
+  <hash>-353975e1</hash>
+<sync><oid>q72qkq1frvwy</oid><hash>-353975e1</hash></sync><config>huwtUcgXyWCfG13Ephrwj8Gk9+Jdbuy8qU7RwlMHdN77kLxo32k0r/SoE6n2RWGDAGj1EIqp6fyE7q/tEjWtmPhioBzuoD/VkpNLrI7KM0JYQv+wuV22UMLYo+dVUqR359ib6NJKPFAug+paB1xBgzM1qGpgWPW4Lb6vz2q03WIm1XGya+mBmF0fprATt+fn0Pt3D9vBOdsIamQhCX8BT2PHdX2igWdwXgPRYaZiE5MWqYVI54rJ2Wwguhe7VUR5xmH8UQSuS94dRbVMEvzVx413sad+qFiSjtW3bcwKsOxgi/2WfZO3snCd9IJDW7qu1QLpmPWJEMDSjc8DxPm6kw==</config></zuiprezi>
