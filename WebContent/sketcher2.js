@@ -1109,7 +1109,7 @@ function onSequenceItemSelected(ev) {
 			}
 		}		
 	} 
-	else if ($('#copyAction').hasClass('actionSelected')) {
+	else if ($('#copyAction').hasClass('actionSelected') || $('#placeAction').hasClass('actionSelected')) {
 		if (si) {
 			if (si.sequenceId) {
 				var sequence = sketchbook.getSequenceById(si.sequenceId);
